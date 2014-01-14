@@ -9,6 +9,6 @@ import (
 
 func TestPat(t *testing.T) {
   RegisterFailHandler(Fail)
-  Serve()
+  ServeWithArgs("/tmp/pats-acceptance-test-runs")
   RunSpecs(t, "Pat Suite")
 }
