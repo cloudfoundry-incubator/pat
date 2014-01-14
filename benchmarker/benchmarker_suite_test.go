@@ -1,13 +1,13 @@
 package benchmarker
 
 import (
-  . "github.com/onsi/ginkgo"
-  . "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
-  "testing"
+	"testing"
 )
 
 func TestBenchmarker(t *testing.T) {
-  RegisterFailHandler(Fail)
-  RunSpecs(t, "Benchmarker Suite")
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Benchmarker Suite")
 }

@@ -1,9 +1,9 @@
 package pat
 
 import (
-  . "github.com/onsi/gomega"
-  . "github.com/pivotal-cf-experimental/cf-acceptance-tests/helpers"
-  . "github.com/vito/cmdtest/matchers"
+	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/cf-acceptance-tests/helpers"
+	. "github.com/vito/cmdtest/matchers"
 )
 
 func push() {
