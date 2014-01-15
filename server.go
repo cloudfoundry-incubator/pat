@@ -50,7 +50,7 @@ func handleList(ctx *context, w http.ResponseWriter, r *http.Request) (interface
 }
 
 func handlePush(ctx *context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	totalTime := benchmarker.Time(dummy)
+	totalTime, _ := benchmarker.Time(dummy)
 	result := &Response{totalTime.Nanoseconds(), time.Now().UnixNano()}
 	return history.Save(ctx.baseDir, result, result.Timestamp)
 }
