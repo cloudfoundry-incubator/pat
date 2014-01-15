@@ -42,10 +42,8 @@ var _ = Describe("System", func() {
 			post("/experiments/push")
 			resp2 := post("/experiments/push")
 			resp3 := post("/experiments/push")
-			post("/experiments/push")
-			post("/experiments/push")
 
-			json := get(fmt.Sprintf("/experiments/?from=%d&to=%d", int(resp2["Timestamp"].(float64)), int(resp3["Timestamp"].(float64))))
+			json := get(fmt.Sprintf("/experiments/?from=%d&to=%d", int(resp2["Timestamp"].(float64)), int(resp3["Timestamp"].(float64))+1))
 			Ω(json["Items"]).Should(HaveLen(2))
 		})
 	})
