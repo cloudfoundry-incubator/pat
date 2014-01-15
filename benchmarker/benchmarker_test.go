@@ -17,17 +17,17 @@ var _ = Describe("Benchmarker", func() {
 	Describe("Timed", func() {
 		It("sends the timing information of a function to a channel", func() {
 			ch := make(chan time.Duration)
-			var seconds float64
-			go func() {
+			result := make(chan float64)
+			go func(result chan float64) {
 				defer close(ch)
 				for t := range ch {
-					seconds = t.Seconds()
+					result <- t.Seconds()
 				}
-			}()
+			}(result)
 
 			Timed(ch, func() { time.Sleep(1 * time.Second) })()
 
-			Ω(seconds).Should(BeNumerically("~", 1, 0.5))
+			Ω(<-result).Should(BeNumerically("~", 1, 0.5))
 		})
 	})
 
