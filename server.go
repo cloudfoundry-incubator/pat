@@ -17,7 +17,7 @@ func Serve() {
 
 func ServeWithArgs(baseDir string) {
 	ctx := &context{baseDir}
-	http.HandleFunc("/experiments", handler(ctx, handleList))
+	http.HandleFunc("/experiments/", handler(ctx, handleList))
 	http.HandleFunc("/experiments/push", handler(ctx, handlePush))
 }
 
@@ -25,6 +25,7 @@ func Stop() {
 }
 
 func Bind() {
+	fmt.Println("Started listening on :8080")
 	http.ListenAndServe(":8080", nil)
 }
 
