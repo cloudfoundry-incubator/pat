@@ -5,16 +5,29 @@ import (
 	"time"
 )
 
-func Time(experiment func()) (totalTime time.Duration) {
+func Time(experiment func() error) (totalTime time.Duration, err error) {
 	t0 := time.Now()
-	experiment()
+	err = experiment()
 	t1 := time.Now()
-	return t1.Sub(t0)
+	return t1.Sub(t0), err
 }
 
-func Timed(out chan<- time.Duration, experiment func()) func() {
+func Counted(out chan<- int, fn func()) func() {
 	return func() {
-		out <- Time(experiment)
+		out <- 1
+		fn()
+		out <- -1
+	}
+}
+
+func Timed(out chan<- time.Duration, errOut chan<- error, experiment func() error) func() {
+	return func() {
+		time, err := Time(experiment)
+		if err == nil {
+			out <- time
+		} else {
+			errOut <- err
+		}
 	}
 }
 

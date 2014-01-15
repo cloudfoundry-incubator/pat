@@ -9,7 +9,7 @@ import (
 var _ = Describe("Benchmarker", func() {
 	Describe("#Time", func() {
 		It("times an arbitrary function", func() {
-			time := Time(func() { time.Sleep(2 * time.Second) })
+			time, _ := Time(func() error { time.Sleep(2 * time.Second); return nil })
 			Ω(time.Seconds()).Should(BeNumerically("~", 2, 0.5))
 		})
 	})
@@ -25,9 +25,18 @@ var _ = Describe("Benchmarker", func() {
 				}
 			}(result)
 
-			Timed(ch, func() { time.Sleep(1 * time.Second) })()
+			Timed(ch, nil, func() error { time.Sleep(1 * time.Second); return nil })()
 
 			Ω(<-result).Should(BeNumerically("~", 1, 0.5))
+		})
+	})
+
+	Describe("Counted", func() {
+		It("Sends +1 when the function is called, and -1 when it ends", func() {
+			ch := make(chan int)
+			go Counted(ch, func() {})()
+			Ω(<-ch).Should(Equal(+1))
+			Ω(<-ch).Should(Equal(-1))
 		})
 	})
 
@@ -50,8 +59,9 @@ var _ = Describe("Benchmarker", func() {
 	Describe("Repeat Concurrently", func() {
 		Context("with 1 worker", func() {
 			It("Runs in series", func() {
-				time := Time(func() {
+				time, _ := Time(func() error {
 					ExecuteConcurrently(1, Repeat(3, func() { time.Sleep(1 * time.Second) }))
+					return nil
 				})
 				Ω(time.Seconds()).Should(BeNumerically("~", 3, 1))
 			})
@@ -59,8 +69,9 @@ var _ = Describe("Benchmarker", func() {
 
 		Context("With 3 workers", func() {
 			It("Runs in parallel", func() {
-				time := Time(func() {
+				time, _ := Time(func() error {
 					ExecuteConcurrently(3, Repeat(3, func() { time.Sleep(2 * time.Second) }))
+					return nil
 				})
 				Ω(time.Seconds()).Should(BeNumerically("~", 2, 1))
 			})

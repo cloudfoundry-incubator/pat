@@ -14,32 +14,69 @@ type Response struct {
 
 func RunCommandLine(pushes int, concurrency int) *Response {
 	result := make(chan time.Duration)
-	go func(result chan time.Duration) {
+	errors := make(chan error)
+	workers := make(chan int)
+	go func(started time.Time, result chan time.Duration) {
 		var avg int64
 		var total int64
 		var n int64
-		for r := range result {
-			total = total + r.Nanoseconds()
-			n = n + 1
-			avg = total / n
+		var totalErrors int64
+		var lastError string
+		var lastPush int64
+		var worstPush int64
+		var running int
+		tick := time.Tick(1 * time.Second)
+		for {
+			select {
+			case r := <-result:
+				total = total + r.Nanoseconds()
+				n = n + 1
+				avg = total / n
+				lastPush = r.Nanoseconds()
+				if lastPush > worstPush {
+					worstPush = lastPush
+				}
+			case w := <-workers:
+				running = running + w
+			case e := <-errors:
+				totalErrors = totalErrors + 1
+				lastError = e.Error()
+			case <-tick:
+			}
+
 			fmt.Print("\033[2J\033[;H")
-			fmt.Println("Cloud Foundry Performance Acceptance Tests")
-			fmt.Printf("Test underway.  Pushes: \x1b[32m%v\x1b[0m  Concurrency: \x1b[32m%v\x1b[0m\n", pushes, concurrency)
-			fmt.Println("----------------------------------------------------------\n")
-			fmt.Printf("Total pushes:   \x1b[32m%v\x1b[0m / %v           %v\n", n, int64(pushes), bar(n, int64(pushes), 20))
-			fmt.Printf("Latest Push:    \x1b[32m%v\x1b[0m\n", r.Nanoseconds())
-			fmt.Printf("Average:        \x1b[32m%v\x1b[0m\n", avg)
-			fmt.Printf("Total time:     \x1b[32m%v\x1b[0m\n", total)
-			fmt.Println("----------------------------------------------------------\n")
-
+			fmt.Println("\x1b[30;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
+			fmt.Printf("Test underway.  Pushes: \x1b[36m%v\x1b[0m  Concurrency: \x1b[36m%v\x1b[0m\n", pushes, concurrency)
+			fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n")
+			fmt.Printf("\x1b[30;1mTotal pushes\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(n, int64(pushes), 25), n, int64(pushes))
+			fmt.Println()
+			fmt.Printf("\x1b[30;1mLatest Push\x1b[0m:     \x1b[36m%v\x1b[0m\n", lastPush)
+			fmt.Printf("\x1b[30;1mWorst Push\x1b[0m:      \x1b[36m%v\x1b[0m\n", worstPush)
+			fmt.Printf("\x1b[30;1mAverage\x1b[0m:         \x1b[36m%v\x1b[0m\n", avg)
+			fmt.Printf("\x1b[30;1mTotal time\x1b[0m:      \x1b[36m%v\x1b[0m\n", total)
+			fmt.Printf("\x1b[30;1mWall time\x1b[0m:       \x1b[36m%v\x1b[0m\n", time.Since(started))
+			fmt.Printf("\x1b[30;1mRunning Workers\x1b[0m: \x1b[36m%v\x1b[0m\n", running)
+			fmt.Println()
+			fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n")
+			if totalErrors > 0 {
+				fmt.Printf("Total errors: %d\n", totalErrors)
+				fmt.Printf("Last error: %v\n", lastError)
+			}
 		}
-	}(result)
+	}(time.Now(), result)
 
-	totalTime := Time(func() { ExecuteConcurrently(concurrency, Repeat(pushes, Timed(result, dummy))) })
+	totalTime, _ := Time(func() error {
+		ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, push))))
+		return nil
+	})
+
 	return &Response{totalTime.Nanoseconds(), time.Now().UnixNano()}
 }
 
 func bar(n int64, total int64, size int) (bar string) {
+	if n == 0 {
+		n = 1
+	}
 	progress := int64(size) / (total / n)
-	return "|" + strings.Repeat("X", int(progress)) + strings.Repeat("-", size-int(progress)) + "|"
+	return "╞" + strings.Repeat("═", int(progress)) + strings.Repeat("┄", size-int(progress)) + "╡"
 }

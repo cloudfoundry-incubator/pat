@@ -1,16 +1,18 @@
 package pat
 
 import (
-	. "github.com/onsi/gomega"
+	"github.com/nu7hatch/gouuid"
 	. "github.com/pivotal-cf-experimental/cf-acceptance-tests/helpers"
-	. "github.com/vito/cmdtest/matchers"
 	"time"
 )
 
-func dummy() {
-	time.Sleep(1 * time.Second)
+func dummy() error {
+	time.Sleep(3 * time.Second)
+	return nil
 }
 
-func push() {
-	Expect(Cf("push", "patsapp", "-p", "assets/hello-world")).To(Say("App started"))
+func push() error {
+	guid, _ := uuid.NewV4()
+	err := Cf("push", "pats-"+guid.String(), "patsapp", "-m", "64M", "-p", "assets/hello-world").ExpectOutput("App started")
+	return err
 }
