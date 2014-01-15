@@ -7,12 +7,12 @@ import (
 )
 
 func dummy() error {
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 	return nil
 }
 
 func push() error {
 	guid, _ := uuid.NewV4()
-	err := Cf("push", "pats-"+guid.String(), "patsapp", "-p", "assets/hello-world").ExpectOutput("App started")
+	err := Cf("push", "pats-"+guid.String(), "patsapp", "-m", "64M", "-p", "assets/hello-world").ExpectOutput("App started")
 	return err
 }

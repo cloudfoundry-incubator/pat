@@ -45,17 +45,19 @@ func RunCommandLine(pushes int, concurrency int) *Response {
 			}
 
 			fmt.Print("\033[2J\033[;H")
-			fmt.Println("Cloud Foundry Performance Acceptance Tests")
-			fmt.Printf("Test underway.  Pushes: \x1b[32m%v\x1b[0m  Concurrency: \x1b[32m%v\x1b[0m\n", pushes, concurrency)
-			fmt.Println("----------------------------------------------------------\n")
-			fmt.Printf("Total pushes:    \x1b[32m%v\x1b[0m / %v        %v\n", n, int64(pushes), bar(n, int64(pushes), 25))
-			fmt.Printf("Latest Push:     \x1b[32m%v\x1b[0m\n", lastPush)
-			fmt.Printf("Worst Push:      \x1b[32m%v\x1b[0m\n", worstPush)
-			fmt.Printf("Average:         \x1b[32m%v\x1b[0m\n", avg)
-			fmt.Printf("Total time:      \x1b[32m%v\x1b[0m\n", total)
-			fmt.Printf("Wall time:       \x1b[32m%v\x1b[0m\n", time.Since(started))
-			fmt.Printf("Running Workers: \x1b[32m%v\x1b[0m\n", running)
-			fmt.Println("----------------------------------------------------------\n")
+			fmt.Println("\x1b[30;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
+			fmt.Printf("Test underway.  Pushes: \x1b[36m%v\x1b[0m  Concurrency: \x1b[36m%v\x1b[0m\n", pushes, concurrency)
+			fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n")
+			fmt.Printf("\x1b[30;1mTotal pushes\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(n, int64(pushes), 25), n, int64(pushes))
+			fmt.Println()
+			fmt.Printf("\x1b[30;1mLatest Push\x1b[0m:     \x1b[36m%v\x1b[0m\n", lastPush)
+			fmt.Printf("\x1b[30;1mWorst Push\x1b[0m:      \x1b[36m%v\x1b[0m\n", worstPush)
+			fmt.Printf("\x1b[30;1mAverage\x1b[0m:         \x1b[36m%v\x1b[0m\n", avg)
+			fmt.Printf("\x1b[30;1mTotal time\x1b[0m:      \x1b[36m%v\x1b[0m\n", total)
+			fmt.Printf("\x1b[30;1mWall time\x1b[0m:       \x1b[36m%v\x1b[0m\n", time.Since(started))
+			fmt.Printf("\x1b[30;1mRunning Workers\x1b[0m: \x1b[36m%v\x1b[0m\n", running)
+			fmt.Println()
+			fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n")
 			if totalErrors > 0 {
 				fmt.Printf("Total errors: %d\n", totalErrors)
 				fmt.Printf("Last error: %v\n", lastError)
@@ -72,10 +74,9 @@ func RunCommandLine(pushes int, concurrency int) *Response {
 }
 
 func bar(n int64, total int64, size int) (bar string) {
-	if n > 0 {
-		progress := int64(size) / (total / n)
-		return "|" + strings.Repeat("X", int(progress)) + strings.Repeat("-", size-int(progress)) + "|"
-	} else {
-		return ""
+	if n == 0 {
+		n = 1
 	}
+	progress := int64(size) / (total / n)
+	return "╞" + strings.Repeat("═", int(progress)) + strings.Repeat("┄", size-int(progress)) + "╡"
 }
