@@ -9,13 +9,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"time"
 )
 
 var _ = Describe("System", func() {
 	Describe("Running PATs with a cmd line interface", func() {
 		It("Runs a push and responds with the speed", func() {
 			output := RunCommandLine(1, 1)
-			Ω(output.TotalTime).Should(BeNumerically("~", 44088715219, 3000000000))
+			Ω(output.TotalTime).Should(BeNumerically("~", 1*time.Second, 2*time.Second))
 		})
 	})
 
@@ -26,14 +27,14 @@ var _ = Describe("System", func() {
 
 		It("Reports app push speed correctly", func() {
 			json := post("/experiments/push")
-			Ω(json["TotalTime"]).Should(BeNumerically("~", 44088715219, 3000000000))
+			Ω(json["TotalTime"]).Should(BeNumerically("~", 1*time.Second, 2*time.Second))
 		})
 
 		It("Lists historical results", func() {
 			post("/experiments/push")
 			post("/experiments/push")
 
-			json := get("/experiments")
+			json := get("/experiments/")
 			Ω(json["Items"]).Should(HaveLen(2))
 		})
 
@@ -44,7 +45,7 @@ var _ = Describe("System", func() {
 			post("/experiments/push")
 			post("/experiments/push")
 
-			json := get(fmt.Sprintf("/experiments?from=%d&to=%d", int(resp2["Timestamp"].(float64)), int(resp3["Timestamp"].(float64))))
+			json := get(fmt.Sprintf("/experiments/?from=%d&to=%d", int(resp2["Timestamp"].(float64)), int(resp3["Timestamp"].(float64))))
 			Ω(json["Items"]).Should(HaveLen(2))
 		})
 	})
