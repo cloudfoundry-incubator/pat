@@ -7,6 +7,8 @@ import (
 	"github.com/julz/pat/history"
 	"net/http"
 	"reflect"
+	"strconv"
+	"time"
 )
 
 func Serve() {
@@ -35,13 +37,21 @@ type context struct {
 }
 
 func handleList(ctx *context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	response, err := history.LoadAll(ctx.baseDir, reflect.TypeOf(Response{}))
-	return &listResponse{response}, err
+	from, err := strconv.Atoi(r.FormValue("from"))
+	to, err := strconv.Atoi(r.FormValue("to"))
+	if err == nil {
+		response, err := history.LoadBetween(ctx.baseDir, reflect.TypeOf(Response{}), time.Unix(0, int64(from)), time.Unix(0, int64(to)))
+		return &listResponse{response}, err
+	} else {
+		response, err := history.LoadAll(ctx.baseDir, reflect.TypeOf(Response{}))
+		return &listResponse{response}, err
+	}
 }
 
 func handlePush(ctx *context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	totalTime := benchmarker.Time(push)
-	return history.Save(ctx.baseDir, &Response{totalTime.Nanoseconds()})
+	totalTime := benchmarker.Time(dummy)
+	result := &Response{totalTime.Nanoseconds(), time.Now().UnixNano()}
+	return history.Save(ctx.baseDir, result, result.Timestamp)
 }
 
 func handler(ctx *context, fn func(ctx *context, w http.ResponseWriter, r *http.Request) (interface{}, error)) http.HandlerFunc {
