@@ -14,7 +14,7 @@ import (
 var _ = Describe("System", func() {
 	Describe("Running PATs with a cmd line interface", func() {
 		It("Runs a push and responds with the speed", func() {
-			output := RunCommandLine()
+			output := RunCommandLine(1, 1)
 			Ω(output.TotalTime).Should(BeNumerically("~", 44088715219, 3000000000))
 		})
 	})
