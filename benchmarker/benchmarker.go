@@ -5,21 +5,11 @@ import (
 	"time"
 )
 
-type Timer struct {
-	Runs []time.Duration
-}
-
 func Time(experiment func()) (totalTime time.Duration) {
 	t0 := time.Now()
 	experiment()
 	t1 := time.Now()
 	return t1.Sub(t0)
-}
-
-func Benchmark(experiment func(*Timer)) (totalTime time.Duration) {
-	timer := &Timer{make([]time.Duration, 0)}
-	experiment(timer)
-	return 0
 }
 
 func Timed(out chan<- time.Duration, experiment func()) func() {
