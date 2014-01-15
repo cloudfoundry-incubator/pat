@@ -16,7 +16,7 @@ func RunCommandLine(pushes int, concurrency int) *Response {
 	result := make(chan time.Duration)
 	errors := make(chan error)
 	workers := make(chan int)
-	go func(result chan time.Duration) {
+	go func(started time.Time, result chan time.Duration) {
 		var avg int64
 		var total int64
 		var n int64
@@ -25,6 +25,7 @@ func RunCommandLine(pushes int, concurrency int) *Response {
 		var lastPush int64
 		var worstPush int64
 		var running int
+		tick := time.Tick(1 * time.Second)
 		for {
 			select {
 			case r := <-result:
@@ -40,6 +41,7 @@ func RunCommandLine(pushes int, concurrency int) *Response {
 			case e := <-errors:
 				totalErrors = totalErrors + 1
 				lastError = e.Error()
+			case <-tick:
 			}
 
 			fmt.Print("\033[2J\033[;H")
@@ -51,6 +53,7 @@ func RunCommandLine(pushes int, concurrency int) *Response {
 			fmt.Printf("Worst Push:      \x1b[32m%v\x1b[0m\n", worstPush)
 			fmt.Printf("Average:         \x1b[32m%v\x1b[0m\n", avg)
 			fmt.Printf("Total time:      \x1b[32m%v\x1b[0m\n", total)
+			fmt.Printf("Wall time:       \x1b[32m%v\x1b[0m\n", time.Since(started))
 			fmt.Printf("Running Workers: \x1b[32m%v\x1b[0m\n", running)
 			fmt.Println("----------------------------------------------------------\n")
 			if totalErrors > 0 {
@@ -58,7 +61,7 @@ func RunCommandLine(pushes int, concurrency int) *Response {
 				fmt.Printf("Last error: %v\n", lastError)
 			}
 		}
-	}(result)
+	}(time.Now(), result)
 
 	totalTime, _ := Time(func() error {
 		ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, push))))
