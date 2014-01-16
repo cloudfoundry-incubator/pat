@@ -17,7 +17,7 @@ var _ = Describe("System", func() {
 
 	Describe("Running PATs with a cmd line interface", func() {
 		It("Runs a single push and responds with the speed", func() {
-			output := RunCommandLine(1, 1, false)
+			output := RunCommandLine(1, 1, true)
 			Ω(output.TotalTime).Should(BeAssignableToTypeOf(push_time))
 		})
 

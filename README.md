@@ -53,7 +53,7 @@ Run
 To run this project, you will first need to go the "Setting up PATs" section. Afterwards, you can
 change into the pat directory and run:
 
-1) Go therough the "Setting up Go" section
+1) Go through the "Setting up Go" section
 
 2) change into the top level of this project
 
@@ -63,7 +63,7 @@ change into the pat directory and run:
 
 	# go run pat/main.go
 
-OR install the binary
+OR install the binary (recommended)
 
 2) Change into the main directory
 
@@ -73,5 +73,20 @@ OR install the binary
 
 3) Run PATs from the command line
 
-	# pat 
+	# pat
+
+4) Run PATs as an HTTP server (work in progress)
+
+	# pat -server
+
+Example calls:
+
+	# pat -h [will output all of the command line options if installed the recommended way]
+
+	# pat -concurrency=5 -pushes=5 [This will start 5 concurrent threads all pushing 1 application]
+
+	# pat -concurrency=5 -pushes=1 [This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application]
+
+	# pat -silent [if you don't want all the fancy output use the silent flag]
+ 
 

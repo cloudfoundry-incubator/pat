@@ -12,7 +12,7 @@ type Response struct {
 	Timestamp	int64
 }
 
-func RunCommandLine(pushes int, concurrency int, output bool) *Response {
+func RunCommandLine(pushes int, concurrency int, silent bool) *Response {
 	result := make(chan time.Duration)
 	errors := make(chan error)
 	workers := make(chan int)
@@ -44,7 +44,7 @@ func RunCommandLine(pushes int, concurrency int, output bool) *Response {
 				lastError = e.Error()
 			case <-tick:
 			}
-			if output {
+			if !silent {
 				fmt.Print("\033[2J\033[;H")
 				fmt.Println("\x1b[32;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
 				fmt.Printf("Test underway.  Pushes: \x1b[36m%v\x1b[0m  Concurrency: \x1b[36m%v\x1b[0m\n", pushes, concurrency)
