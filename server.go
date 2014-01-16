@@ -25,8 +25,11 @@ func Stop() {
 }
 
 func Bind() {
+	http.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("ui"))))
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Printf("ListenAndServe: %s\n", err)
+	}
 	fmt.Println("Started listening on :8080")
-	http.ListenAndServe(":8080", nil)
 }
 
 type listResponse struct {
