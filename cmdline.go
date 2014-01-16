@@ -8,8 +8,8 @@ import (
 )
 
 type Response struct {
-	TotalTime	int64
-	Timestamp	int64
+	TotalTime int64
+	Timestamp int64
 }
 
 func RunCommandLine(pushes int, concurrency int, silent bool) *Response {

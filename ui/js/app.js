@@ -1,8 +1,9 @@
 var app = function() {
 
     $("#cmd1").click(function(){
-        $.get( "/push", function(data) {
-            alert( "command was performed." + data );
+        $('#console').append("App push started<br>running ...<br>");
+        $.get( "/experiments/push", function(data) {
+            $('#console').append("Total time ran: " + data.TotalTime + "<br>");
         });
     });
 
