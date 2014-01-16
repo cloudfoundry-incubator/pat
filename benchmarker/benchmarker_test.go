@@ -1,6 +1,7 @@
 package benchmarker
 
 import (
+	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"time"
@@ -28,6 +29,36 @@ var _ = Describe("Benchmarker", func() {
 			Timed(ch, nil, func() error { time.Sleep(1 * time.Second); return nil })()
 
 			Ω(<-result).Should(BeNumerically("~", 1, 0.5))
+		})
+	})
+
+	Describe("TimedWithWorker", func() {
+		It("sends the timing information retrieved from a worker to a channel", func() {
+			ch := make(chan time.Duration)
+			result := make(chan time.Duration)
+			go func(result chan time.Duration) {
+				defer close(ch)
+				for t := range ch {
+					result <- t
+				}
+			}(result)
+
+			TimedWithWorker(ch, nil, &DummyWorker{}, "three")()
+			Ω((<-result).Seconds()).Should(BeNumerically("==", 3))
+		})
+	})
+
+	Describe("LocalWorker", func() {
+		It("Times a function by name", func() {
+			worker := NewWorker().withExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
+			time, _ := worker.Time("foo")
+			Ω(time.Seconds()).Should(BeNumerically("~", 1, 0.1))
+		})
+
+		It("Returns any errors", func() {
+			worker := NewWorker().withExperiment("foo", func() error { return errors.New("Foo") })
+			_, err := worker.Time("foo")
+			Ω(err).Should(HaveOccurred())
 		})
 	})
 
@@ -78,3 +109,12 @@ var _ = Describe("Benchmarker", func() {
 		})
 	})
 })
+
+type DummyWorker struct{}
+
+func (*DummyWorker) Time(experiment string) (time.Duration, error) {
+	if experiment == "three" {
+		return 3 * time.Second, nil
+	}
+	return 0 * time.Second, nil
+}
