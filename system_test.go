@@ -9,16 +9,21 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"time"
 )
 
 var _ = Describe("System", func() {
+	var push_time int64
+	var json_time float64
+
 	Describe("Running PATs with a cmd line interface", func() {
-		It("Runs a push and responds with the speed", func() {
-			output := RunCommandLine(1, 1)
-			Ω(output.TotalTime).Should(BeNumerically("~", 1*time.Second, 2*time.Second))
+		It("Runs a single push and responds with the speed", func() {
+			output := RunCommandLine(1, 1, false)
+			Ω(output.TotalTime).Should(BeAssignableToTypeOf(push_time))
 		})
+
+		PIt("Should fail to push an app when not logged in and report an error", func() {})
 	})
+
 
 	Describe("Running PATs with a web API", func() {
 		BeforeEach(func() {
@@ -27,7 +32,7 @@ var _ = Describe("System", func() {
 
 		It("Reports app push speed correctly", func() {
 			json := post("/experiments/push")
-			Ω(json["TotalTime"]).Should(BeNumerically("~", 1*time.Second, 2*time.Second))
+			Ω(json["TotalTime"]).Should(BeAssignableToTypeOf(json_time))
 		})
 
 		It("Lists historical results", func() {
