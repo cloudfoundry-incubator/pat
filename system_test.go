@@ -24,7 +24,6 @@ var _ = Describe("System", func() {
 		PIt("Should fail to push an app when not logged in and report an error", func() {})
 	})
 
-
 	Describe("Running PATs with a web API", func() {
 		BeforeEach(func() {
 			os.RemoveAll("/tmp/pats-acceptance-test-runs")

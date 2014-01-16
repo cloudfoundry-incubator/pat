@@ -1,15 +1,21 @@
-package pat
+package server
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/julz/pat/benchmarker"
+	"github.com/julz/pat/experiments"
 	"github.com/julz/pat/history"
 	"net/http"
 	"reflect"
 	"strconv"
 	"time"
 )
+
+type Response struct {
+	TotalTime int64
+	Timestamp int64
+}
 
 func Serve() {
 	ServeWithArgs("historical-runs")
@@ -53,7 +59,7 @@ func handleList(ctx *context, w http.ResponseWriter, r *http.Request) (interface
 }
 
 func handlePush(ctx *context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	totalTime, _ := benchmarker.Time(dummy)
+	totalTime, _ := benchmarker.Time(experiments.Dummy)
 	result := &Response{totalTime.Nanoseconds(), time.Now().UnixNano()}
 	return history.Save(ctx.baseDir, result, result.Timestamp)
 }
