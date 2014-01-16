@@ -1,6 +1,7 @@
 package pat
 
 import (
+	"github.com/julz/pat/server"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -9,6 +10,6 @@ import (
 
 func TestPat(t *testing.T) {
 	RegisterFailHandler(Fail)
-	ServeWithArgs("/tmp/pats-acceptance-test-runs")
+	server.ServeWithArgs("/tmp/pats-acceptance-test-runs")
 	RunSpecs(t, "Pat Suite")
 }

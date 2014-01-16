@@ -1,4 +1,4 @@
-package pat_test
+package server_test
 
 import (
 	. "github.com/julz/pat"
