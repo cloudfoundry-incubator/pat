@@ -6,6 +6,8 @@
     <link rel="stylesheet" href="css/bootstrap-theme.min.css"type="text/css" media="screen" />
     <link rel="stylesheet" href="css/app.css"type="text/css" media="screen" />
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="/ui/js/chart.js"></script>
     <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
     <title>Cloud Foundry Performance Suite</title>
@@ -38,16 +40,8 @@
 
     <!-- ********** Graph Wrapper ********** -->
     <div style="width:50%; left:20%; top:175px; bottom: 100px; padding:5px; position:absolute;">
-        <div class="infoBox" style="height:100%"> <!-- Tourney Info -->
-            <img src='images/bar.png' style="width:400px; height:350px; position:absolute; left:20%; bottom:10px;" />
+        <div id="graph" class="infoBox" style="height:100%"> <!-- Tourney Info -->
             <font><h4>Graph Area</h4></font>
-        </div>
-    </div>
-
-    <!-- ********** Data Wrapper ********** -->
-    <div style="width:50%; left:20%; top:175px; bottom: 100px; padding:5px; position:absolute;">
-        <div class="infoBox" style="height:100%">
-					<textarea id="data">Data here..</textarea>
         </div>
     </div>
 

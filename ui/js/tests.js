@@ -1,8 +1,9 @@
 
 describe("throughput chart", function() {
   var chart
+
   beforeEach(function() {
-    chart = d3.custom.pats.throughput()
+    chart = d3.custom.pats.throughput(d3.select("#target"))
   })
 
   it("should have a default width (300) and height (500)", function() {

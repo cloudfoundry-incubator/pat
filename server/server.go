@@ -98,7 +98,6 @@ func handleGetExperiment(ctx *context, w http.ResponseWriter, r *http.Request) (
 
 func (context *context) buffer(name string, samples chan *experiment.Sample, target int) {
 	for s := range samples {
-		fmt.Println("Got sample, ", s)
 		// FIXME(jz) - need to clear this at some point, memory leak..
 		context.running[name] = append(context.running[name], s)
 	}
