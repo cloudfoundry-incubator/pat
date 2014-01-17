@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <link rel="stylesheet" href="css/bootstrap.min.css"type="text/css" media="screen" />
+    <link rel="stylesheet" href="css/bootstrap-theme.min.css"type="text/css" media="screen" />
+    <link rel="stylesheet" href="css/app.css"type="text/css" media="screen" />
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="/ui/js/chart.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <title>Cloud Foundry Performance Suite</title>
+
+    <style>
+      body { padding: 8px }
+      #graph { min-height: 500px; }
+    </style>
+  </head>
+
+  <body>
+
+    <div class="jumbotron container">
+      <h2>Performance Acceptance Tests <small>v0.1</small></h2>
+    </div>
+
+    <div class="container">
+
+      <div class="row panel panel-primary">
+        <div class="panel-heading">
+          Experiment Configuration
+        </div>
+        <div class="panel-body">
+          <button id="startbtn" type="button" class="btn btn-primary btn-default navbar-btn">Start Experiment</button>
+        </div>
+      </div>
+
+      <!-- ********** Graph Wrapper ********** -->
+      <div class="row panel panel-default">
+        <div class="panel-heading">
+          Experiment Results
+        </div>
+        <div id="graph" class="panel-body col-md-12 center-block">
+          <p class="text-muted center-block">(No Experiment Running)</p>
+        </div>
+      </div>
+
+      <!-- ********** Console Wrapper ********** -->
+      <div class="row panel panel-success">
+        <div class="panel-heading">
+          Debug Console
+        </div>
+        <div class="panel-body">
+          <div id="console" >
+          </div>
+        </div>
+      </div>
+
+      <!-- **************** footer ******************* -->
+      <script>
+        var _app = new app();
+      </script>
+
+    </div>
+  </body>
+</html>
