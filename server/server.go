@@ -3,10 +3,12 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/julz/pat/benchmarker"
-	"github.com/julz/pat/experiments"
+	"github.com/gorilla/mux"
+	"github.com/julz/pat/experiment"
 	"github.com/julz/pat/history"
+	"github.com/nu7hatch/gouuid"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strconv"
 	"time"
@@ -17,21 +19,34 @@ type Response struct {
 	Timestamp int64
 }
 
+type context struct {
+	router  *mux.Router
+	baseDir string
+	running map[string][]*experiment.Sample
+}
+
 func Serve() {
 	ServeWithArgs("historical-runs")
 }
 
 func ServeWithArgs(baseDir string) {
-	ctx := &context{baseDir}
-	http.HandleFunc("/experiments/", handler(ctx, handleList))
-	http.HandleFunc("/experiments/push", handler(ctx, handlePush))
+	r := mux.NewRouter()
+	ctx := &context{r, baseDir, make(map[string][]*experiment.Sample)}
+	r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx, handleList))
+	r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx, handleGetExperiment)).Name("experiment")
+	r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx, handlePush))
+
+	// BUG(jz) For easy web-browser testing, remove
+	r.HandleFunc("/POST/experiments/", handler(ctx, handlePush))
+
+	http.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui"))))
+	http.Handle("/", r)
 }
 
 func Stop() {
 }
 
 func Bind() {
-	http.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("ui"))))
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Printf("ListenAndServe: %s\n", err)
 	}
@@ -39,11 +54,7 @@ func Bind() {
 }
 
 type listResponse struct {
-	Items []interface{}
-}
-
-type context struct {
-	baseDir string
+	Items interface{}
 }
 
 func handleList(ctx *context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
@@ -59,9 +70,38 @@ func handleList(ctx *context, w http.ResponseWriter, r *http.Request) (interface
 }
 
 func handlePush(ctx *context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	totalTime, _ := benchmarker.Time(experiments.Dummy)
-	result := &Response{totalTime.Nanoseconds(), time.Now().UnixNano()}
-	return history.Save(ctx.baseDir, result, result.Timestamp)
+	fmt.Println("handlepush")
+	name, _ := uuid.NewV4()
+
+	pushes, err := strconv.Atoi(r.FormValue("pushes"))
+	if err != nil {
+		pushes = 1
+	}
+
+	concurrency, err := strconv.Atoi(r.FormValue("concurrency"))
+	if err != nil {
+		concurrency = 1
+	}
+
+	go experiment.Run(pushes, concurrency, func(samples chan *experiment.Sample, target int) {
+		ctx.buffer(name.String(), samples, target)
+	})
+
+	return ctx.router.Get("experiment").URL("name", name.String())
+}
+
+func handleGetExperiment(ctx *context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	name := mux.Vars(r)["name"]
+	// TODO(jz) only send back since N
+	return &listResponse{ctx.running[name]}, nil
+}
+
+func (context *context) buffer(name string, samples chan *experiment.Sample, target int) {
+	for s := range samples {
+		fmt.Println("Got sample, ", s)
+		// FIXME(jz) - need to clear this at some point, memory leak..
+		context.running[name] = append(context.running[name], s)
+	}
 }
 
 func handler(ctx *context, fn func(ctx *context, w http.ResponseWriter, r *http.Request) (interface{}, error)) http.HandlerFunc {
@@ -69,11 +109,21 @@ func handler(ctx *context, fn func(ctx *context, w http.ResponseWriter, r *http.
 		var err error
 		var response interface{}
 		var encoded []byte
+
 		if response, err = fn(ctx, w, r); err == nil {
-			if encoded, err = json.Marshal(response); err == nil {
+			fmt.Println("Response: ", response)
+			switch r := response.(type) {
+			case *url.URL:
+				w.Header().Set("Location", r.String())
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprintf(w, string(encoded))
+				fmt.Fprintf(w, "{ \"Location\": \"%v\" }", r)
 				return
+			default:
+				if encoded, err = json.Marshal(r); err == nil {
+					w.Header().Set("Content-Type", "application/json")
+					fmt.Fprintf(w, string(encoded))
+					return
+				}
 			}
 		}
 

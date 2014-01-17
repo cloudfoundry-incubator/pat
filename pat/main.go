@@ -12,6 +12,7 @@ func main() {
   pushes := flag.Int("pushes", 1, "number of pushes to attempt")
   concurrency := flag.Int("concurrency", 1, "max number of pushes to attempt in parallel")
   silent := flag.Bool("silent", false, "true to run the commands and print output the terminal")
+  output := flag.String("output", "", "if specified, writes benchmark results to a CSV file")
   flag.Parse()
 
   if *useServer == true {
@@ -19,7 +20,6 @@ func main() {
     server.Serve()
     server.Bind()
   } else {
-    resp := pat.RunCommandLine(*pushes, *concurrency, *silent)
-    fmt.Printf("\n\nTest Complete. Total Time: %d\n", resp.TotalTime)
+    pat.RunCommandLine(*pushes, *concurrency, *silent, *output)
   }
 }

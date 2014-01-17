@@ -2,9 +2,16 @@ var app = function() {
 
     $("#cmd1").click(function(){
         $('#console').append("App push started<br>running ...<br>");
-        $.get( "/experiments/push", function(data) {
-            $('#console').append("Total time ran: " + data.TotalTime + "<br>");
-        });
+        $.post( "/experiments/", function(data) {
+            $('#console').append("Experiment started, URL is " + data.Location + "<br>");
+
+						$.get(data["Location"], function(data) {
+							$('#data').val(""+data.Items.map(function(el) {
+								return JSON.stringify(el)
+							}).join("\n"))
+							// repeat.. (keep polling for new results, and graph..)
+						}, "json")
+        }, "json");
     });
 
     $("#cmd2").click(function(){
