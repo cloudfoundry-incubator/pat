@@ -1,7 +1,18 @@
-package pat
+package experiment
 
 import (
+	. "github.com/julz/pat/benchmarker"
+	"github.com/julz/pat/experiments"
 	"time"
+)
+
+type SampleType int
+
+const (
+	ResultSample SampleType = iota
+	WorkerSample
+	ErrorSample
+	OtherSample
 )
 
 type Sample struct {
@@ -14,6 +25,7 @@ type Sample struct {
 	LastError    error
 	WorstResult  time.Duration
 	WallTime     time.Time
+	Type         SampleType
 }
 
 type RunningExperiment struct {
@@ -21,6 +33,17 @@ type RunningExperiment struct {
 	errors  chan error
 	workers chan int
 	samples chan *Sample
+}
+
+func Run(pushes int, concurrency int, tracker func(chan *Sample, int)) error {
+	result := make(chan time.Duration)
+	errors := make(chan error)
+	workers := make(chan int)
+	samples := make(chan *Sample)
+	go Track(samples, result, errors, workers)
+	go tracker(samples, pushes)
+	ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
+	return nil
 }
 
 func Track(samples chan *Sample, results chan time.Duration, errors chan error, workers chan int) {
@@ -38,8 +61,10 @@ func (ex *RunningExperiment) run() {
 	var workers int
 	var worstResult time.Duration
 	for {
+		sampleType := OtherSample
 		select {
 		case result := <-ex.results:
+			sampleType = ResultSample
 			n = n + 1
 			totalTime = totalTime + result
 			avg = time.Duration(totalTime.Nanoseconds() / n)
@@ -54,6 +79,6 @@ func (ex *RunningExperiment) run() {
 			workers = workers + w
 		}
 
-		ex.samples <- &Sample{avg, totalTime, n, totalErrors, workers, lastResult, lastError, worstResult, time.Now()}
+		ex.samples <- &Sample{avg, totalTime, n, totalErrors, workers, lastResult, lastError, worstResult, time.Now(), sampleType}
 	}
 }

@@ -1,67 +1,66 @@
 <!DOCTYPE html>
 
 <html>
-<head>
+  <head>
     <link rel="stylesheet" href="css/bootstrap.min.css"type="text/css" media="screen" />
     <link rel="stylesheet" href="css/bootstrap-theme.min.css"type="text/css" media="screen" />
     <link rel="stylesheet" href="css/app.css"type="text/css" media="screen" />
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="/ui/js/chart.js"></script>
     <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
     <title>Cloud Foundry Performance Suite</title>
-</head>
 
-<body style="background:url(images/bg.jpg);">
-    <div style="background:#333; color:#eee; padding-top:5px; padding-bottom:5px;">
-        <div style="width:750px; margin:auto; position:relative; padding-left:150px;">
-            <h1>Cloud Foundry Load Tester</h1>
-            <p class="lead">
-                Description goes here ...
-            </p>
+    <style>
+      body { padding: 8px }
+      #graph { min-height: 500px; }
+    </style>
+  </head>
+
+  <body>
+
+    <div class="jumbotron container">
+      <h2>Performance Acceptance Tests <small>v0.1</small></h2>
+    </div>
+
+    <div class="container">
+
+      <div class="row panel panel-primary">
+        <div class="panel-heading">
+          Experiment Configuration
         </div>
-    </div>
-    <div style="background:rgb(0,131,187); height:5px;"></div>
-    <div style="height:5px;"></div>
-
-    <select class="form-control" style="width:28%;float:right; margin-right:10px;">
-      <option>CF Commands ...</option>
-    </select>
-
-    <!-- ********** Control Wrapper ********** -->
-    <div style="width:20%; top:175px; bottom: 100px; padding:5px; position:absolute;">
-        <div class="infoBox" style="height:100%"> <!-- Tourney Info -->
-            <button id='cmd1' type="button" class="btn btn-default btn-block">Workload 1 (App Push) </button>
-            <button id='cmd2' type="button" onclick='alert("n/a");' class="btn btn-default btn-block">Workload 2</button>
-            <button id='cmd3' type="button" onclick='alert("n/a");' class="btn btn-default btn-block">Workload 3</button>
+        <div class="panel-body">
+          <button id="startbtn" type="button" class="btn btn-primary btn-default navbar-btn">Start Experiment</button>
         </div>
-    </div>
+      </div>
 
-    <!-- ********** Graph Wrapper ********** -->
-    <div style="width:50%; left:20%; top:175px; bottom: 100px; padding:5px; position:absolute;">
-        <div class="infoBox" style="height:100%"> <!-- Tourney Info -->
-            <img src='images/bar.png' style="width:400px; height:350px; position:absolute; left:20%; bottom:10px;" />
-            <font><h4>Graph Area</h4></font>
+      <!-- ********** Graph Wrapper ********** -->
+      <div class="row panel panel-default">
+        <div class="panel-heading">
+          Experiment Results
         </div>
-    </div>
-
-    <!-- ********** Console Wrapper ********** -->
-    <div style="width:30%; left:70%; top:175px; bottom: 100px;  padding:5px; position:absolute;">
-        <div id="console">
-            Console:<br>
-            > <font class="success">Performance stats shows here</font><br>
-            > <font class="blink">_</font><br>
+        <div id="graph" class="panel-body col-md-12 center-block">
+          <p class="text-muted center-block">(No Experiment Running)</p>
         </div>
-    </div>
+      </div>
 
-<!-- **************** footer ******************* -->
-    <div style="height:80px;"></div>
-    <div style="background:#333; width:100%; color:#eee; position:fixed; z-index:10; bottom:0; left:0; padding-top:5px; padding-bottom:5px;">
-        Suite Testing Suite
-    </div>
+      <!-- ********** Console Wrapper ********** -->
+      <div class="row panel panel-success">
+        <div class="panel-heading">
+          Debug Console
+        </div>
+        <div class="panel-body">
+          <div id="console" >
+          </div>
+        </div>
+      </div>
 
-    <script>
+      <!-- **************** footer ******************* -->
+      <script>
         var _app = new app();
-    </script>
+      </script>
 
-</body>
+    </div>
+  </body>
 </html>
