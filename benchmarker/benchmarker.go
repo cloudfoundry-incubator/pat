@@ -5,6 +5,27 @@ import (
 	"time"
 )
 
+type Worker interface {
+	Time(experiment string) (time.Duration, error)
+}
+
+type LocalWorker struct {
+	Experiments map[string]func() error
+}
+
+func NewWorker() *LocalWorker {
+	return &LocalWorker{make(map[string]func() error)}
+}
+
+func (self *LocalWorker) withExperiment(name string, fn func() error) *LocalWorker {
+	self.Experiments[name] = fn
+	return self
+}
+
+func (self *LocalWorker) Time(experiment string) (time.Duration, error) {
+	return Time(self.Experiments[experiment])
+}
+
 func Time(experiment func() error) (totalTime time.Duration, err error) {
 	t0 := time.Now()
 	err = experiment()
@@ -21,8 +42,12 @@ func Counted(out chan<- int, fn func()) func() {
 }
 
 func Timed(out chan<- time.Duration, errOut chan<- error, experiment func() error) func() {
+	return TimedWithWorker(out, errOut, NewWorker().withExperiment("*", experiment), "*")
+}
+
+func TimedWithWorker(out chan<- time.Duration, errOut chan<- error, worker Worker, experiment string) func() {
 	return func() {
-		time, err := Time(experiment)
+		time, err := worker.Time(experiment)
 		if err == nil {
 			out <- time
 		} else {
