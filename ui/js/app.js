@@ -6,11 +6,11 @@ var app = function() {
   refresh = function() {
     d3.json(running, function(data) {
       chart(data.Items)
-      setTimeout(refresh, 5000);
+      setTimeout(refresh, 800);
     })
   }
 
-  $("#cmd1").click(function(){
+  $("#startbtn").click(function(){
     $('#console').append("App push started<br>running ...<br>");
     $.post( "/experiments/", function(data) {
       $('#console').append("Experiment started, URL is " + data.Location + "<br>");
