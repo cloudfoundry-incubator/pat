@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=utf-8 />
+    <title>Tests</title>
+    <link href="http://pivotal.github.com/jasmine/lib/jasmine-1.3.1/jasmine.css" rel="stylesheet">
+  </head>
+  <body>
+
+    <script src="http://pivotal.github.com/jasmine/lib/jasmine-1.3.1/jasmine.js"></script>
+    <script src="http://pivotal.github.com/jasmine/lib/jasmine-1.3.1/jasmine-html.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="/ui/js/chart.js"></script>
+    <script src="/ui/js/tests.js"></script>
+
+    <script type="text/javascript">
+      jasmine.getEnv().addReporter(new jasmine.HtmlReporter());
+      jasmine.getEnv().execute();
+    </script>
+  </body>
+</html>
