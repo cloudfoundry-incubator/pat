@@ -35,13 +35,13 @@ type RunningExperiment struct {
 	samples chan *Sample
 }
 
-func Run(pushes int, concurrency int, tracker func(chan *Sample, int)) error {
+func Run(pushes int, concurrency int, tracker func(chan *Sample)) error {
 	result := make(chan time.Duration)
 	errors := make(chan error)
 	workers := make(chan int)
 	samples := make(chan *Sample)
 	go Track(samples, result, errors, workers)
-	go tracker(samples, pushes)
+	go tracker(samples)
 	ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
 	return nil
 }
