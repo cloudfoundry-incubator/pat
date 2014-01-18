@@ -5,3 +5,4 @@ github.com/pivotal-cf-experimental/cf-acceptance-tests/helpers	accec453e017a39c7
 github.com/vito/cmdtest	a720969567219160e78fdf5f1486b6887771f311
 github.com/gorilla/mux	9ede152210fa25c1377d33e867cb828c19316445
 github.com/garyburd/redigo/redis	ed54f4ed86a815cf09870e4bd1a10a2ee39a4308
+launchpad.net/goyaml	50

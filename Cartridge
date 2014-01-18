@@ -5,3 +5,4 @@ github.com/pivotal-cf-experimental/cf-acceptance-tests/helpers origin/master
 github.com/vito/cmdtest origin/master
 github.com/gorilla/mux origin/master
 github.com/garyburd/redigo/redis origin/master
+launchpad.net/goyaml last:1
