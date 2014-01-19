@@ -77,7 +77,7 @@ tr, td {
   fill: steelblue;
 }
 #graph .barchart text {
-  fill: white;
+  fill: red;
   font: 10px sans-serif;
   text-anchor: middle;
 }
