@@ -48,11 +48,15 @@ ko.bindingHandlers.chart = {
   function barchart(data) {
     if (data.length === 0) return;
 
+    $('.barchart').html("");
     var svg = d3.select(".barchart");
+
     var h = $('.barchart').height();
+    //var x = d3.scale.linear().domain([0, d3.max(data, function(d){return d.LastResult/1000000000})]).range([0, h]);
+    var x = d3.scale.linear().domain([0, 6]).range([0, h]);
 
     data.forEach(function(d){
-      svg.append("rect").attr("x",50 * d.Total).attr("y",h - (d.LastResult / 10000000)).attr("width",30).attr("height", d.LastResult / 10000000);
+      svg.append("rect").attr("x",50 * d.Total).attr("y",h - x(d.LastResult / 1000000000)).attr("width",30).attr("height", x(d.LastResult / 1000000000));
     });
   }
 
