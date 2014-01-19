@@ -1,3 +1,50 @@
+describe("The view", function() {
+  var experiment = { run: function() {}, state: ko.observable(""), csvUrl: ko.observable("") }
+
+  beforeEach(function() {
+    spyOn(experiment, "run")
+    v = new pat.view(experiment)
+    spyOn(v, "redirectTo").andReturn()
+    v.start()
+  })
+
+  describe("clicking start", function() {
+    it("runs the experiment", function() {
+      expect(experiment.run).toHaveBeenCalled()
+    })
+  })
+
+  describe("when the state of the experiment changes to running", function() {
+    beforeEach(function() { experiment.state("running") })
+
+    it("sets canStart to false", function() {
+      expect(v.canStart()).toBe(false)
+    })
+
+    it("sets canStop to true", function() {
+      expect(v.canStop()).toBe(true)
+    })
+
+    it("sets noExperimentRunning to false", function() {
+      expect(v.noExperimentRunning()).toBe(false)
+    })
+  })
+
+  describe("when the experiment has an associated CSV URL", function() {
+    beforeEach(function() { experiment.csvUrl("some-url.csv") })
+
+    it("sets canDownloadCsv to true", function() {
+      expect(v.canDownloadCsv()).toBe(true)
+    })
+
+    describe("clicking downloadCsv", function() {
+      it("redirects to the csv URL", function() {
+        v.downloadCsv()
+        expect(v.redirectTo).toHaveBeenCalledWith("some-url.csv")
+      })
+    })
+  })
+})
 
 describe("Throughput chart", function() {
   var chart
@@ -41,50 +88,45 @@ describe("Running an experiment", function my() {
 
   describe("When results are returned", function() {
 
-    var data = { update: function() {} }
-    var obj = { onCsvCallback: function() {}, onStateChangedCallback: function() {} }
     var refreshRate = 800
     var csvUrl   = "foo/bar/baz.csv"
+    var experiment
+    var results
 
     beforeEach(function() {
-      jasmine.Clock.useMock();
-
       a = {"Type": 0, "name": "a"}
       b = {"Type": 1, "name": "b"}
       spyOn($, "post").andCallFake(function(url, data, callback) { callback({ "Location": replyUrl, "CsvLocation": csvUrl }) })
-      spyOn($, "get").andCallFake(function(url, callback) {callback({ "Items": [a, b] }) })
-      spyOn(obj, "onCsvCallback")
-      spyOn(obj, "onStateChangedCallback")
-      spyOn(data, "update")
+      spyOn($, "get").andCallFake(function(url, callback) {
+          callback({ "Items": [a,b] })
+      })
 
-      var experiment = pat.experiment(data.update, refreshRate)
-      experiment.onCsvUrlChanged = obj.onCsvCallback
-      experiment.onStateChanged = obj.onStateChangedCallback
-
+      experiment = pat.experiment(refreshRate)
+      spyOn(experiment, "refresh").andCallThrough()
+      spyOn(experiment, "waitAndRefreshOnce") //mocked because jasmine.Clock was being painful
       experiment.run()
     })
 
-    it("calls the onData function", function() {
-      expect(data.update).toHaveBeenCalledWith([a])
+    it("updates with the latest data", function() {
+      expect(experiment.data()).toEqual([a])
     })
 
-    it("only calls with Type = result", function() {
-      expect(data.update).not.toHaveBeenCalledWith([a, b])
+    it("only includes data of type 0 (ResultSample)", function() {
+      expect(experiment.data()).not.toBe([a, b])
     })
 
-    it("refreshes the data at the refresh rate", function() {
-      jasmine.Clock.tick(refreshRate + 1)
-      expect(data.update.calls.length).toBe(2)
-      jasmine.Clock.tick(refreshRate + 1)
-      expect(data.update.calls.length).toBe(3)
+    it("refreshes the data at the refresh rate after data is returned", function() {
+      expect(experiment.waitAndRefreshOnce.callCount).toEqual(1)
+      $.get.mostRecentCall.args[1]({"Items": [{"Type": 0}]})
+      expect(experiment.waitAndRefreshOnce.callCount).toEqual(2)
     })
 
-    it("calls the onCsvUrlChanged callback", function() {
-      expect(obj.onCsvCallback).toHaveBeenCalledWith(csvUrl)
+    it("updates the csv url", function() {
+      expect(experiment.csvUrl()).toBe(csvUrl)
     })
 
-    it("calls onStateChanged callback", function() {
-      expect(obj.onStateChangedCallback).toHaveBeenCalledWith("running")
+    it("updates the state to 'running'", function() {
+      expect(experiment.state()).toBe("running")
     })
   })
 })
