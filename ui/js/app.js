@@ -35,15 +35,32 @@ pat.experiment = function(refreshRate) {
 ko.bindingHandlers.chart = {
   c: {},
   init: function(element, valueAccessor) {
-    ko.bindingHandlers.chart.c = d3.custom.pats.throughput(d3.select(element))
+    //ko.bindingHandlers.chart.c = d3.custom.pats.throughput(d3.select(element))
+    ko.bindingHandlers.chart.b = barchart;
   },
   update: function(element, valueAccessor) {
-    ko.bindingHandlers.chart.c(ko.unwrap(valueAccessor()))
+    //ko.bindingHandlers.chart.c(ko.unwrap(valueAccessor()))
+    ko.bindingHandlers.chart.b(ko.unwrap(valueAccessor()))
   }
 }
 
+  //belong to bar.js
+  function barchart(data) {
+    if (data.length === 0) return;
+
+    var svg = d3.select(".barchart");
+    var h = $('.barchart').height();
+
+    data.forEach(function(d){
+      svg.append("rect").attr("x",50 * d.Total).attr("y",h - (d.LastResult / 10000000)).attr("width",30).attr("height", d.LastResult / 10000000);
+    });
+  }
+
 pat.view = function(experiment) {
   var self = this
+
+  //Todo: move to bar.js - setup SVG to draw barchart
+  d3.select("#graph").append("svg").attr("class","barchart").attr("width", $("#graph").width()).attr("height", $("#graph").height());
 
   this.redirectTo = function(location) { window.location = location }
 
