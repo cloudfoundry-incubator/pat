@@ -57,6 +57,7 @@ ko.bindingHandlers.chart = {
 
     data.forEach(function(d){
       svg.append("rect").attr("x",50 * d.Total).attr("y",h - x(d.LastResult / 1000000000)).attr("width",30).attr("height", x(d.LastResult / 1000000000));
+      svg.append("text").attr("x", 50 * d.Total + 15 ).attr("y", h - 10 - x(d.LastResult / 1000000000)).attr("dy", ".75em").text((d.LastResult / 1000000000).toFixed(2) + " sec");
     });
   }
 
