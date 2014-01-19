@@ -71,6 +71,17 @@ tr, td {
    box-shadow: inset 0 0 3px #555;
 }
 
+#graph {
+}
+#graph .barchart {
+  fill: steelblue;
+}
+#graph .barchart text {
+  fill: white;
+  font: 10px sans-serif;
+  text-anchor: middle;
+}
+
 /* override bootstrip css */
 .popover-content {
     font-size: 1em;
