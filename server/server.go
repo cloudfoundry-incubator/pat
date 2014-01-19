@@ -6,9 +6,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/julz/pat/experiment"
 	"github.com/julz/pat/history"
+	"github.com/julz/pat/output"
 	"github.com/nu7hatch/gouuid"
 	"net/http"
 	"net/url"
+	"path"
 	"reflect"
 	"strconv"
 	"time"
@@ -22,16 +24,17 @@ type Response struct {
 type context struct {
 	router  *mux.Router
 	baseDir string
+	csvDir  string
 	running map[string][]*experiment.Sample
 }
 
 func Serve() {
-	ServeWithArgs("historical-runs")
+	ServeWithArgs("historical-runs", "output/csvs")
 }
 
-func ServeWithArgs(baseDir string) {
+func ServeWithArgs(baseDir string, csvDir string) {
 	r := mux.NewRouter()
-	ctx := &context{r, baseDir, make(map[string][]*experiment.Sample)}
+	ctx := &context{r, baseDir, csvDir, make(map[string][]*experiment.Sample)}
 	r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx, handleList))
 	r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx, handleGetExperiment)).Name("experiment")
 	r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx, handlePush))
@@ -40,6 +43,7 @@ func ServeWithArgs(baseDir string) {
 	r.HandleFunc("/POST/experiments/", handler(ctx, handlePush))
 
 	http.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui"))))
+	http.Handle("/csv/experiments/", http.StripPrefix("/csv/experiments/", http.FileServer(http.Dir(ctx.csvDir))))
 	http.Handle("/", r)
 }
 
@@ -83,9 +87,13 @@ func handlePush(ctx *context, w http.ResponseWriter, r *http.Request) (interface
 		concurrency = 1
 	}
 
-	go experiment.Run(pushes, concurrency, func(samples chan *experiment.Sample, target int) {
-		ctx.buffer(name.String(), samples, target)
+	handlers := make([]func(chan *experiment.Sample), 0)
+	handlers = append(handlers, output.NewCsvWriter(path.Join(ctx.csvDir, name.String())+".csv").Write)
+	handlers = append(handlers, func(samples chan *experiment.Sample) {
+		ctx.buffer(name.String(), samples)
 	})
+
+	go experiment.Run(pushes, concurrency, output.Multiplexer(handlers).Multiplex)
 
 	return ctx.router.Get("experiment").URL("name", name.String())
 }
@@ -96,7 +104,7 @@ func handleGetExperiment(ctx *context, w http.ResponseWriter, r *http.Request) (
 	return &listResponse{ctx.running[name]}, nil
 }
 
-func (context *context) buffer(name string, samples chan *experiment.Sample, target int) {
+func (context *context) buffer(name string, samples chan *experiment.Sample) {
 	for s := range samples {
 		// FIXME(jz) - need to clear this at some point, memory leak..
 		context.running[name] = append(context.running[name], s)
@@ -110,12 +118,11 @@ func handler(ctx *context, fn func(ctx *context, w http.ResponseWriter, r *http.
 		var encoded []byte
 
 		if response, err = fn(ctx, w, r); err == nil {
-			fmt.Println("Response: ", response)
 			switch r := response.(type) {
 			case *url.URL:
 				w.Header().Set("Location", r.String())
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprintf(w, "{ \"Location\": \"%v\" }", r)
+				fmt.Fprintf(w, "{ \"Location\": \"%v\", \"CsvLocation\": \"/csv/%v.csv\" }", r, r)
 				return
 			default:
 				if encoded, err = json.Marshal(r); err == nil {

@@ -20,19 +20,12 @@
 
   <body>
 
-    <div class="jumbotron container">
-      <h2>Performance Acceptance Tests <small>v0.1</small></h2>
-    </div>
-
     <div class="container">
+      <div class="header row">
+        <h1>Performance Acceptance Tests <small>v0.1</small></h1>
+      </div>
 
-      <div class="row panel panel-primary">
-        <div class="panel-heading">
-          Experiment Configuration
-        </div>
-        <div class="panel-body">
-          <button id="startbtn" type="button" class="btn btn-primary btn-default navbar-btn">Start Experiment</button>
-        </div>
+      <div class="row">
       </div>
 
       <!-- ********** Graph Wrapper ********** -->
@@ -43,6 +36,37 @@
         <div id="graph" class="panel-body col-md-12 center-block">
           <p class="text-muted center-block">(No Experiment Running)</p>
         </div>
+        <div style="max-height: 250px; overflow-y: scroll; border-top: 2px solid #ccc">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Wall Time</th>
+                <th>Result</th>
+                <th>Running Average</th>
+                <th>Running Total</th>
+              </tr>
+            </thead>
+            <tbody id="data">
+              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
+              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
+              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
+              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
+              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
+              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="row panel panel-primary">
+        <div class="panel-heading">
+          <span class="glyphicon glyphicon-cog"></span> Experiment Configuration
+        </div>
+        <div class="panel-body">
+          <button id="startbtn" type="button" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
+          <button id="stopbtn" type="button" style="display: none" class="btn btn-danger navbar-btn"><span class="glyphicon glyphicon-stop"></span> Stop Experiment</button>
+          <button id="csvbtn" type="button" disabled=true" class="btn btn-default navbar-btn"><span class="glyphicon glyphicon-floppy-save"></span> Download CSV</button>
+        </div>
       </div>
 
       <!-- ********** Console Wrapper ********** -->
@@ -50,9 +74,7 @@
         <div class="panel-heading">
           Debug Console
         </div>
-        <div class="panel-body">
-          <div id="console" >
-          </div>
+        <div class="panel-body" id="console">
         </div>
       </div>
 

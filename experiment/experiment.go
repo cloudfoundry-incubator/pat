@@ -24,7 +24,7 @@ type Sample struct {
 	LastResult   time.Duration
 	LastError    error
 	WorstResult  time.Duration
-	WallTime     time.Time
+	WallTime     time.Duration
 	Type         SampleType
 }
 
@@ -35,13 +35,13 @@ type RunningExperiment struct {
 	samples chan *Sample
 }
 
-func Run(pushes int, concurrency int, tracker func(chan *Sample, int)) error {
+func Run(pushes int, concurrency int, tracker func(chan *Sample)) error {
 	result := make(chan time.Duration)
 	errors := make(chan error)
 	workers := make(chan int)
 	samples := make(chan *Sample)
 	go Track(samples, result, errors, workers)
-	go tracker(samples, pushes)
+	go tracker(samples)
 	ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
 	return nil
 }
@@ -60,6 +60,8 @@ func (ex *RunningExperiment) run() {
 	var totalErrors int
 	var workers int
 	var worstResult time.Duration
+	startTime := time.Now()
+
 	for {
 		sampleType := OtherSample
 		select {
@@ -79,6 +81,6 @@ func (ex *RunningExperiment) run() {
 			workers = workers + w
 		}
 
-		ex.samples <- &Sample{avg, totalTime, n, totalErrors, workers, lastResult, lastError, worstResult, time.Now(), sampleType}
+		ex.samples <- &Sample{avg, totalTime, n, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}
 	}
 }
