@@ -1,27 +1,27 @@
 pat = {}
 
-pat.experiment = function(onDataCallback, refreshRate) {
+pat.experiment = function(onDataCallbacks, refreshRate) {
 
   var infoUrl
+  function exports() {}
 
-  function exports() {
-  }
-
-  exports.onCsvUrlChanged = function() {}
-  exports.onStateChanged = function() {}
+  exports.state = ko.observable("")
+  exports.csvUrl = ko.observable("")
 
   exports.refresh = function() {
     $.get(infoUrl, function(data) {
-      onDataCallback(data.Items.filter(function(d) { return d.Type === 0 }))
+      onDataCallbacks.forEach(function(cb) {
+        cb(data.Items.filter(function(d) { return d.Type === 0 }))
+      })
       setTimeout(exports.refresh, refreshRate)
     })
   }
 
   exports.run = function() {
+    exports.state("running")
     $.post( "/experiments/", { "pushes": 10, "concurrency": 3 }, function(data) {
       infoUrl = data.Location
-      exports.onCsvUrlChanged(data.CsvLocation)
-      exports.onStateChanged("running")
+      exports.csvUrl(data.CsvLocation)
       exports.refresh()
     })
   }
@@ -29,42 +29,28 @@ pat.experiment = function(onDataCallback, refreshRate) {
   return exports
 }
 
-var app = function() {
-  var chart = d3.custom.pats.throughput(d3.select("#graph"))
-
-  // fixme(jz) - move to table.js and test
-  function table(data) {
-    tr = d3.select("#data").selectAll("tr").data(data.filter(function(d) { return d.Type === 0 })).enter().append("tr")
+pat.table = function(nodes) {
+  return function table(data) {
+    tr = nodes.selectAll("tr").data(data.filter(function(d) { return d.Type === 0 })).enter().append("tr")
     tr.append("td").text(function(d) { return d.WallTime })
     tr.append("td").text(function(d) { return d.LastResult })
     tr.append("td").text(function(d) { return d.Average })
     tr.append("td").text(function(d) { return d.TotalTime })
   }
+}
 
-  var experiment = pat.experiment(function(data) {
-    chart(data)
-    table(data)
-  }, 800)
+pat.view = function(experiment) {
+  var self = this
+  var chart = d3.custom.pats.throughput(d3.select("#graph"))
 
-  experiment.onCsvUrlChanged = function(location) {
-    $('#csvbtn').prop('disabled', false)
-    $('#csvbtn').click(function() {
-      window.location = location
-    })
-  }
+  this.redirectTo = function(location) { window.location = location }
 
-  experiment.onStateChanged = function(state) {
-    $('#startbtn').hide()
-    $('#stopbtn').show()
-  }
+  this.start = function() { experiment.run() }
+  this.stop = function() { alert("Not implemented") }
+  this.downloadCsv = function() { self.redirectTo(experiment.csvUrl()) }
 
-  $("#startbtn").click(function() {
-    $('#console').append("App push started<br>running ...<br>");
-    $("#data tr").remove()
-    experiment.run()
-  });
-
-  $("#stopbtn").click(function() {
-    alert("Not implemented")
-  })
+  this.canStart = ko.computed(function() { return experiment.state() !== "running" })
+  this.canStop = ko.computed(function() { return experiment.state() === "running" })
+  this.canDownloadCsv = ko.computed(function() { return experiment.csvUrl() !== "" })
+  this.noExperimentRunning = ko.computed(function() { return self.canStart() })
 }

@@ -10,6 +10,7 @@
     <script src="/ui/js/chart.js"></script>
     <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
     <title>Cloud Foundry Performance Suite</title>
 
     <style>
@@ -34,9 +35,9 @@
           Experiment Results
         </div>
         <div id="graph" class="panel-body col-md-12 center-block">
-          <p class="text-muted center-block">(No Experiment Running)</p>
+          <p data-bind="visible: noExperimentRunning" class="text-muted center-block">(No Experiment Running)</p>
         </div>
-        <div style="max-height: 250px; overflow-y: scroll; border-top: 2px solid #ccc">
+        <div style="max-height: 210px; min-height: 210px; overflow-y: scroll; border-top: 2px solid #ccc">
           <table class="table table-striped">
             <thead>
               <tr>
@@ -47,12 +48,6 @@
               </tr>
             </thead>
             <tbody id="data">
-              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
-              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
-              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
-              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
-              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
-              <tr><td>-</td><td>-</td><td></td><td>-</td></tr>
             </tbody>
           </table>
         </div>
@@ -63,9 +58,9 @@
           <span class="glyphicon glyphicon-cog"></span> Experiment Configuration
         </div>
         <div class="panel-body">
-          <button id="startbtn" type="button" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
-          <button id="stopbtn" type="button" style="display: none" class="btn btn-danger navbar-btn"><span class="glyphicon glyphicon-stop"></span> Stop Experiment</button>
-          <button id="csvbtn" type="button" disabled=true" class="btn btn-default navbar-btn"><span class="glyphicon glyphicon-floppy-save"></span> Download CSV</button>
+          <button data-bind="click: start, visible: canStart" id="startbtn" type="button" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
+          <button data-bind="click: stop, visible: canStop" id="stopbtn" type="button" style="display: none" class="btn btn-danger navbar-btn"><span class="glyphicon glyphicon-stop"></span> Stop Experiment</button>
+          <button data-bind="click: downloadCsv, enable: canDownloadCsv" id="csvbtn" type="button" disabled=true" class="btn btn-default navbar-btn"><span class="glyphicon glyphicon-floppy-save"></span> Download CSV</button>
         </div>
       </div>
 
@@ -80,7 +75,14 @@
 
       <!-- **************** footer ******************* -->
       <script>
-        var _app = new app();
+        ko.applyBindings(new pat.view(
+          pat.experiment(
+          [
+          d3.custom.pats.throughput(d3.select("#graph")),
+          pat.table(d3.select("#data"))
+          ], 800
+          )
+        ));
       </script>
 
     </div>
