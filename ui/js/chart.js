@@ -1,30 +1,41 @@
 d3.custom = {}
 d3.custom.pats = {}
 d3.custom.pats.throughput = function my(selection) {
-  var width = 300
-  var height = 300
-  var svg
+	var width = 800
+	var height = 400
+	var padding = 12
+	var svg
 
-  function exports(dataset) {
-    if (!svg) {
-      svg = selection.append("svg")
-      .attr("width", width)
-      .attr("height", height)
-      .append("g")
-    }
+	function exports(dataset) {
+		if (!svg) {
+			svg = selection.append("svg")
+			.attr("width", width)
+			.attr("height", height)
+			.append("g")
+		}
 
-    svg.selectAll("circle")
-    .data(dataset)
-    .enter()
-      .append("circle")
-        .style("fill", "steelblue")
-        .attr("cx", function(data, index) { return index })
-        .attr("cy", function(data) { return data.TotalTime })
-        .attr("r", 3);
-  }
+		var x = d3.scale.linear().range([width-padding, padding]);
+		x.domain(d3.extent(dataset, function(d) { return d.WallTime; }));
 
-  exports.width = function() { return width }
-  exports.height = function() { return height }
+		var y = d3.scale.linear().range([padding, height-padding]);
+		y.domain(d3.extent(dataset, function(d) { return d.LastResult; }));
 
-  return exports
+		var circles = svg.selectAll("circle")
+		.data(dataset);
+
+		circles.enter()
+		.append("circle")
+		.style("fill", "steelblue")
+		.attr("r", 3);
+
+		circles.exit().remove();
+
+		circles.attr("cx", function(d) { return x(d.WallTime) })
+		circles.attr("cy", function(d) { return y(d.LastResult) })
+	}
+
+	exports.width = function() { return width }
+	exports.height = function() { return height }
+
+	return exports
 }

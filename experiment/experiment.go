@@ -24,7 +24,7 @@ type Sample struct {
 	LastResult   time.Duration
 	LastError    error
 	WorstResult  time.Duration
-	WallTime     time.Time
+	WallTime     time.Duration
 	Type         SampleType
 }
 
@@ -60,6 +60,8 @@ func (ex *RunningExperiment) run() {
 	var totalErrors int
 	var workers int
 	var worstResult time.Duration
+	startTime := time.Now()
+
 	for {
 		sampleType := OtherSample
 		select {
@@ -79,6 +81,6 @@ func (ex *RunningExperiment) run() {
 			workers = workers + w
 		}
 
-		ex.samples <- &Sample{avg, totalTime, n, totalErrors, workers, lastResult, lastError, worstResult, time.Now(), sampleType}
+		ex.samples <- &Sample{avg, totalTime, n, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}
 	}
 }
