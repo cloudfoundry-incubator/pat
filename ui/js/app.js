@@ -1,20 +1,23 @@
 pat = {}
 
-pat.experiment = function(onDataCallbacks, refreshRate) {
+pat.experiment = function(refreshRate) {
 
   var infoUrl
   function exports() {}
 
   exports.state = ko.observable("")
   exports.csvUrl = ko.observable("")
+  exports.data = ko.observableArray()
 
   exports.refresh = function() {
     $.get(infoUrl, function(data) {
-      onDataCallbacks.forEach(function(cb) {
-        cb(data.Items.filter(function(d) { return d.Type === 0 }))
-      })
-      setTimeout(exports.refresh, refreshRate)
+      exports.data(data.Items.filter(function(d) { return d.Type === 0 }))
+      exports.waitAndRefreshOnce()
     })
+  }
+
+  exports.waitAndRefreshOnce = function() {
+    setTimeout(exports.refresh, refreshRate)
   }
 
   exports.run = function() {
@@ -29,19 +32,18 @@ pat.experiment = function(onDataCallbacks, refreshRate) {
   return exports
 }
 
-pat.table = function(nodes) {
-  return function table(data) {
-    tr = nodes.selectAll("tr").data(data.filter(function(d) { return d.Type === 0 })).enter().append("tr")
-    tr.append("td").text(function(d) { return d.WallTime })
-    tr.append("td").text(function(d) { return d.LastResult })
-    tr.append("td").text(function(d) { return d.Average })
-    tr.append("td").text(function(d) { return d.TotalTime })
+ko.bindingHandlers.chart = {
+  c: {},
+  init: function(element, valueAccessor) {
+    ko.bindingHandlers.chart.c = d3.custom.pats.throughput(d3.select(element))
+  },
+  update: function(element, valueAccessor) {
+    ko.bindingHandlers.chart.c(ko.unwrap(valueAccessor()))
   }
 }
 
 pat.view = function(experiment) {
   var self = this
-  var chart = d3.custom.pats.throughput(d3.select("#graph"))
 
   this.redirectTo = function(location) { window.location = location }
 
@@ -53,4 +55,5 @@ pat.view = function(experiment) {
   this.canStop = ko.computed(function() { return experiment.state() === "running" })
   this.canDownloadCsv = ko.computed(function() { return experiment.csvUrl() !== "" })
   this.noExperimentRunning = ko.computed(function() { return self.canStart() })
+  this.data = experiment.data
 }

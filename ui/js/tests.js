@@ -88,39 +88,37 @@ describe("Running an experiment", function my() {
 
   describe("When results are returned", function() {
 
-    var data = { update: function() {}, update2: function() {} }
     var refreshRate = 800
     var csvUrl   = "foo/bar/baz.csv"
     var experiment
+    var results
 
     beforeEach(function() {
-      jasmine.Clock.useMock();
-
       a = {"Type": 0, "name": "a"}
       b = {"Type": 1, "name": "b"}
       spyOn($, "post").andCallFake(function(url, data, callback) { callback({ "Location": replyUrl, "CsvLocation": csvUrl }) })
-      spyOn($, "get").andCallFake(function(url, callback) {callback({ "Items": [a, b] }) })
-      spyOn(data, "update")
-      spyOn(data, "update2")
+      spyOn($, "get").andCallFake(function(url, callback) {
+          callback({ "Items": [a,b] })
+      })
 
-      experiment = pat.experiment([data.update, data.update2], refreshRate)
+      experiment = pat.experiment(refreshRate)
+      spyOn(experiment, "refresh").andCallThrough()
+      spyOn(experiment, "waitAndRefreshOnce") //mocked because jasmine.Clock was being painful
       experiment.run()
     })
 
-    it("calls the onData functions", function() {
-      expect(data.update).toHaveBeenCalledWith([a])
-      expect(data.update2).toHaveBeenCalledWith([a])
+    it("updates with the latest data", function() {
+      expect(experiment.data()).toEqual([a])
     })
 
-    it("only calls with Type = result", function() {
-      expect(data.update).not.toHaveBeenCalledWith([a, b])
+    it("only includes data of type 0 (ResultSample)", function() {
+      expect(experiment.data()).not.toBe([a, b])
     })
 
-    it("refreshes the data at the refresh rate", function() {
-      jasmine.Clock.tick(refreshRate + 1)
-      expect(data.update.calls.length).toBe(2)
-      jasmine.Clock.tick(refreshRate + 1)
-      expect(data.update.calls.length).toBe(3)
+    it("refreshes the data at the refresh rate after data is returned", function() {
+      expect(experiment.waitAndRefreshOnce.callCount).toEqual(1)
+      $.get.mostRecentCall.args[1]({"Items": [{"Type": 0}]})
+      expect(experiment.waitAndRefreshOnce.callCount).toEqual(2)
     })
 
     it("updates the csv url", function() {

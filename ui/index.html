@@ -7,10 +7,10 @@
     <link rel="stylesheet" href="css/app.css"type="text/css" media="screen" />
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
     <script src="/ui/js/chart.js"></script>
     <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
     <title>Cloud Foundry Performance Suite</title>
 
     <style>
@@ -34,22 +34,34 @@
         <div class="panel-heading">
           Experiment Results
         </div>
-        <div id="graph" class="panel-body col-md-12 center-block">
+        <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data">
           <p data-bind="visible: noExperimentRunning" class="text-muted center-block">(No Experiment Running)</p>
         </div>
-        <div style="max-height: 210px; min-height: 210px; overflow-y: scroll; border-top: 2px solid #ccc">
-          <table class="table table-striped">
+        <div style="border-top: 2px solid #ddd">
+          <table class="table table-striped" style="table-layout: fixed; margin-bottom: 0px">
             <thead>
               <tr>
                 <th>Wall Time</th>
                 <th>Result</th>
                 <th>Running Average</th>
                 <th>Running Total</th>
+                <th>Workers</th>
               </tr>
             </thead>
-            <tbody id="data">
+          </table>
+          <div style="max-height: 210px; min-height: 210px; overflow-y: scroll;">
+          <table class="table table-striped" style="table-layout: fixed">
+            <tbody id="data" data-bind="foreach: data">
+              <tr>
+                <td data-bind="text: WallTime"></td>
+                <td data-bind="text: LastResult"></td>
+                <td data-bind="text: Average"></td>
+                <td data-bind="text: TotalTime"></td>
+                <td data-bind="text: TotalWorkers"></td>
+              </tr>
             </tbody>
           </table>
+        </div>
         </div>
       </div>
 
@@ -75,16 +87,8 @@
 
       <!-- **************** footer ******************* -->
       <script>
-        ko.applyBindings(new pat.view(
-          pat.experiment(
-          [
-          d3.custom.pats.throughput(d3.select("#graph")),
-          pat.table(d3.select("#data"))
-          ], 800
-          )
-        ));
+        ko.applyBindings(new pat.view( pat.experiment(800) ));
       </script>
-
     </div>
   </body>
 </html>
