@@ -48,16 +48,22 @@ ko.bindingHandlers.chart = {
   function barchart(data) {
     if (data.length === 0) return;
 
-    $('.barchart').html("");
+    var xOffset = 50, yOffset = 50, barWidth = 30;
     var svg = d3.select(".barchart");
-
     var h = $('.barchart').height();
-    //var x = d3.scale.linear().domain([0, d3.max(data, function(d){return d.LastResult/1000000000})]).range([0, h]);
-    var x = d3.scale.linear().domain([0, 6]).range([0, h]);
+    //Bug(simon) Range is hard-coded for now
+    var x = d3.scale.linear().domain([0, 10]).range([0, $('.barchart').width() - (xOffset*2)], 1);
+    var y = d3.scale.linear().domain([5, 0]).range([0, h - (yOffset*2)]);
+
+    var xAxis = d3.svg.axis().scale(x).orient("bottom");
+    var yAxis = d3.svg.axis().scale(y).orient("left");
+    svg.append("g").attr("class", "x axis").attr("transform", "translate(" + xOffset + "," + (h-yOffset) + ")").call(xAxis);
+    svg.append("g").attr("class", "y axis").attr("transform", "translate(" + xOffset + ","+ yOffset + ")").call(yAxis);
+
 
     data.forEach(function(d){
-      svg.append("rect").attr("x",50 * d.Total).attr("y",h - x(d.LastResult / 1000000000)).attr("width",30).attr("height", x(d.LastResult / 1000000000));
-      svg.append("text").attr("x", 50 * d.Total + 15 ).attr("y", h - 10 - x(d.LastResult / 1000000000)).attr("dy", ".75em").text((d.LastResult / 1000000000).toFixed(2) + " sec");
+      svg.append("rect").attr("x",x(d.Total) + xOffset - (barWidth/2)).attr("y",  y(d.LastResult / 1000000000) + yOffset ).attr("width", barWidth).attr("height", h - y(d.LastResult / 1000000000) - (yOffset * 2));
+      svg.append("text").attr("x",x(d.Total) + xOffset ).attr("y", y(d.LastResult / 1000000000) + yOffset - 10).attr("dy", ".75em").text((d.LastResult / 1000000000).toFixed(2) + " sec");
     });
   }
 
@@ -65,7 +71,7 @@ pat.view = function(experiment) {
   var self = this
 
   //Todo: move to bar.js - setup SVG to draw barchart
-  d3.select("#graph").append("svg").attr("class","barchart").attr("width", $("#graph").width()).attr("height", $("#graph").height());
+  d3.select("#graph").append("svg").attr("class","barchart").attr("width", $("#graph").width()-20).attr("height", $("#graph").height()-20);
 
   this.redirectTo = function(location) { window.location = location }
 
