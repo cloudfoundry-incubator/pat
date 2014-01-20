@@ -35,10 +35,12 @@ pat.experiment = function(refreshRate) {
 ko.bindingHandlers.chart = {
   c: {},
   init: function(element, valueAccessor) {
-    ko.bindingHandlers.chart.c = d3.custom.pats.throughput(d3.select(element))
+    //ko.bindingHandlers.chart.c = d3.custom.pats.throughput(d3.select(element))
+    ko.bindingHandlers.chart.b = d3.custom.barchart(d3.select(element));
   },
   update: function(element, valueAccessor) {
-    ko.bindingHandlers.chart.c(ko.unwrap(valueAccessor()))
+    //ko.bindingHandlers.chart.c(ko.unwrap(valueAccessor()))
+    ko.bindingHandlers.chart.b(ko.unwrap(valueAccessor()))
   }
 }
 
