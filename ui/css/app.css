@@ -77,12 +77,15 @@ tr, td {
 #graph .barchart {
   fill: steelblue;
 }
+#graph .bar:hover {
+    fill: brown;
+}
 #graph .barchart text {
   fill: red;
   font: 10px sans-serif;
   text-anchor: middle;
 }
-.axis text {
+#graph .axis text {
   font: 10px sans-serif;
 }
 
