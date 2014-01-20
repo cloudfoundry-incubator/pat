@@ -71,6 +71,7 @@ tr, td {
    box-shadow: inset 0 0 3px #555;
 }
 
+/*** Todo(simon), move to d3.css ***/
 #graph {
 }
 #graph .barchart {
@@ -80,6 +81,16 @@ tr, td {
   fill: red;
   font: 10px sans-serif;
   text-anchor: middle;
+}
+.axis text {
+  font: 10px sans-serif;
+}
+
+#graph .axis path,
+#graph .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
 }
 
 /* override bootstrip css */
