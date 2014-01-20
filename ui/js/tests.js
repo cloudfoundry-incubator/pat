@@ -1,5 +1,5 @@
 describe("The view", function() {
-  var experiment = { run: function() {}, state: ko.observable(""), csvUrl: ko.observable("") }
+  var experiment = { run: function() {}, state: ko.observable(""), csvUrl: ko.observable(""), config: { pushes: ko.observable(1), concurrency: ko.observable(1)  } }
 
   beforeEach(function() {
     spyOn(experiment, "run")
@@ -27,6 +27,24 @@ describe("The view", function() {
 
     it("sets noExperimentRunning to false", function() {
       expect(v.noExperimentRunning()).toBe(false)
+    })
+  })
+
+  describe("validation", function() {
+    it("prevents pushes being <= 0", function() {
+      v.numPushes(-1)
+      v.numConcurrent(1)
+      expect(v.numPushesHasError()).toBe(true)
+      expect(v.numConcurrentHasError()).toBe(false)
+      expect(v.formHasNoErrors()).toBe(false)
+    })
+
+    it("prevents concurrency being <= 0", function() {
+      v.numConcurrent(-1)
+      v.numPushes(1)
+      expect(v.numPushesHasError()).toBe(false)
+      expect(v.numConcurrentHasError()).toBe(true)
+      expect(v.formHasNoErrors()).toBe(false)
     })
   })
 
@@ -70,15 +88,25 @@ describe("Running an experiment", function my() {
 
   describe("Calling the endpoint", function() {
 
+    var pushes = 3
+    var concurrency = 5
+
     beforeEach(function() {
       spyOn($, "post").andCallFake(function(url, data, callback) { callback({ "Location": replyUrl }) })
       spyOn($, "get").andCallFake(function(url, callback) {  })
       var experiment = pat.experiment()
+      experiment.config.pushes(pushes)
+      experiment.config.concurrency(concurrency)
       experiment.run()
     })
 
     it("sends a POST to the /experiments/ endpoint", function() {
       expect($.post).toHaveBeenCalledWith("/experiments/", jasmine.any(Object), jasmine.any(Function))
+    })
+
+    it("sends the pushes and concurrency is the POST body", function() {
+      expect($.post.mostRecentCall.args[1].pushes).toBe(3)
+      expect($.post.mostRecentCall.args[1].concurrency).toBe(5)
     })
 
     it("sends a GET to the tracking URL", function() {
