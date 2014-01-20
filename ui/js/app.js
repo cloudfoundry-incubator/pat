@@ -8,6 +8,7 @@ pat.experiment = function(refreshRate) {
   exports.state = ko.observable("")
   exports.csvUrl = ko.observable("")
   exports.data = ko.observableArray()
+  exports.config = { pushes: ko.observable(1), concurrency: ko.observable(1) }
 
   exports.refresh = function() {
     $.get(infoUrl, function(data) {
@@ -22,7 +23,7 @@ pat.experiment = function(refreshRate) {
 
   exports.run = function() {
     exports.state("running")
-    $.post( "/experiments/", { "pushes": 10, "concurrency": 3 }, function(data) {
+    $.post( "/experiments/", { "pushes": exports.config.pushes(), "concurrency": exports.config.concurrency() }, function(data) {
       infoUrl = data.Location
       exports.csvUrl(data.CsvLocation)
       exports.refresh()
@@ -57,5 +58,10 @@ pat.view = function(experiment) {
   this.canStop = ko.computed(function() { return experiment.state() === "running" })
   this.canDownloadCsv = ko.computed(function() { return experiment.csvUrl() !== "" })
   this.noExperimentRunning = ko.computed(function() { return self.canStart() })
+  this.numPushes = experiment.config.pushes
+  this.numPushesHasError = ko.computed(function() { return experiment.config.pushes() <= 0 })
+  this.numConcurrent = experiment.config.concurrency
+  this.numConcurrentHasError = ko.computed(function() { return experiment.config.concurrency() <= 0 })
+  this.formHasNoErrors = ko.computed(function() { return ! ( this.numPushesHasError() | this.numConcurrentHasError() ) }, this)
   this.data = experiment.data
 }
