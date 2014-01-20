@@ -16,7 +16,7 @@
 
     <style>
       body { padding: 8px; }
-      #graph { min-height: 500px; }
+      #graph { min-height: 450px; height: 450px }
     </style>
   </head>
 
@@ -36,7 +36,7 @@
           Experiment Results
         </div>
         <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data">
-          <p data-bind="visible: noExperimentRunning" class="text-muted center-block">(No Experiment Running)</p>
+          <p data-bind="visible: noExperimentRunning" class="text-muted text-center" style="position: relative; top: 20%">(No Experiment Running)</p>
         </div>
         <div style="border-top: 2px solid #ddd">
           <table class="table table-striped" style="table-layout: fixed; margin-bottom: 0px">
