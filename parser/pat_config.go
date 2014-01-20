@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"path"
 	"io/ioutil"
 	"launchpad.net/goyaml"
 )
@@ -19,7 +18,7 @@ type PATs struct {
 func NewPATsConfiguration(fName string) (*PATs, error) {
 	var pat = PATs{}
 
-	file, err := ioutil.ReadFile(path.Join("..", "config", fName))
+	file, err := ioutil.ReadFile(fName)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package parser_test
 
 import (
 	"os"
-	"path"
 	"io/ioutil"
 	"launchpad.net/goyaml"
 	. "github.com/julz/pat/parser"
@@ -38,6 +37,7 @@ var _ = Describe("PatConfig", func() {
 		Ω(pat.Cli_commands.Pushes).Should(Equal(1))
 		Ω(pat.Cli_commands.Concurrency).Should(Equal(1))
 		Ω(pat.Cli_commands.Silent).Should(Equal(true))
+		Ω(pat.Cli_commands.Output).Should(Equal("AFileName.csv"))
 	})
 
 	It("Can read in a configuration file with only some parameters set from a YAML file", func() {
@@ -64,12 +64,12 @@ func createTestFile(T interface{}) {
 		panic(err)
 	}
 
-	err = ioutil.WriteFile(path.Join("..", "config", fName), file, 0644)
+	err = ioutil.WriteFile(fName, file, 0644)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func deleteTestFile() {
-	os.Remove(path.Join("..", "config", fName))
+	os.Remove(fName)
 }

@@ -3,7 +3,8 @@
 
 # cli_commands are used to specify what the cli commands should be. 
 cli_commands:
-  server: true
+  server: false
   pushes: 1
   concurrency: 1
-  silent: true
+  silent: false
+  output: ""
