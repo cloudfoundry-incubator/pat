@@ -1,9 +1,0 @@
-# yaml file to outline what we wish to run with a jenkins test.
-
-
-# cli_commands aer used to specify what the cli commands should be. 
-cli_commands:
-  - server: true
-    pushes: 1
-    concurrency: 1
-    output: true

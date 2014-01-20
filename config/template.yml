@@ -1,0 +1,10 @@
+# yaml file template to outline what we wish to run with a jenkins test.
+
+
+# cli_commands are used to specify what the cli commands should be. 
+cli_commands:
+  server: false
+  pushes: 1
+  concurrency: 1
+  silent: false
+  output: ""
