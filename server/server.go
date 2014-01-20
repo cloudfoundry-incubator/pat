@@ -51,10 +51,10 @@ func Stop() {
 }
 
 func Bind() {
+	fmt.Println("Starting web ui on http://localhost:8080/ui/")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Printf("ListenAndServe: %s\n", err)
 	}
-	fmt.Println("Started listening on :8080")
 }
 
 type listResponse struct {

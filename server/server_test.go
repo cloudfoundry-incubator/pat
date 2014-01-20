@@ -7,5 +7,6 @@ import (
 )
 
 var _ = Describe("Server", func() {
-
+	PIt("Prints a message after binding", func() {
+	})
 })
