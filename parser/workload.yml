@@ -1,0 +1,11 @@
+users: 2                # mimic how many users should be running through the workload at once
+workload:
+  loop: 1               # how many times we wish to run through all of the commands
+  commands:
+    - loop: 1           # how many times we want to run throug a single command
+      input:            # command we want to perform and any associated parameters
+        cmd: login
+    - loop: 1
+      input:
+        cmd: push
+        name: sinatra_app
