@@ -1,37 +1,32 @@
-package main 
+package interval 
 
 import (
 	"fmt"
 	"time"
 )
 
-type workitem struct {
+type RepeatItem struct {
 	fn func()
 	interval int
 	ticker *time.Ticker
 	quit chan bool
 }
 
-var worklist []workitem = make([]workitem, 0)
+var worklist []RepeatItem = make([]RepeatItem, 0)
 
-func main() {
-	item := Repeat( 2, func(){ fmt.Printf("%v Time in 2\n", time.Stamp) } )
-	time.AfterFunc(10 * time.Second, func(){
-		item.Stop()
-	})	
-//bugz: remove
-var quit = make(chan bool)
-<-quit
+func Repeat(s int, fn func()) *RepeatItem {
+	if (s > 0) {
+		w := RepeatItem{ fn, s, nil, nil }
+		w.quit, w.ticker = doWork(s, fn)
+		worklist = append(worklist, w)
+		return &w
+	} else {
+		fn()
+		return nil
+	}
 }
 
-func Repeat(s int, fn func()) *workitem {
-	w :=  workitem{fn, s, nil, nil}
-	w.quit, w.ticker = doWork(s, fn)
-	worklist = append(worklist, w)
-	return &w
-}
-
-func (w *workitem) Stop() {
+func (w *RepeatItem) Stop() {
 	w.quit <- true
 }
 
