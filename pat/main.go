@@ -36,7 +36,7 @@ func main() {
     server.Serve()
     server.Bind()
   } else {
-		_ = interval.Repeat(0,func() {
+		_ = interval.Repeat(0, func() {
 	    		pat.RunCommandLine(*pushes, *concurrency, *silent, *output)
 				})
 	}		
