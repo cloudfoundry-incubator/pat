@@ -14,10 +14,10 @@ type RepeatItem struct {
 
 var worklist []RepeatItem = make([]RepeatItem, 0)
 
-func Repeat(s int, fn func()) *RepeatItem {
-	if (s > 0) {
-		w := RepeatItem{ fn, s, nil, nil }
-		w.quit, w.ticker = doWork(s, fn)
+func Repeat(second int, fn func()) *RepeatItem {
+	if (second > 0) {
+		w := RepeatItem{ fn, second, nil, nil }
+		w.quit, w.ticker = doWork(second, fn)
 		worklist = append(worklist, w)
 		return &w
 	} else {
