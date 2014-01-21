@@ -15,21 +15,22 @@ var worklist []RepeatItem = make([]RepeatItem, 0)
 
 func Repeat(second int, fn func()) *RepeatItem {
   if second > 0 {
-    w := RepeatItem{fn, second, nil, nil}
-    w.quit, w.ticker = doWork(second, fn)
-    worklist = append(worklist, w)
-    return &w
+    ri := RepeatItem{fn, second, nil, nil}
+    ri.quit, ri.ticker = doWork(second, fn)
+    worklist = append(worklist, ri)
+    return &ri
   } else {
     fn()
-    return nil
+    return &RepeatItem{fn, 0, nil, nil} 
   }
 }
 
-func (w *RepeatItem) Stop() {
-  w.quit <- true
+func (ri *RepeatItem) Stop() {
+  ri.quit <- true
 }
 
 func doWork(s int, fn func()) (chan bool, *time.Ticker) {
+	fn()
   ticker := time.NewTicker(time.Duration(s) * time.Second)
   quit := make(chan bool)
   go func() {
