@@ -19,7 +19,7 @@ var _ = Describe("Interval", func() {
 		}
 	})
 
-	Describe("Repeat returns nil or *ReturnItem depends on the value of second", func() {
+	Describe("Repeat()", func() {
 
 		Context("When Repeat() is called with seconds and fn() provide", func() {
 
