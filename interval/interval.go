@@ -1,7 +1,6 @@
 package interval
 
 import (
-  "fmt"
   "time"
 )
 
@@ -34,7 +33,6 @@ func doWork(s int, fn func()) (chan bool, *time.Ticker) {
   ticker := time.NewTicker(time.Duration(s) * time.Second)
   quit := make(chan bool)
   go func() {
-    defer fmt.Println("job stopped")
     for {
       select {
       case <-ticker.C:
