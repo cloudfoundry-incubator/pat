@@ -15,19 +15,24 @@ type workitem struct {
 var worklist []workitem = make([]workitem, 0)
 
 func main() {
-	goRepeat( 2, func(){ fmt.Printf("%v Time in 2\n", time.Stamp) } )
+	item := Repeat( 2, func(){ fmt.Printf("%v Time in 2\n", time.Stamp) } )
 	time.AfterFunc(10 * time.Second, func(){
-		worklist[0].quit <- true
+		item.Stop()
 	})	
-
+//bugz: remove
 var quit = make(chan bool)
 <-quit
 }
 
-func goRepeat(s int, fn func()) {
+func Repeat(s int, fn func()) *workitem {
 	w :=  workitem{fn, s, nil, nil}
 	w.quit, w.ticker = doWork(s, fn)
 	worklist = append(worklist, w)
+	return &w
+}
+
+func (w *workitem) Stop() {
+	w.quit <- true
 }
 
 func doWork(s int, fn func()) (chan bool, *time.Ticker) {
@@ -47,4 +52,5 @@ func doWork(s int, fn func()) (chan bool, *time.Ticker) {
 	}()
 	return quit, ticker
 }
+
 
