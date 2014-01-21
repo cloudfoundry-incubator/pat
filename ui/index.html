@@ -17,6 +17,9 @@
     <style>
       body { padding: 8px; }
       #graph { min-height: 450px; height: 450px }
+      .state-Finished { color: green }
+      .state-Running { color: blue }
+      .state-Failed { color: red }
     </style>
   </head>
 
@@ -30,7 +33,6 @@
       <div class="row">
       </div>
 
-      <!-- ********** Graph Wrapper ********** -->
       <div class="row panel panel-default">
         <div class="panel-heading">
           Experiment Results
@@ -103,9 +105,34 @@
         </div>
       </div>
 
+      <div class="row panel panel-default">
+        <div class="panel-heading">
+          Previous Experiments
+        </div>
+        <div class="panel-body">
+          <table class="table table-striped">
+            <thead>
+              <th>Name</th>
+              <th>State</th>
+              <th>Actions</th>
+            </thead>
+            <tbody data-bind="foreach: previousExperiments">
+              <tr>
+                <td data-bind="text: Name"></td>
+                <td data-bind="text: State, css: 'state-'+State "></td>
+                <td>
+                  <a data-bind="attr: { href: '#' + Location }"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;&nbsp;Show</a> &nbsp;
+                  <a data-bind="attr: { href: CsvLocation }"><span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp;Download CSV</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- **************** footer ******************* -->
       <script>
-        ko.applyBindings(new pat.view( pat.experiment(800) ));
+        ko.applyBindings(new pat.view( pat.experimentList(), pat.experiment(800) ));
       </script>
     </div>
   </body>

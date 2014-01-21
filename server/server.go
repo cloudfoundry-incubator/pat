@@ -35,7 +35,7 @@ func Serve() {
 func ServeWithArgs(baseDir string, csvDir string) {
 	r := mux.NewRouter()
 	ctx := &context{r, baseDir, csvDir, make(map[string][]*experiment.Sample)}
-	r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx.handleList))
+	r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx.handleListExperiments))
 	r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx.handleGetExperiment)).Name("experiment")
 	r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx.handlePush))
 
@@ -73,8 +73,23 @@ func (ctx *context) handleList(w http.ResponseWriter, r *http.Request) (interfac
 	}
 }
 
+func (ctx *context) handleListExperiments(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	running := make([]map[string]string, 0, len(ctx.running))
+	for k, _ := range ctx.running {
+		url, _ := ctx.router.Get("experiment").URL("name", k)
+		csvUrl := fmt.Sprintf("/csv/%v.csv", url.String())
+		json := make(map[string]string)
+		json["Location"] = url.String()
+		json["CsvLocation"] = csvUrl
+		json["Name"] = "Simple Push"
+		json["State"] = "Unknown"
+		running = append(running, json)
+	}
+
+	return &listResponse{running}, nil
+}
+
 func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	fmt.Println("handlepush")
 	name, _ := uuid.NewV4()
 
 	pushes, err := strconv.Atoi(r.FormValue("pushes"))

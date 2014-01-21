@@ -1,9 +1,14 @@
 describe("The view", function() {
-  var experiment = { run: function() {}, state: ko.observable(""), csvUrl: ko.observable(""), config: { pushes: ko.observable(1), concurrency: ko.observable(1)  } }
+  var experiment
+	var experimentList
 
   beforeEach(function() {
+		experiment = { run: function() {}, state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { pushes: ko.observable(1), concurrency: ko.observable(1)  } }
+		experimentList = { experiments: [], refresh: function(){} }
+		spyOn(experimentList, "refresh")
+		spyOn(experiment, "view")
     spyOn(experiment, "run")
-    v = new pat.view(experiment)
+    v = new pat.view(experimentList, experiment)
     spyOn(v, "redirectTo").andReturn()
     v.start()
   })
@@ -28,6 +33,10 @@ describe("The view", function() {
     it("sets noExperimentRunning to false", function() {
       expect(v.noExperimentRunning()).toBe(false)
     })
+
+		it("refreshes the experiments list", function() {
+			expect(experimentList.refresh).toHaveBeenCalled()
+		})
   })
 
   describe("validation", function() {
@@ -47,6 +56,18 @@ describe("The view", function() {
       expect(v.formHasNoErrors()).toBe(false)
     })
   })
+
+	describe("hash urls", function() {
+		it("does nothing if the hash is empty", function() {
+			v.onHashChange("#")
+			expect(experiment.view).not.toHaveBeenCalledWith()
+		})
+
+		it("views an experiment when the url hash changes", function() {
+			v.onHashChange("#foo.csv")
+			expect(experiment.view).toHaveBeenCalledWith("foo.csv")
+		})
+	})
 
   describe("when the experiment has an associated CSV URL", function() {
     beforeEach(function() { experiment.csvUrl("some-url.csv") })
@@ -82,6 +103,31 @@ describe("Throughput chart", function() {
   })
 })
 
+describe("The experiment list", function() {
+
+	var self = this
+	var experiments
+	var list
+
+	describe("refreshing", function() {
+		beforeEach(function() {
+			self.experiments = [ { name: "a" }, { name: "b" } ]
+      spyOn($, "get").andCallFake(function(url, callback) { console.log("ex", self.experiments); callback({ "Items": self.experiments }) })
+			list = pat.experimentList()
+		})
+
+		it("adds all the items to the experiments array", function() {
+			self.experiments = [1, 2, 3]
+			list.refresh()
+			expect(list.experiments()).toEqual(self.experiments)
+		})
+
+		it("refreshes on startup", function() {
+			expect(list.experiments()).toEqual(self.experiments)
+		})
+	})
+})
+
 describe("Running an experiment", function my() {
 
   var replyUrl = "foo/bar/baz"
@@ -104,7 +150,7 @@ describe("Running an experiment", function my() {
       expect($.post).toHaveBeenCalledWith("/experiments/", jasmine.any(Object), jasmine.any(Function))
     })
 
-    it("sends the pushes and concurrency is the POST body", function() {
+    it("sends the pushes and concurrency in the POST body", function() {
       expect($.post.mostRecentCall.args[1].pushes).toBe(3)
       expect($.post.mostRecentCall.args[1].concurrency).toBe(5)
     })
