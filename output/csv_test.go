@@ -20,8 +20,8 @@ var _ = Describe("Csv", func() {
 	JustBeforeEach(func() {
 		filename := "/var/tmp/test-output/foo.csv"
 		csv = write(filename, []*experiment.Sample{
-			&experiment.Sample{1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
-			&experiment.Sample{9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
+			&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
+			&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
 		})
 		in, err := ioutil.ReadFile(filename)
 		Ω(err).ShouldNot(HaveOccurred())
@@ -48,7 +48,7 @@ var _ = Describe("Csv", func() {
 	It("Round trips", func() {
 		samples, err := csv.Read()
 		Ω(err).ShouldNot(HaveOccurred())
-		Ω(samples[0]).Should(Equal(&experiment.Sample{1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample}))
+		Ω(samples[0]).Should(Equal(&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample}))
 	})
 
 	It("Does not save error text, to avoid huge files", func() {
@@ -59,13 +59,13 @@ var _ = Describe("Csv", func() {
 
 	It("Loads multiple CSVs from a directory", func() {
 		write("/var/tmp/test-output/foo.csv", []*experiment.Sample{
-			&experiment.Sample{1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
-			&experiment.Sample{9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
+			&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
+			&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
 		})
 
 		write("/var/tmp/test-output/bar.csv", []*experiment.Sample{
-			&experiment.Sample{1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
-			&experiment.Sample{9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
+			&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
+			&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
 		})
 
 		samples, err := ReloadCSVs("/var/tmp/test-output/")

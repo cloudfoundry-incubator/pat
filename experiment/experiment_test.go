@@ -1,6 +1,7 @@
 package experiment
 
 import (
+	. "github.com/julz/pat/benchmarker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"time"
@@ -8,16 +9,17 @@ import (
 
 var _ = Describe("Experiment", func() {
 	It("Calculates the running average", func() {
-		results := make(chan time.Duration)
+		iteration := make(chan IterationResult)
+		results := make(chan BenchmarkResult)
 		errors := make(chan error)
 		workers := make(chan int)
 		quit := make(chan bool)
 
 		samples := make(chan *Sample)
-		go Track(samples, results, errors, workers, quit)
-		go func() { results <- 2 * time.Second }()
-		go func() { results <- 4 * time.Second }()
-		go func() { results <- 6 * time.Second }()
+		go Track(iteration, samples, results, errors, workers, quit)
+		go func() { iteration <- IterationResult{2 * time.Second} }()
+		go func() { iteration <- IterationResult{4 * time.Second} }()
+		go func() { iteration <- IterationResult{6 * time.Second} }()
 
 		Ω((<-samples).Average).Should(Equal(2 * time.Second))
 		Ω((<-samples).Average).Should(Equal(3 * time.Second))

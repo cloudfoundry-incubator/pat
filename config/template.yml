@@ -2,11 +2,11 @@
 
 
 # cli_commands are used to specify what the cli commands should be.
-cli_commands:
-  server: false
-  pushes: 1
-  concurrency: 1
-  silent: false
-  output: ""
-  interval: 0
-  stop: 0
+server: false
+iterations: 1
+concurrency: 1
+silent: false
+output: ""
+interval: 0
+stop: 0
+workload: ""

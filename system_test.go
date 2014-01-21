@@ -13,6 +13,16 @@ import (
 )
 
 var _ = Describe("System", func() {
+	Describe("Running PATs with the command line", func() {
+		PIt("Push a single app", func() {
+			//gcf apps . length()
+			//runCommands(...)
+			//gcf apps . length = old length + 1
+			//OR
+			//expect some kind of output
+		})
+	})
+
 	Describe("Running PATs with a web API", func() {
 		BeforeEach(func() {
 			os.RemoveAll("/tmp/pats-acceptance-test-runs")
