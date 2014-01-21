@@ -77,7 +77,7 @@ OR install the binary (recommended)
 
 4) Run PATs as an HTTP server (work in progress)
 
-	# pat -server
+	# go run pat/main.go -server [must be called in this fashion due to static file location]
 
 Example calls:
 
