@@ -3,7 +3,7 @@ describe("The view", function() {
 	var experimentList
 
 	beforeEach(function() {
-		experiment = { run: function() {}, state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { pushes: ko.observable(1), concurrency: ko.observable(1)  } }
+		experiment = { run: function() {}, url: ko.observable(""), state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { pushes: ko.observable(1), concurrency: ko.observable(1)  } }
 		experimentList = { experiments: [], refresh: function(){} }
 		spyOn(experimentList, "refresh")
 		spyOn(experiment, "view")
@@ -136,13 +136,15 @@ describe("Running an experiment", function my() {
 
 		var pushes = 3
 		var concurrency = 5
+		var experiment
 
 		beforeEach(function() {
 			spyOn($, "post").andCallFake(function(url, data, callback) { callback({ "Location": replyUrl }) })
 			spyOn($, "get").andCallFake(function(url, callback) {  })
-			var experiment = pat.experiment()
+			experiment = pat.experiment()
 			experiment.config.pushes(pushes)
 			experiment.config.concurrency(concurrency)
+			experiment.data([1,2,3])
 			experiment.run()
 		})
 
@@ -157,6 +159,10 @@ describe("Running an experiment", function my() {
 
 		it("sends a GET to the tracking URL", function() {
 			expect($.get).toHaveBeenCalledWith(replyUrl, jasmine.any(Function))
+		})
+
+		it("clears any existing data", function() {
+			expect(experiment.data().length).toEqual(0)
 		})
 	})
 

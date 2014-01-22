@@ -2,16 +2,16 @@ pat = {}
 
 pat.experiment = function(refreshRate) {
 
-	var infoUrl
 	function exports() {}
 
 	exports.state = ko.observable("")
+	exports.url = ko.observable("")
 	exports.csvUrl = ko.observable("")
 	exports.data = ko.observableArray()
 	exports.config = { pushes: ko.observable(1), concurrency: ko.observable(1) }
 
 	exports.refresh = function() {
-		$.get(infoUrl, function(data) {
+		$.get(exports.url(), function(data) {
 			exports.data(data.Items.filter(function(d) { return d.Type === 0 }))
 			exports.waitAndRefreshOnce()
 		})
@@ -23,8 +23,9 @@ pat.experiment = function(refreshRate) {
 
 	exports.run = function() {
 		exports.state("running")
+		exports.data([])
 		$.post( "/experiments/", { "pushes": exports.config.pushes(), "concurrency": exports.config.concurrency() }, function(data) {
-			infoUrl = data.Location
+			exports.url(data.Location)
 			exports.csvUrl(data.CsvLocation)
 			exports.refresh()
 		})
@@ -32,7 +33,7 @@ pat.experiment = function(refreshRate) {
 
 	exports.view = function(url) {
 		exports.state("running")
-		infoUrl = url
+		exports.url(url)
 		exports.csvUrl("")
 		exports.refresh()
 	}
@@ -96,6 +97,10 @@ pat.view = function(experimentList, experiment) {
 
 	experiment.state.subscribe(function() {
 		experimentList.refresh()
+	})
+
+	experiment.url.subscribe(function(url) {
+		window.location.hash = "#" + url
 	})
 
 	this.onHashChange = function(hash) {
