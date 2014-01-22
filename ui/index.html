@@ -54,11 +54,11 @@
             <table class="table table-striped" style="table-layout: fixed">
               <tbody id="data" data-bind="foreach: data">
                 <tr>
-                  <td data-bind="text: WallTime"></td>
-                  <td data-bind="text: LastResult"></td>
-                  <td data-bind="text: Average"></td>
-                  <td data-bind="text: TotalTime"></td>
-                  <td data-bind="text: TotalWorkers"></td>
+                  <td data-bind="text: WallTime_fmt"></td>
+                  <td data-bind="text: LastResult_fmt"></td>
+                  <td data-bind="text: Average_fmt"></td>
+                  <td data-bind="text: TotalTime_fmt"></td>
+                  <td><span data-bind="text: TotalWorkers"></span> running</td>
                 </tr>
               </tbody>
             </table>

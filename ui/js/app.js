@@ -41,6 +41,11 @@ ko.bindingHandlers.chart = {
   },
   update: function(element, valueAccessor) {
     //ko.bindingHandlers.chart.c(ko.unwrap(valueAccessor()))
+    ko.unwrap(valueAccessor()).forEach(function(obj) {
+      for (k in obj) {
+        if (k == "Average" || k == "WallTime" || k == "LastResult" || k == "TotalTime") obj[k + '_fmt'] = (obj[k] / 1000000000).toFixed(2) + " sec";
+      }
+    });
     ko.bindingHandlers.chart.b(ko.unwrap(valueAccessor()))
   }
 }
