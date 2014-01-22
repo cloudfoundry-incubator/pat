@@ -29,6 +29,8 @@ To setup this project, a number of requires need to be met for GO.
 
         # gocart
 
+5) Install [gcf] (https://github.com/cloudfoundry/cli)
+
 Develop
 ===================================
 To develop for this project, you will first need to go through the "Setting up PATs" section. This project will
@@ -55,29 +57,33 @@ change into the pat directory and run:
 
 1) Go through the "Setting up Go" section
 
-2) change into the top level of this project
+2) Make sure that you have targeted a cloud foundry environment from the gcf tool (# gcf login)
+
+Option 1
+
+3) change into the top level of this project
 
 	# cd $GOPATH/src/github.com/julz/pat
 
-3) execute the command line
+4) execute the command line
 
 	# go run pat/main.go
 
-OR install the binary (recommended)
+Option 2
 
-2) Change into the main directory
+3) Change into the main directory
 
 	# cd $GOPATH/src/github.com/julz/pat/pat
 
 	# go install
 
-3) Run PATs from the command line
+4) Run PATs from the command line
 
 	# pat
 
-4) Run PATs as an HTTP server (work in progress)
+5) Run PATs as an HTTP server (work in progress)
 
-	# pat -server
+	# go run pat/main.go -server [must be called in this fashion due to static file location]
 
 Example calls:
 
