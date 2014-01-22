@@ -97,7 +97,6 @@
                 <button data-bind="click: start, visible: canStart, enable: formHasNoErrors" id="startbtn" type="button" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
                 <button data-bind="click: stop, visible: canStop" id="stopbtn" type="button" style="display: none" class="btn btn-danger navbar-btn"><span class="glyphicon glyphicon-stop"></span> Stop Experiment</button>
                 <button data-bind="click: downloadCsv, enable: canDownloadCsv" id="csvbtn" type="button" disabled=true" class="btn btn-default navbar-btn"><span class="glyphicon glyphicon-floppy-save"></span> Download CSV</button>
-                <button data-bind="click: abc" id="test" type="button">isldfkj</button>
               </div>
             </div>
           </form>
@@ -106,8 +105,7 @@
 
       <!-- **************** footer ******************* -->
       <script>
-        var data = new pat.view( pat.experiment(800) );
-        ko.applyBindings(data);
+        ko.applyBindings(new pat.view( pat.experiment(800) ));
       </script>
 
     </div>
