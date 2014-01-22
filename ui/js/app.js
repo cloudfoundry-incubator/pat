@@ -41,6 +41,11 @@ ko.bindingHandlers.chart = {
   },
   update: function(element, valueAccessor) {
     //ko.bindingHandlers.chart.c(ko.unwrap(valueAccessor()))
+    ko.unwrap(valueAccessor()).forEach(function(obj) {
+      for (k in obj) {
+        obj[k + '_fmt'] = (obj[k] / 1000000000).toFixed(2) + " sec";
+      }
+    });
     ko.bindingHandlers.chart.b(ko.unwrap(valueAccessor()))
   }
 }
@@ -53,6 +58,7 @@ pat.view = function(experiment) {
   this.start = function() { experiment.run() }
   this.stop = function() { alert("Not implemented") }
   this.downloadCsv = function() { self.redirectTo(experiment.csvUrl()) }
+  this.abc = function() {alert("hihi");}
 
   this.canStart = ko.computed(function() { return experiment.state() !== "running" })
   this.canStop = ko.computed(function() { return experiment.state() === "running" })
