@@ -11,23 +11,23 @@ To setup this project, a number of requires need to be met for GO.
 
 2) Setup the GOPATH
 
-        # export GOPATH=~/go (or any other workspace repository for all your go code)
+        export GOPATH=~/go (or any other workspace repository for all your go code)
 
-        # export PATH=$GOPATH/bin:$PATH
+        export PATH=$GOPATH/bin:$PATH
 
 3) Install [gocart] (https://github.com/vito/gocart)
 
-        # go get github.com/vito/gocart
+        go get github.com/vito/gocart
 
 4) Clone the project to the correct location
 
-        # mkdir -p $GOPATH/src/github.com/julz
+        mkdir -p $GOPATH/src/github.com/julz
 
-        # cd $GOPATH/src/github.com/julz
+        cd $GOPATH/src/github.com/julz
 
-        # git clone "This project" and change into the new pat directory
+        git clone "This project" and change into the new pat directory
 
-        # gocart
+        gocart
 
 5) Install [gcf] (https://github.com/cloudfoundry/cli)
 
@@ -42,7 +42,7 @@ functionality and provide an example of how to use it.
 
 2) Install [ginkgo] (http://onsi.github.io/ginkgo/#getting_ginkgo)
 
-        # go install github.com/onsi/ginkgo/ginkgo
+        go install github.com/onsi/ginkgo/ginkgo
 
 3) Write and test your code following the ginkgo standards
 
@@ -63,36 +63,36 @@ Option 1
 
 3) change into the top level of this project
 
-	# cd $GOPATH/src/github.com/julz/pat
+	cd $GOPATH/src/github.com/julz/pat
 
 4) execute the command line
 
-	# go run pat/main.go
+	go run pat/main.go
 
 Option 2
 
 3) Change into the main directory
 
-	# cd $GOPATH/src/github.com/julz/pat/pat
+	cd $GOPATH/src/github.com/julz/pat/pat
 
-	# go install
+	go install
 
 4) Run PATs from the command line
 
-	# pat
+	pat
 
 5) Run PATs as an HTTP server (work in progress)
 
-	# go run pat/main.go -server [must be called in this fashion due to static file location]
+	go run pat/main.go -server # must be called in this fashion due to static file location
 
 Example calls:
 
-	# pat -h [will output all of the command line options if installed the recommended way]
+	pat -h  # will output all of the command line options if installed the recommended way
 
-	# pat -concurrency=5 -pushes=5 [This will start 5 concurrent threads all pushing 1 application]
+	pat -concurrency=5 -pushes=5 # This will start 5 concurrent threads all pushing 1 application
 
-	# pat -concurrency=5 -pushes=1 [This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application]
+	pat -concurrency=5 -pushes=1 # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
 
-	# pat -silent [if you don't want all the fancy output use the silent flag]
+	pat -silent # if you don't want all the fancy output use the silent flag
  
 
