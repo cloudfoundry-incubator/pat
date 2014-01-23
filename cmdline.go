@@ -28,6 +28,7 @@ func RunCommandLine(pushes int, concurrency int, silent bool, name string) error
 
 func display(target int, concurrency int, samples chan *experiment.Sample) {
 	for s := range samples {
+		fmt.Println("in display")
 		fmt.Print("\033[2J\033[;H")
 		fmt.Println("\x1b[32;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
 		fmt.Printf("Test underway.  Pushes: \x1b[36m%v\x1b[0m  Concurrency: \x1b[36m%v\x1b[0m\n", target, concurrency)
@@ -47,6 +48,7 @@ func display(target int, concurrency int, samples chan *experiment.Sample) {
 			fmt.Printf("Last error: %v\n", "")
 		}
 	}
+	fmt.Println("\n\n\n QUITED DISPLAY")
 }
 
 func bar(n int64, total int64, size int) (bar string) {

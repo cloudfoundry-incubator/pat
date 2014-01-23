@@ -1,6 +1,7 @@
 package benchmarker
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -58,6 +59,34 @@ func TimedWithWorker(out chan<- time.Duration, errOut chan<- error, worker Worke
 
 func Once(fn func()) <-chan func() {
 	return Repeat(1, fn)
+}
+
+func RepeatEveryUntil(s int, stop int, fn func(), quit <-chan bool) <-chan func() {
+	ch := make(chan func())
+	var tickerQuit *time.Ticker
+	fn()
+	ticker := time.NewTicker(time.Duration(s) * time.Second)
+	if ( stop > 0 )	{
+		tickerQuit = time.NewTicker(time.Duration(stop) * time.Second)
+	}
+	go func() {
+		defer close(ch)
+		for {
+			select {
+			case <-ticker.C:
+				fmt.Println(time.Stamp)
+				ch <- fn
+			case <-quit:
+				ticker.Stop()
+				return
+			case <-tickerQuit.C:
+				fmt.Printf("ended %v",time.Stamp)
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+	return ch
 }
 
 func Repeat(n int, fn func()) <-chan func() {

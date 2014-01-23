@@ -33,6 +33,7 @@ type RunningExperiment struct {
 	errors  chan error
 	workers chan int
 	samples chan *Sample
+	quit    chan bool
 }
 
 func Run(pushes int, concurrency int, tracker func(chan *Sample)) error {
@@ -40,18 +41,22 @@ func Run(pushes int, concurrency int, tracker func(chan *Sample)) error {
 	errors := make(chan error)
 	workers := make(chan int)
 	samples := make(chan *Sample)
-	go Track(samples, result, errors, workers)
+	quit := make(chan bool)
+	go Track(samples, result, errors, workers, quit, pushes)
 	go tracker(samples)
-	ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
+	//ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
+	Execute(RepeatEveryUntil(6, 20, func() {
+		ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
+	}, quit))
 	return nil
 }
 
-func Track(samples chan *Sample, results chan time.Duration, errors chan error, workers chan int) {
-	ex := &RunningExperiment{results, errors, workers, samples}
-	ex.run()
+func Track(samples chan *Sample, results chan time.Duration, errors chan error, workers chan int, quit chan bool, total int) {
+	ex := &RunningExperiment{results, errors, workers, samples, quit}
+	ex.run(total)
 }
 
-func (ex *RunningExperiment) run() {
+func (ex *RunningExperiment) run(total int) {
 	var n int64
 	var totalTime time.Duration
 	var avg time.Duration
@@ -67,8 +72,14 @@ func (ex *RunningExperiment) run() {
 		select {
 		case result := <-ex.results:
 			sampleType = ResultSample
-			n = n + 1
-			totalTime = totalTime + result
+			if n < int64(total) {
+				n = n + 1
+				totalTime = totalTime + result
+			} else {
+				n = 1
+				totalTime = result
+				worstResult = 0
+			}
 			avg = time.Duration(totalTime.Nanoseconds() / n)
 			lastResult = result
 			if result > worstResult {
