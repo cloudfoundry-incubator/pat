@@ -39,9 +39,6 @@ func ServeWithArgs(baseDir string, csvDir string) {
 	r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx.handleGetExperiment)).Name("experiment")
 	r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx.handlePush))
 
-	// BUG(jz) For easy web-browser testing, remove
-	r.HandleFunc("/POST/experiments/", handler(ctx.handlePush))
-
 	http.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui"))))
 	http.Handle("/csv/experiments/", http.StripPrefix("/csv/experiments/", http.FileServer(http.Dir(ctx.csvDir))))
 	http.Handle("/", r)
