@@ -18,11 +18,21 @@ d3.custom.barchart = function(el) {
     svg.append("text").attr("x",30).attr("y", 30).attr("dy", ".85em").text("Seconds");
     svg.append("text").attr("x",$('.barchart').width() - xOffset).attr("y", h - 20).attr("dy", ".85em").text("App Pushes");
 
+		bars = svg.selectAll("rect.bar").data(data)
+		bars.enter().append("rect")
+			.attr("width", barWidth)
+			.attr("class", "bar")
+		bars.exit().remove()
+		bars
+			.attr("x", function(d) { return x(d.Total) + xOffset - (barWidth/2) })
+			.attr("y", function(d) { return y(d.LastResult / 1000000000) + yOffset })
+			.attr("height", function(d) { return h - y(d.LastResult / 1000000000) - (yOffset * 2) })
 
-    data.forEach(function(d){
-      svg.append("rect").attr("x",x(d.Total) + xOffset - (barWidth/2)).attr("y",  y(d.LastResult / 1000000000) + yOffset ).attr("width", barWidth).attr("height", h - y(d.LastResult / 1000000000) - (yOffset * 2)).attr("class","bar");
-      svg.append("text").attr("x",x(d.Total) + xOffset ).attr("y", y(d.LastResult / 1000000000) + yOffset - 10).attr("dy", ".75em").text((d.LastResult / 1000000000).toFixed(2) + " sec");
-    });
+//    data.forEach(function(d){
+//      svg.append("rect").attr("x",x(d.Total) + xOffset - (barWidth/2)).attr("y",  y(d.LastResult / 1000000000) + yOffset ).attr("width", barWidth)
+//			.attr("height", h - y(d.LastResult / 1000000000) - (yOffset * 2)).attr("class","bar");
+//      svg.append("text").attr("x",x(d.Total) + xOffset ).attr("y", y(d.LastResult / 1000000000) + yOffset - 10).attr("dy", ".75em").text((d.LastResult / 1000000000).toFixed(2) + " sec");
+//    });
   }
 
   return barchart;
