@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"github.com/julz/pat"
-	"github.com/julz/pat/server"
+	"github.com/julz/pat/interval"
 	"github.com/julz/pat/parser"
+	"github.com/julz/pat/server"
 )
 
 func main() {
@@ -35,6 +36,8 @@ func main() {
 		server.Serve()
 		server.Bind()
 	} else {
-		pat.RunCommandLine(*pushes, *concurrency, *silent, *output)
+		_ = interval.Repeat(0, func() {
+			pat.RunCommandLine(*pushes, *concurrency, *silent, *output)
+		})
 	}
 }
