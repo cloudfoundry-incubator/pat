@@ -29,10 +29,11 @@ type Sample struct {
 }
 
 type RunningExperiment struct {
-	results chan time.Duration
-	errors  chan error
-	workers chan int
-	samples chan *Sample
+	results <-chan time.Duration
+	errors  <-chan error
+	workers <-chan int
+	samples chan<- *Sample
+	quit    <-chan bool
 }
 
 func Run(pushes int, concurrency int, tracker func(chan *Sample)) error {
@@ -40,14 +41,16 @@ func Run(pushes int, concurrency int, tracker func(chan *Sample)) error {
 	errors := make(chan error)
 	workers := make(chan int)
 	samples := make(chan *Sample)
-	go Track(samples, result, errors, workers)
+	quit := make(chan bool)
+	go Track(samples, result, errors, workers, quit)
 	go tracker(samples)
 	ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
+	quit <- true
 	return nil
 }
 
-func Track(samples chan *Sample, results chan time.Duration, errors chan error, workers chan int) {
-	ex := &RunningExperiment{results, errors, workers, samples}
+func Track(samplesOut chan<- *Sample, results <-chan time.Duration, errors <-chan error, workers <-chan int, quit <-chan bool) {
+	ex := &RunningExperiment{results, errors, workers, samplesOut, quit}
 	ex.run()
 }
 
@@ -79,6 +82,9 @@ func (ex *RunningExperiment) run() {
 			totalErrors = totalErrors + 1
 		case w := <-ex.workers:
 			workers = workers + w
+		case <-ex.quit:
+			close(ex.samples)
+			return // FIXME(jz) maybe we need to train the errors and results channels here?
 		}
 
 		ex.samples <- &Sample{avg, totalTime, n, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}

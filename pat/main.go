@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"github.com/julz/pat"
-	"github.com/julz/pat/server"
 	"github.com/julz/pat/parser"
+	"github.com/julz/pat/server"
 )
 
 func main() {
