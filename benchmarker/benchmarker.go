@@ -1,7 +1,6 @@
 package benchmarker
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -64,9 +63,8 @@ func Once(fn func()) <-chan func() {
 func RepeatEveryUntil(s int, stop int, fn func(), quit <-chan bool) <-chan func() {
 	ch := make(chan func())
 	var tickerQuit *time.Ticker
-	fn()
 	ticker := time.NewTicker(time.Duration(s) * time.Second)
-	if ( stop > 0 )	{
+	if stop > 0 {
 		tickerQuit = time.NewTicker(time.Duration(stop) * time.Second)
 	}
 	go func() {
@@ -74,13 +72,11 @@ func RepeatEveryUntil(s int, stop int, fn func(), quit <-chan bool) <-chan func(
 		for {
 			select {
 			case <-ticker.C:
-				fmt.Println(time.Stamp)
 				ch <- fn
 			case <-quit:
 				ticker.Stop()
 				return
 			case <-tickerQuit.C:
-				fmt.Printf("ended %v",time.Stamp)
 				ticker.Stop()
 				return
 			}

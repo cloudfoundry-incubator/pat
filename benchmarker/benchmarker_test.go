@@ -87,6 +87,38 @@ var _ = Describe("Benchmarker", func() {
 		})
 	})
 
+	Describe("RepeatEveryUntil", func() {
+		It("repeats a function at n seconds interval", func() {
+			start := time.Now()
+			var end time.Time
+			n := 2
+			Execute(RepeatEveryUntil(n, 3, func() { end = time.Now() }, nil))
+			elapsed := end.Sub(start)
+			elapsed = (elapsed / time.Second)
+			Ω(int(elapsed)).Should(Equal(n))
+		})
+
+		It("repeats a function at n seconds interval and stops at s second", func() {
+			var total int = 0
+			n := 2
+			s := 11
+			Execute(RepeatEveryUntil(n, s, func() { total += 1 }, nil))
+			Ω(total).Should(Equal(s / n))
+		})
+
+		It("repeats a function at n seconds interval and stops when channel quit is set to true", func() {
+			quit := make(chan bool)
+			var total int = 0
+			n := 2
+			s := 11
+			stop := 5
+			time.AfterFunc(time.Duration(stop)*time.Second, func() { quit <- true })
+			Execute(RepeatEveryUntil(n, s, func() { total += 1 }, quit))
+			Ω(total).Should(Equal(stop / n))
+		})
+
+	})
+
 	Describe("Repeat Concurrently", func() {
 		Context("with 1 worker", func() {
 			It("Runs in series", func() {
