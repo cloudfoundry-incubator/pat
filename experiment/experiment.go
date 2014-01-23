@@ -44,8 +44,7 @@ func Run(pushes int, concurrency int, tracker func(chan *Sample)) error {
 	quit := make(chan bool)
 	go Track(samples, result, errors, workers, quit, pushes)
 	go tracker(samples)
-	//ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
-	Execute(RepeatEveryUntil(6, 20, func() {
+	Execute(RepeatEveryUntil(0, 0, func() {
 		ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
 	}, quit))
 	return nil

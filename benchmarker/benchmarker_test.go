@@ -117,6 +117,19 @@ var _ = Describe("Benchmarker", func() {
 			Ω(total).Should(Equal(stop / n))
 		})
 
+		It("runs a function once if n = 0 or s = 0", func() {
+			var total int = 0
+			n := 0
+			s := 1
+			Execute(RepeatEveryUntil(n, s, func() { total += 1 }, nil))
+			Ω(total).Should(Equal(1))
+
+			total = 0
+			n = 3
+			s = 0
+			Execute(RepeatEveryUntil(n, s, func() { total += 1 }, nil))
+			Ω(total).Should(Equal(1))
+		})
 	})
 
 	Describe("Repeat Concurrently", func() {
