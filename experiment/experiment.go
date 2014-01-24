@@ -72,7 +72,7 @@ func (ex *RunningExperiment) run() {
 		select {
 		case result := <-ex.results:
 			sampleType = ResultSample
-		n = n + 1
+			n = n + 1
 			totalTime = totalTime + result
 			avg = time.Duration(totalTime.Nanoseconds() / n)
 			lastResult = result

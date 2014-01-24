@@ -1,12 +1,12 @@
 package parser_test
 
 import (
-	"os"
-	"io/ioutil"
-	"launchpad.net/goyaml"
 	. "github.com/julz/pat/parser"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io/ioutil"
+	"launchpad.net/goyaml"
+	"os"
 )
 
 const fName = "TestConfigCmdFile.yml"
