@@ -16,7 +16,7 @@ func RunCommandLine(pushes int, concurrency int, silent bool, name string, inter
   handlers := make([]func(chan *experiment.Sample), 0)
 
   if !silent {
-    handlers = append(handlers, func(s chan *experiment.Sample) { display(pushes, concurrency, s) })
+    handlers = append(handlers, func(s chan *experiment.Sample) { display(int64(pushes), concurrency, interval, stop, s) })
   }
 
   if len(name) > 0 {
@@ -26,11 +26,18 @@ func RunCommandLine(pushes int, concurrency int, silent bool, name string, inter
   return experiment.Run(pushes, concurrency, interval, stop, output.Multiplexer(handlers).Multiplex)
 }
 
-func display(target int, concurrency int, samples chan *experiment.Sample) {
+func display(target int64, concurrency int, interval int, stop int, samples chan *experiment.Sample) {
+  //temp workaround:(simon): with a repeating workload,  we don't know the total target of pushes until the interval stops, so we set target = current s.Total
   for s := range samples {
+    if s.Total > target {
+      target = s.Total
+    }
     fmt.Print("\033[2J\033[;H")
     fmt.Println("\x1b[32;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
     fmt.Printf("Test underway.  Pushes: \x1b[36m%v\x1b[0m  Concurrency: \x1b[36m%v\x1b[0m\n", target, concurrency)
+    if interval > 0 && stop > 0 {
+      fmt.Printf("\x1b[31mCurrent workload repeats at %d sec. interval, stops after %d sec.\x1b[0m\n", interval, stop)
+    }
     fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n")
     fmt.Printf("\x1b[36mTotal pushes\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(s.Total, int64(target), 25), s.Total, int64(target))
     fmt.Println()
