@@ -37,10 +37,12 @@ var _ = Describe("Experiment", func() {
 
 			samples := make(chan *Sample)
 			go Track(samples, results, errors, workers, quit, workload_total)
-			go func() { results <- 1 * time.Second }()
-			go func() { results <- 2 * time.Second }()
-			go func() { results <- 3 * time.Second }()
-			go func() { results <- 4 * time.Second }()
+			go func() {
+				results <- 1 * time.Second
+				results <- 2 * time.Second
+				results <- 3 * time.Second
+				results <- 4 * time.Second
+			}()
 
 			Ω((<-samples).Total).Should(Equal(int64(1)))
 			Ω((<-samples).Total).Should(Equal(int64(2)))
