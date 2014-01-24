@@ -84,7 +84,7 @@ func (ex *RunningExperiment) run() {
 			workers = workers + w
 		case <-ex.quit:
 			close(ex.samples)
-			return // FIXME(jz) maybe we need to train the errors and results channels here?
+			return // FIXME(jz) maybe we need to drain the errors and results channels here?
 		}
 
 		ex.samples <- &Sample{avg, totalTime, n, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}

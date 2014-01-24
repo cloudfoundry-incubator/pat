@@ -35,6 +35,11 @@ func Serve() {
 func ServeWithArgs(baseDir string, csvDir string) {
 	r := mux.NewRouter()
 	ctx := &context{r, baseDir, csvDir, make(map[string][]*experiment.Sample)}
+	err := ctx.reload()
+	if err != nil {
+		fmt.Println("Couldn't load previous experiments, ", err)
+	}
+
 	r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx.handleListExperiments))
 	r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx.handleGetExperiment)).Name("experiment")
 	r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx.handlePush))
@@ -56,6 +61,15 @@ func Bind() {
 
 type listResponse struct {
 	Items interface{}
+}
+
+func (ctx *context) reload() (err error) {
+	// this is super-simple right now, we just load all the CSVs back in to memory
+	// will move to using REDIS / SQLite at some point
+	// also I'm aware server.go isn't well covered by tests and needs back-filling now that we
+	// lost the previous system tests
+	ctx.running, err = output.ReloadCSVs(ctx.csvDir)
+	return err
 }
 
 func (ctx *context) handleList(w http.ResponseWriter, r *http.Request) (interface{}, error) {
