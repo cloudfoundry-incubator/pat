@@ -11,9 +11,10 @@ var _ = Describe("Experiment", func() {
 		results := make(chan time.Duration)
 		errors := make(chan error)
 		workers := make(chan int)
+		quit := make(chan bool)
 
 		samples := make(chan *Sample)
-		go Track(samples, results, errors, workers)
+		go Track(samples, results, errors, workers, quit)
 		go func() { results <- 2 * time.Second }()
 		go func() { results <- 4 * time.Second }()
 		go func() { results <- 6 * time.Second }()

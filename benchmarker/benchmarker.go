@@ -60,6 +60,36 @@ func Once(fn func()) <-chan func() {
 	return Repeat(1, fn)
 }
 
+func RepeatEveryUntil(s int, stop int, fn func(), quit <-chan bool) <-chan func() {
+	if s == 0 || stop == 0 {
+		return Once(fn)
+	} else {
+		ch := make(chan func())
+		var tickerQuit *time.Ticker
+		ticker := time.NewTicker(time.Duration(s) * time.Second)
+		if stop > 0 {
+			tickerQuit = time.NewTicker(time.Duration(stop) * time.Second)
+		}
+		go func() {
+			ch <- fn
+			defer close(ch)
+			for {
+				select {
+				case <-ticker.C:
+					ch <- fn
+				case <-quit:
+					ticker.Stop()
+					return
+				case <-tickerQuit.C:
+					ticker.Stop()
+					return
+				}
+			}
+		}()
+		return ch
+	}
+}
+
 func Repeat(n int, fn func()) <-chan func() {
 	ch := make(chan func())
 	go func() {

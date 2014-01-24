@@ -36,7 +36,7 @@ type RunningExperiment struct {
 	quit    <-chan bool
 }
 
-func Run(pushes int, concurrency int, tracker func(chan *Sample)) error {
+func Run(pushes int, concurrency int, interval int, stop int, tracker func(chan *Sample)) error {
 	result := make(chan time.Duration)
 	errors := make(chan error)
 	workers := make(chan int)
@@ -44,7 +44,9 @@ func Run(pushes int, concurrency int, tracker func(chan *Sample)) error {
 	quit := make(chan bool)
 	go Track(samples, result, errors, workers, quit)
 	go tracker(samples)
-	ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
+	Execute(RepeatEveryUntil(interval, stop, func() {
+		ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
+	}, quit))
 	quit <- true
 	return nil
 }

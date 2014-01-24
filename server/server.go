@@ -119,7 +119,8 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		ctx.buffer(name.String(), samples)
 	})
 
-	go experiment.Run(pushes, concurrency, output.Multiplexer(handlers).Multiplex)
+	//ToDo (simon): interval and stop is 0, repeating at interval is not yet exposed in Web UI
+	go experiment.Run(pushes, concurrency, 0, 0, output.Multiplexer(handlers).Multiplex)
 
 	return ctx.router.Get("experiment").URL("name", name.String())
 }

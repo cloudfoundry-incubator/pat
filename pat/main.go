@@ -15,6 +15,8 @@ func main() {
 	silent := flag.Bool("silent", false, "true to run the commands and print output the terminal")
 	output := flag.String("output", "", "if specified, writes benchmark results to a CSV file")
 	config := flag.String("config", "", "name of the command line configuration file you wish to use (including path to file)")
+	interval := flag.Int("interval", 0, "repeat a workload at n second interval, to be used with -stop")
+	stop := flag.Int("stop", 0, "stop a repeating interval after n second, to be used with -interval")
 	flag.Parse()
 
 	if *config != "" {
@@ -27,6 +29,9 @@ func main() {
 		*concurrency = cfg.Cli_commands.Concurrency
 		*silent = cfg.Cli_commands.Silent
 		*output = cfg.Cli_commands.Output
+		*interval = cfg.Cli_commands.Interval
+		*stop = cfg.Cli_commands.Stop
+
 	}
 
 	flag.Parse() //(dan) Regrab the commandline flags. This can be used to override the configurations set by the config file. May be useful later on.
@@ -35,6 +40,6 @@ func main() {
 		server.Serve()
 		server.Bind()
 	} else {
-		pat.RunCommandLine(*pushes, *concurrency, *silent, *output)
+		pat.RunCommandLine(*pushes, *concurrency, *silent, *output, *interval, *stop)
 	}
 }

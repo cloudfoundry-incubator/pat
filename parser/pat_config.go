@@ -7,11 +7,13 @@ import (
 
 type PATs struct {
 	Cli_commands struct {
-		Server		bool
-		Pushes		int
-		Concurrency	int
-		Silent		bool
-		Output		string
+		Server      bool
+		Pushes      int
+		Concurrency int
+		Silent      bool
+		Output      string
+		Interval    int
+		Stop        int
 	}
 }
 
