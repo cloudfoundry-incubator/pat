@@ -3,14 +3,17 @@ d3.custom.barchart = function(el) {
 
   function barchart(data) {
     if (data.length === 0) return;
-
+    var xRange = 10
+    if (data.length > xRange) {
+      xRange = data.length
+      $(".barchart").html("");
+    }
     var xOffset = 50, yOffset = 50, barWidth = 30;
-    var svg = d3.select(".barchart");
     var h = $('.barchart').height();
     //Bug(simon) Range is hard-coded for now
-    var x = d3.scale.linear().domain([0, 10]).range([0, $('.barchart').width() - (xOffset*2)], 1);
-    var y = d3.scale.linear().domain([5, 0]).range([0, h - (yOffset*2)]);
-
+    var svg = d3.select(".barchart");
+    var x = d3.scale.linear().domain([0, xRange]).xRange([0, $('.barchart').width() - (xOffset*2)], 1);
+    var y = d3.scale.linear().domain([5, 0]).xRange([0, h - (yOffset*2)]);
     var xAxis = d3.svg.axis().scale(x).orient("bottom");
     var yAxis = d3.svg.axis().scale(y).orient("left");
     svg.append("g").attr("class", "x axis").attr("transform", "translate(" + xOffset + "," + (h-yOffset) + ")").call(xAxis);
