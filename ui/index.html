@@ -1,139 +1,140 @@
 <!DOCTYPE html>
 
 <html>
-  <head>
-    <link rel="stylesheet" href="css/bootstrap.min.css"type="text/css" media="screen" />
-    <link rel="stylesheet" href="css/bootstrap-theme.min.css"type="text/css" media="screen" />
-    <link rel="stylesheet" href="css/app.css"type="text/css" media="screen" />
-    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
-    <script src="http://d3js.org/d3.v3.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
-    <script src="/ui/js/chart.js"></script>
-    <script src="/ui/js/bar.js"></script>
-    <script type="text/javascript" src="js/app.js"></script>
-    <script type="text/javascript" src="js/bootstrap.min.js"></script>
-    <title>Cloud Foundry Performance Suite</title>
+<head>
+<link rel="stylesheet" href="css/bootstrap.min.css"type="text/css" media="screen" />
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"type="text/css" media="screen" />
+<link rel="stylesheet" href="css/app.css"type="text/css" media="screen" />
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
+<script src="/ui/js/chart.js"></script>
+<script src="/ui/js/bar.js"></script>
+<script type="text/javascript" src="js/app.js?"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
+<title>Cloud Foundry Performance Suite</title>
 
-    <style>
-      body { padding: 8px; }
-      #graph { min-height: 450px; height: 450px }
-      .state-Finished { color: green }
-      .state-Running { color: blue }
-      .state-Failed { color: red }
-    </style>
-  </head>
+<style>
+body { padding: 8px; }
+#graph { min-height: 450px; height: 450px }
+.state-Finished { color: green }
+.state-Running { color: blue }
+.state-Failed { color: red }
+tr.active td { background: #fc0 }
+</style>
+</head>
 
-  <body>
+<body>
 
-    <div class="container">
-      <div class="header row">
-        <h1>Performance Acceptance Tests <small>v0.1</small></h1>
+<div class="container">
+  <div class="header row">
+    <h1>Performance Acceptance Tests <small>v0.1</small></h1>
+  </div>
+
+  <div class="row">
+  </div>
+
+  <div class="row panel panel-default">
+    <div class="panel-heading">
+      Experiment Results
+    </div>
+    <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data">
+      <p data-bind="visible: noExperimentRunning" class="text-muted text-center" style="position: relative; top: 20%">(No Experiment Running)</p>
+    </div>
+    <div style="border-top: 2px solid #ddd">
+      <table class="table table-striped" style="table-layout: fixed; margin-bottom: 0px">
+        <thead>
+          <tr>
+            <th>Wall Time</th>
+            <th>Result</th>
+            <th>Running Average</th>
+            <th>Running Total</th>
+            <th>Workers</th>
+          </tr>
+        </thead>
+      </table>
+      <div style="max-height: 210px; min-height: 210px; overflow-y: scroll;">
+        <table class="table table-striped" style="table-layout: fixed">
+          <tbody id="data" data-bind="foreach: data">
+          <tr>
+            <td data-bind="text: WallTime_fmt"></td>
+            <td data-bind="text: LastResult_fmt"></td>
+            <td data-bind="text: Average_fmt"></td>
+            <td data-bind="text: TotalTime_fmt"></td>
+            <td><span data-bind="text: TotalWorkers"></span> running</td>
+          </tr>
+          </tbody>
+        </table>
       </div>
+    </div>
+  </div>
 
-      <div class="row">
-      </div>
-
-      <div class="row panel panel-default">
-        <div class="panel-heading">
-          Experiment Results
-        </div>
-        <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data">
-          <p data-bind="visible: noExperimentRunning" class="text-muted text-center" style="position: relative; top: 20%">(No Experiment Running)</p>
-        </div>
-        <div style="border-top: 2px solid #ddd">
-          <table class="table table-striped" style="table-layout: fixed; margin-bottom: 0px">
-            <thead>
-              <tr>
-                <th>Wall Time</th>
-                <th>Result</th>
-                <th>Running Average</th>
-                <th>Running Total</th>
-                <th>Workers</th>
-              </tr>
-            </thead>
-          </table>
-          <div style="max-height: 210px; min-height: 210px; overflow-y: scroll;">
-            <table class="table table-striped" style="table-layout: fixed">
-              <tbody id="data" data-bind="foreach: data">
-                <tr>
-                  <td data-bind="text: WallTime_fmt"></td>
-                  <td data-bind="text: LastResult_fmt"></td>
-                  <td data-bind="text: Average_fmt"></td>
-                  <td data-bind="text: TotalTime_fmt"></td>
-                  <td><span data-bind="text: TotalWorkers"></span> running</td>
-                </tr>
-              </tbody>
-            </table>
+  <div class="row panel panel-primary">
+    <div class="panel-heading">
+      <span class="glyphicon glyphicon-cog"></span> Experiment Configuration
+    </div>
+    <div class="panel-body">
+      <form class="form-horizontal" role="form">
+        <div class="form-group">
+          <label for="inputExperiment" class="col-sm-2 control-label">Experiment</label>
+          <div class="col-sm-6">
+            <select class="form-control">
+              <option>Simple Push</option>
+            </select>
           </div>
         </div>
-      </div>
-
-      <div class="row panel panel-primary">
-        <div class="panel-heading">
-          <span class="glyphicon glyphicon-cog"></span> Experiment Configuration
+        <div class="form-group" data-bind="css: { 'has-error': numPushesHasError }">
+          <label for="inputPushes" class="col-sm-2 control-label">Pushes</label>
+          <div class="col-sm-6">
+            <input type="number" class="form-control" id="inputPushes" placeholder="1" data-bind="value: numPushes">
+          </div>
         </div>
-        <div class="panel-body">
-          <form class="form-horizontal" role="form">
-            <div class="form-group">
-              <label for="inputExperiment" class="col-sm-2 control-label">Experiment</label>
-              <div class="col-sm-6">
-                <select class="form-control">
-                  <option>Simple Push</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group" data-bind="css: { 'has-error': numPushesHasError }">
-              <label for="inputPushes" class="col-sm-2 control-label">Pushes</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputPushes" placeholder="1" data-bind="value: numPushes">
-              </div>
-            </div>
-            <div class="form-group" data-bind="css: { 'has-error': numConcurrentHasError }">
-              <label for="inputConcurrency" class="col-sm-2 control-label">Concurrency</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputConcurrency" placeholder="1" data-bind="value: numConcurrent">
-              </div>
-            </div>
-            <div class="form-group">
-              <div class="col-sm-offset-2 col-sm-10">
-                <button data-bind="click: start, enable: formHasNoErrors" id="startbtn" type="button" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
-                <button data-bind="click: stop, visible: canStop" id="stopbtn" type="button" style="display: none" class="btn btn-danger navbar-btn"><span class="glyphicon glyphicon-stop"></span> Stop Experiment</button>
-                <button data-bind="click: downloadCsv, enable: canDownloadCsv" id="csvbtn" type="button" disabled=true" class="btn btn-default navbar-btn"><span class="glyphicon glyphicon-floppy-save"></span> Download CSV</button>
-              </div>
-            </div>
-          </form>
+        <div class="form-group" data-bind="css: { 'has-error': numConcurrentHasError }">
+          <label for="inputConcurrency" class="col-sm-2 control-label">Concurrency</label>
+          <div class="col-sm-6">
+            <input type="number" class="form-control" id="inputConcurrency" placeholder="1" data-bind="value: numConcurrent">
+          </div>
         </div>
-      </div>
-
-      <div class="row panel panel-default">
-        <div class="panel-heading">
-          Previous Experiments
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            <button data-bind="click: start, enable: formHasNoErrors" id="startbtn" type="button" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
+            <button data-bind="click: stop, visible: canStop" id="stopbtn" type="button" style="display: none" class="btn btn-danger navbar-btn"><span class="glyphicon glyphicon-stop"></span> Stop Experiment</button>
+            <button data-bind="click: downloadCsv, enable: canDownloadCsv" id="csvbtn" type="button" disabled=true" class="btn btn-default navbar-btn"><span class="glyphicon glyphicon-floppy-save"></span> Download CSV</button>
+          </div>
         </div>
-        <div class="panel-body">
-          <table class="table table-striped">
-            <thead>
-              <th>Name</th>
-              <th>State</th>
-              <th>Actions</th>
-            </thead>
-            <tbody data-bind="foreach: previousExperiments">
-              <tr>
-                <td data-bind="text: Name"></td>
-                <td data-bind="text: State, css: 'state-'+State "></td>
-                <td>
-                  <a data-bind="attr: { href: '#' + Location }"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;&nbsp;Show</a> &nbsp;
-                  <a data-bind="attr: { href: CsvLocation }"><span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp;Download CSV</a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- **************** footer ******************* -->
-      <script>
-        ko.applyBindings(new pat.view( pat.experimentList(), pat.experiment(800) ));
-      </script>
+      </form>
     </div>
-  </body>
+  </div>
+
+  <div class="row panel panel-default">
+    <div class="panel-heading">
+      Previous Experiments
+    </div>
+    <div class="panel-body">
+      <table class="table table-striped">
+        <thead>
+          <th>Name</th>
+          <th>State</th>
+          <th>Actions</th>
+        </thead>
+        <tbody data-bind="foreach: previousExperiments">
+        <tr data-bind="css: { warning: active }">
+          <td data-bind="text: Name"></td>
+          <td data-bind="text: State, css: 'state-'+State "></td>
+          <td>
+            <a data-bind="attr: { href: '#' + Location }"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;&nbsp;Show</a> &nbsp;
+            <a data-bind="attr: { href: CsvLocation }"><span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp;Download CSV</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- **************** footer ******************* -->
+  <script>
+ko.applyBindings(new pat.view( pat.experimentList(), pat.experiment(800) ));
+  </script>
+</div>
+</body>
 </html>
