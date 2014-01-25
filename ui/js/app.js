@@ -10,8 +10,7 @@ pat.experiment = function(refreshRate) {
   exports.data = ko.observableArray()
   exports.config = { pushes: ko.observable(1), concurrency: ko.observable(1) }
 
-  timer = null
-
+  var timer = null
 
   exports.refresh = function() {
     $.get(exports.url(), function(data) {
@@ -56,8 +55,8 @@ pat.experiment = function(refreshRate) {
 pat.experimentList = function() {
   var exports = {}
 
-  self = this
-  timer = null
+  var self = this
+  var timer = null
   self.active = ko.observable()
 
   exports.experiments = ko.observableArray()
@@ -140,5 +139,4 @@ pat.view = function(experimentList, experiment) {
 
   $(document).ready(function() { self.onHashChange(window.location.hash) })
   $(window).on('hashchange', function() { self.onHashChange(window.location.hash) })
-
 }
