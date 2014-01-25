@@ -59,15 +59,14 @@ pat.experimentList = function() {
   var timer = null
   self.active = ko.observable()
 
-  exports.experiments = ko.observableArray()
+  exports.experiments = ko.observable()
   exports.refresh = function() {
     $.get("/experiments/", function(data) {
       // fixme(jz) be better to do an append here, when server supports it
-      exports.experiments.removeAll()
       data.Items.forEach(function(d) {
         d.active = ko.computed(function() { return self.active() == d.Location })
-        exports.experiments.unshift(d)
       })
+      exports.experiments(data.Items.reverse())
       timer = setTimeout(exports.refresh, 1000 * 10)
     })
   }

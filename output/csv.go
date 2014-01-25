@@ -88,16 +88,17 @@ func (self *CsvSampleFile) Read() (samples []*experiment.Sample, err error) {
 	return
 }
 
-func ReloadCSVs(baseDir string) (samples map[string][]*experiment.Sample, err error) {
+func ReloadCSVs(baseDir string) (samples map[string][]*experiment.Sample, order []string, err error) {
 	files, err := ioutil.ReadDir(baseDir)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	samples = make(map[string][]*experiment.Sample)
 	for _, f := range files {
 		name := strings.Split(f.Name(), ".")[0]
 		samples[name], err = NewCsvWriter(path.Join(baseDir, f.Name())).Read()
+		order = append(order, name)
 	}
 
 	return

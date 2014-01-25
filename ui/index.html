@@ -39,7 +39,7 @@ tr.active td { background: #fc0 }
       Experiment Results
     </div>
     <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data">
-      <p data-bind="visible: noExperimentRunning" class="text-muted text-center" style="position: relative; top: 20%">(No Experiment Running)</p>
+      <p data-bind="visible: noExperimentRunning" class="noexperimentrunning text-muted text-center" style="position: relative; top: 20%">(No Experiment Running)</p>
     </div>
     <div style="border-top: 2px solid #ddd">
       <table class="table table-striped" style="table-layout: fixed; margin-bottom: 0px">
@@ -117,7 +117,7 @@ tr.active td { background: #fc0 }
           <th>State</th>
           <th>Actions</th>
         </thead>
-        <tbody data-bind="foreach: previousExperiments">
+        <tbody id="previousExperiments" data-bind="foreach: previousExperiments">
         <tr data-bind="css: { warning: active }">
           <td data-bind="text: Name"></td>
           <td data-bind="text: State, css: 'state-'+State "></td>
@@ -133,7 +133,7 @@ tr.active td { background: #fc0 }
 
   <!-- **************** footer ******************* -->
   <script>
-ko.applyBindings(new pat.view( pat.experimentList(), pat.experiment(800) ));
+ko.applyBindings(new pat.view( new pat.experimentList(), pat.experiment(800) ));
   </script>
 </div>
 </body>
