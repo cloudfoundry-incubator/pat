@@ -3,17 +3,22 @@ d3.custom.barchart = function(el) {
 
   function barchart(data) {
     if (data.length === 0) return;
-    var xRange = 10
+    const second = 1000000000;
+    var xRange = 10;
+    var yRange = 0;
+    data.forEach(function(d) {
+      if (d.LastResult > yRange) yRange = d.LastResult;
+    });
+    yRange = yRange / second;
     if (data.length > xRange) {
       xRange = data.length
-      $(".barchart").html("");
     }
+    $(".barchart").html("");
     var xOffset = 50, yOffset = 50, barWidth = 30;
     var h = $('.barchart').height();
-    //Bug(simon) Range is hard-coded for now
     var svg = d3.select(".barchart");
-    var x = d3.scale.linear().domain([0, xRange]).xRange([0, $('.barchart').width() - (xOffset*2)], 1);
-    var y = d3.scale.linear().domain([5, 0]).xRange([0, h - (yOffset*2)]);
+    var x = d3.scale.linear().domain([0, xRange]).range([0, $('.barchart').width() - (xOffset*2)], 1);
+    var y = d3.scale.linear().domain([yRange, 0]).range([0, h - (yOffset*2)]);
     var xAxis = d3.svg.axis().scale(x).orient("bottom");
     var yAxis = d3.svg.axis().scale(y).orient("left");
     svg.append("g").attr("class", "x axis").attr("transform", "translate(" + xOffset + "," + (h-yOffset) + ")").call(xAxis);
@@ -28,8 +33,8 @@ d3.custom.barchart = function(el) {
 		bars.exit().remove()
 		bars
 			.attr("x", function(d) { return x(d.Total) + xOffset - (barWidth/2) })
-			.attr("y", function(d) { return y(d.LastResult / 1000000000) + yOffset })
-			.attr("height", function(d) { return h - y(d.LastResult / 1000000000) - (yOffset * 2) })
+			.attr("y", function(d) { return y(d.LastResult / second) + yOffset })
+			.attr("height", function(d) { return h - y(d.LastResult / second) - (yOffset * 2) })
 
 //    data.forEach(function(d){
 //      svg.append("rect").attr("x",x(d.Total) + xOffset - (barWidth/2)).attr("y",  y(d.LastResult / 1000000000) + yOffset ).attr("width", barWidth)
