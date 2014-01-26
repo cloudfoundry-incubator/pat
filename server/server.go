@@ -26,6 +26,7 @@ type context struct {
 	baseDir string
 	csvDir  string
 	running map[string][]*experiment.Sample
+	order   []string
 }
 
 func Serve() {
@@ -34,7 +35,7 @@ func Serve() {
 
 func ServeWithArgs(baseDir string, csvDir string) {
 	r := mux.NewRouter()
-	ctx := &context{r, baseDir, csvDir, make(map[string][]*experiment.Sample)}
+	ctx := &context{r, baseDir, csvDir, make(map[string][]*experiment.Sample), make([]string, 0)}
 	err := ctx.reload()
 	if err != nil {
 		fmt.Println("Couldn't load previous experiments, ", err)
@@ -68,7 +69,7 @@ func (ctx *context) reload() (err error) {
 	// will move to using REDIS / SQLite at some point
 	// also I'm aware server.go isn't well covered by tests and needs back-filling now that we
 	// lost the previous system tests
-	ctx.running, err = output.ReloadCSVs(ctx.csvDir)
+	ctx.running, ctx.order, err = output.ReloadCSVs(ctx.csvDir)
 	return err
 }
 
@@ -86,7 +87,7 @@ func (ctx *context) handleList(w http.ResponseWriter, r *http.Request) (interfac
 
 func (ctx *context) handleListExperiments(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	running := make([]map[string]string, 0, len(ctx.running))
-	for k, _ := range ctx.running {
+	for _, k := range ctx.order {
 		url, _ := ctx.router.Get("experiment").URL("name", k)
 		csvUrl := fmt.Sprintf("/csv/%v.csv", url.String())
 		json := make(map[string]string)
@@ -132,6 +133,7 @@ func (ctx *context) handleGetExperiment(w http.ResponseWriter, r *http.Request) 
 }
 
 func (ctx *context) buffer(name string, samples chan *experiment.Sample) {
+	ctx.order = append(ctx.order, name)
 	for s := range samples {
 		// FIXME(jz) - need to clear this at some point, memory leak..
 		ctx.running[name] = append(ctx.running[name], s)
