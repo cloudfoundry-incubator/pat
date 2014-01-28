@@ -77,9 +77,10 @@ body { padding: 8px; }
         <div class="form-group">
           <label for="inputExperiment" class="col-sm-2 control-label">Experiment</label>
           <div class="col-sm-6">
-            <select class="form-control">
-              <option>Simple Push</option>
-            </select>
+            <select id="cmdSelect" class="form-control">
+              <option value="Simple Push">Simple Push</option>
+      	      <option value="push,push">Multiple Pushes</option>
+      	    </select>
           </div>
         </div>
         <div class="form-group" data-bind="css: { 'has-error': numPushesHasError }">

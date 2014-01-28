@@ -31,11 +31,19 @@ pat.experiment = function(refreshRate) {
   exports.run = function() {
     exports.state("running")
     exports.data([])
-    $.post( "/experiments/", { "pushes": exports.config.pushes(), "concurrency": exports.config.concurrency() }, function(data) {
+    if ($("#cmdSelect").val() == "Simple Push") {
+      $.post( "/experiments/", { "pushes": exports.config.pushes(), "concurrency": exports.config.concurrency() }, function(data) {
       exports.url(data.Location)
       exports.csvUrl(data.CsvLocation)
       exports.refreshNow()
-    })
+      })
+    } else {
+      $.post( "/experiments/", { "pushes": exports.config.pushes(), "concurrency": exports.config.concurrency(), "workload": $("#cmdSelect").val() }, function(data) {
+      exports.url(data.Location)
+      exports.csvUrl(data.CsvLocation)
+      exports.refreshNow()
+      })
+    }	
   }
 
   exports.view = function(url) {

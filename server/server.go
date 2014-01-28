@@ -114,6 +114,11 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		concurrency = 1
 	}
 
+	workload := r.FormValue("workload")
+	if workload == "" {
+		workload = "push"
+	}
+
 	handlers := make([]func(chan *experiment.Sample), 0)
 	handlers = append(handlers, output.NewCsvWriter(path.Join(ctx.csvDir, name.String())+".csv").Write)
 	handlers = append(handlers, func(samples chan *experiment.Sample) {
@@ -121,7 +126,7 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 	})
 
 	//ToDo (simon): interval and stop is 0, repeating at interval is not yet exposed in Web UI
-	go experiment.Run(pushes, concurrency, 0, 0, output.Multiplexer(handlers).Multiplex)
+	go experiment.Run(concurrency, pushes, 0, 0, workload, output.Multiplexer(handlers).Multiplex)
 
 	return ctx.router.Get("experiment").URL("name", name.String())
 }

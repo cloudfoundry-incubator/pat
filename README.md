@@ -89,10 +89,13 @@ Example calls:
 
 	pat -h  # will output all of the command line options if installed the recommended way
 
-	pat -concurrency=5 -pushes=5 # This will start 5 concurrent threads all pushing 1 application
+	pat -concurrency=5 -iteration=5 # This will start 5 concurrent threads all pushing 1 application
 
-	pat -concurrency=5 -pushes=1 # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
+	pat -concurrency=5 -iteration=1 # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
 
 	pat -silent # if you don't want all the fancy output use the silent flag
  
+	pat -workload=push,push,... #list the gcf operations you want to run
+
+	pat -config=config/template.yml # include a configuration template specifying any number of command line arguments. The template file provides a basic format.
 

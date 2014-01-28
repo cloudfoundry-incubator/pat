@@ -4,6 +4,7 @@ import (
 	. "github.com/julz/pat/benchmarker"
 	"github.com/julz/pat/experiments"
 	"time"
+	"strings"
 )
 
 type SampleType int
@@ -15,7 +16,16 @@ const (
 	OtherSample
 )
 
+type Command struct {
+	Count     int64
+	Average   time.Duration
+	TotalTime time.Duration
+	LastTime  time.Duration
+	WorstTime time.Duration
+}
+
 type Sample struct {
+	Commands     map[string]Command
 	Average      time.Duration
 	TotalTime    time.Duration
 	Total        int64
@@ -29,35 +39,55 @@ type Sample struct {
 }
 
 type RunningExperiment struct {
-	results <-chan time.Duration
-	errors  <-chan error
-	workers <-chan int
-	samples chan<- *Sample
-	quit    <-chan bool
+	iteration <-chan IterationResult
+	benchmark <-chan BenchmarkResult
+	errors    <-chan error
+	workers   <-chan int
+	samples   chan<- *Sample
+	quit      <-chan bool
 }
 
-func Run(pushes int, concurrency int, interval int, stop int, tracker func(chan *Sample)) error {
-	result := make(chan time.Duration)
+func Run(concurrency int, iterations int, interval int, stop int, workload string, tracker func(chan *Sample)) error {
+	iteration := make(chan IterationResult)
+	benchmark := make(chan BenchmarkResult)
 	errors := make(chan error)
 	workers := make(chan int)
 	samples := make(chan *Sample)
 	quit := make(chan bool)
-	go Track(samples, result, errors, workers, quit)
+	go Track(iteration, samples, benchmark, errors, workers, quit)
 	go tracker(samples)
+
+	worker := NewWorker()
+
+	operations := strings.Split(workload, ",")
+	if len(operations) == 1 && operations[0] == "" {
+		operations[0] = "push"
+	}
+
+	for _, operation := range operations {
+		if operation == "push" {
+			worker.AddExperiment(operation, experiments.Dummy) //(dan) change to push later
+		} else {
+			worker.AddExperiment(operation, experiments.Dummy)
+		}
+	}
+
 	Execute(RepeatEveryUntil(interval, stop, func() {
-		ExecuteConcurrently(concurrency, Repeat(pushes, Counted(workers, Timed(result, errors, experiments.Dummy))))
+		ExecuteConcurrently(concurrency, Repeat(iterations, Counted(workers, TimeWorker(iteration, benchmark, errors, worker, operations))))
 	}, quit))
+	time.Sleep(1 * time.Second) //(dan) until we drain the channels, add a simple sleep. Print can close to fast and mess up terminal colors
 	quit <- true
 	return nil
 }
 
-func Track(samplesOut chan<- *Sample, results <-chan time.Duration, errors <-chan error, workers <-chan int, quit <-chan bool) {
-	ex := &RunningExperiment{results, errors, workers, samplesOut, quit}
+func Track(iteration <-chan IterationResult, samplesOut chan<- *Sample, benchmark <-chan BenchmarkResult, errors <-chan error, workers <-chan int, quit <-chan bool) {
+	ex := &RunningExperiment{iteration, benchmark, errors, workers, samplesOut, quit}
 	ex.run()
 }
 
 func (ex *RunningExperiment) run() {
-	var n int64
+	commands := make(map[string]Command)
+	var iterations int64
 	var totalTime time.Duration
 	var avg time.Duration
 	var lastError error
@@ -70,15 +100,26 @@ func (ex *RunningExperiment) run() {
 	for {
 		sampleType := OtherSample
 		select {
-		case result := <-ex.results:
+		case iteration := <-ex.iteration:
 			sampleType = ResultSample
-			n = n + 1
-			totalTime = totalTime + result
-			avg = time.Duration(totalTime.Nanoseconds() / n)
-			lastResult = result
-			if result > worstResult {
-				worstResult = result
+			iterations = iterations + 1
+			totalTime = totalTime + iteration.Duration
+			avg = time.Duration(totalTime.Nanoseconds() / iterations)
+			lastResult = iteration.Duration
+			if iteration.Duration > worstResult {
+				worstResult = iteration.Duration
 			}
+		case benchmark := <-ex.benchmark:
+			cmd := commands[benchmark.Command]
+			cmd.Count = cmd.Count + 1
+			cmd.TotalTime = cmd.TotalTime + benchmark.Duration
+			cmd.LastTime = benchmark.Duration
+			cmd.Average = time.Duration(cmd.TotalTime.Nanoseconds() / cmd.Count)
+			if benchmark.Duration > cmd.WorstTime {
+				cmd.WorstTime = benchmark.Duration
+			}
+
+			commands[benchmark.Command] = cmd
 		case e := <-ex.errors:
 			lastError = e
 			totalErrors = totalErrors + 1
@@ -89,6 +130,6 @@ func (ex *RunningExperiment) run() {
 			return // FIXME(jz) maybe we need to drain the errors and results channels here?
 		}
 
-		ex.samples <- &Sample{avg, totalTime, n, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}
+		ex.samples <- &Sample{commands, avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}
 	}
 }

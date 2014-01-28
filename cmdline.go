@@ -12,42 +12,48 @@ type Response struct {
 	Timestamp int64
 }
 
-func RunCommandLine(pushes int, concurrency int, silent bool, name string, interval int, stop int) error {
+func RunCommandLine(concurrency int, iterations int, silent bool, name string, interval int, stop int, workload string) (err error) {
 	handlers := make([]func(chan *experiment.Sample), 0)
 
 	if !silent {
-		handlers = append(handlers, func(s chan *experiment.Sample) { display(int64(pushes), concurrency, interval, stop, s) })
+		handlers = append(handlers, func(s chan *experiment.Sample) { display(concurrency, iterations, interval, stop, s) })
 	}
 
 	if len(name) > 0 {
 		handlers = append(handlers, output.NewCsvWriter(name).Write)
 	}
 
-	return experiment.Run(pushes, concurrency, interval, stop, output.Multiplexer(handlers).Multiplex)
+	return experiment.Run(concurrency, iterations, interval, stop, workload, output.Multiplexer(handlers).Multiplex)
 }
 
-func display(target int64, concurrency int, interval int, stop int, samples chan *experiment.Sample) {
-	//temp workaround:(simon): with a repeating workload,  we don't know the total target of pushes until the interval stops, so we set target = current s.Total
+func display(concurrency int, iterations int, interval int, stop int, samples chan *experiment.Sample) {
 	for s := range samples {
-		if s.Total > target {
-			target = s.Total
-		}
 		fmt.Print("\033[2J\033[;H")
 		fmt.Println("\x1b[32;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
-		fmt.Printf("Test underway.  Pushes: \x1b[36m%v\x1b[0m  Concurrency: \x1b[36m%v\x1b[0m\n", target, concurrency)
-		if interval > 0 && stop > 0 {
-			fmt.Printf("\x1b[31mCurrent workload repeats at %d sec. interval, stops after %d sec.\x1b[0m\n", interval, stop)
-		}
+		fmt.Printf("Test underway. Concurrency: \x1b[36m%v\x1b[0m  Workload iterations: \x1b[36m%v\x1b[0m  Interval: \x1b[36m%v\x1b[0m  Stop: \x1b[36m%v\x1b[0m\n", concurrency, iterations, interval, stop)
 		fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n")
-		fmt.Printf("\x1b[36mTotal pushes\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(s.Total, int64(target), 25), s.Total, int64(target))
+		if stop > 0 && interval > 0 {
+			fmt.Printf("\x1b[36mTotal iterations\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(s.Total, int64((iterations*stop)/interval), 25), s.Total, int64((iterations*stop)/interval))
+		} else {
+			fmt.Printf("\x1b[36mTotal iterations\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(s.Total, int64(iterations), 25), s.Total, int64(iterations))
+		}
 		fmt.Println()
-		fmt.Printf("\x1b[1mLatest Push\x1b[0m:     \x1b[36m%v\x1b[0m\n", s.LastResult)
-		fmt.Printf("\x1b[1mWorst Push\x1b[0m:      \x1b[36m%v\x1b[0m\n", s.WorstResult)
-		fmt.Printf("\x1b[1mAverage\x1b[0m:         \x1b[36m%v\x1b[0m\n", s.Average)
-		fmt.Printf("\x1b[1mTotal time\x1b[0m:      \x1b[36m%v\x1b[0m\n", s.TotalTime)
-		fmt.Printf("\x1b[1mWall time\x1b[0m:       \x1b[36m%v\x1b[0m\n", s.WallTime)
-		fmt.Printf("\x1b[1mRunning Workers\x1b[0m: \x1b[36m%v\x1b[0m\n", s.TotalWorkers)
+		fmt.Printf("\x1b[1mLatest iteration\x1b[0m:  \x1b[36m%v\x1b[0m\n", s.LastResult)
+		fmt.Printf("\x1b[1mWorst iteration\x1b[0m:   \x1b[36m%v\x1b[0m\n", s.WorstResult)
+		fmt.Printf("\x1b[1mAverage iteration\x1b[0m: \x1b[36m%v\x1b[0m\n", s.Average)
+		fmt.Printf("\x1b[1mTotal time\x1b[0m:        \x1b[36m%v\x1b[0m\n", s.TotalTime)
+		fmt.Printf("\x1b[1mWall time\x1b[0m:         \x1b[36m%v\x1b[0m\n", s.WallTime)
+		fmt.Printf("\x1b[1mRunning Workers\x1b[0m:   \x1b[36m%v\x1b[0m\n", s.TotalWorkers)
 		fmt.Println()
+		fmt.Println("\x1b[32;1mCommands Issued:\x1b[0m")
+		for key, command := range s.Commands {
+			fmt.Printf("\x1b[1m%v\x1b[0m:\n", key)
+			fmt.Printf("\x1b[1m\tCount\x1b[0m:      \x1b[36m%v\x1b[0m\n", command.Count)
+			fmt.Printf("\x1b[1m\tAverage\x1b[0m:    \x1b[36m%v\x1b[0m\n", command.Average)
+			fmt.Printf("\x1b[1m\tLast time\x1b[0m:  \x1b[36m%v\x1b[0m\n", command.LastTime)
+			fmt.Printf("\x1b[1m\tWorst time\x1b[0m: \x1b[36m%v\x1b[0m\n", command.WorstTime)
+			fmt.Printf("\x1b[1m\tTotal time\x1b[0m: \x1b[36m%v\x1b[0m\n", command.TotalTime)
+		}
 		fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
 		if s.TotalErrors > 0 {
 			fmt.Printf("\nTotal errors: %d\n", s.TotalErrors)
