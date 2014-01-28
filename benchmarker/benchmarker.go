@@ -71,6 +71,17 @@ func TimeWorker(out chan<- IterationResult, bench chan<- BenchmarkResult, errOut
 	}
 }
 
+func TimedWithWorker(out chan<- BenchmarkResult, errOut chan<- error, worker Worker, experiment string) func() {
+	return func() {
+		time, err := worker.Time(experiment)
+		if err == nil {
+			out <- time
+		} else {
+			errOut <- err
+		}
+	}
+}
+
 func Once(fn func()) <-chan func() {
 	return Repeat(1, fn)
 }

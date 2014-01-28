@@ -67,6 +67,22 @@ var _ = Describe("Benchmarker", func() {
 		})
 	})
 
+	Describe("TimedWithWorker", func() {
+		It("sends the timing information retrieved from a worker to a channel", func() {
+			ch := make(chan BenchmarkResult)
+			result := make(chan time.Duration)
+			go func(result chan time.Duration) {
+				defer close(ch)
+				for t := range ch {
+					result <- t.Duration
+				}
+			}(result)
+
+			TimedWithWorker(ch, nil, &DummyWorker{}, "three")()
+			Ω((<-result).Seconds()).Should(BeNumerically("==", 3))
+		})
+	})
+
 	Describe("LocalWorker", func() {
 		It("Sets a function by name", func() {
 			worker := NewWorker()
