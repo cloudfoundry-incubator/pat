@@ -88,7 +88,8 @@ pat.experimentList = function() {
 ko.bindingHandlers.chart = {
   c: {},
   init: function(element, valueAccessor) {
-    ko.bindingHandlers.chart.b = d3.custom.barchart(d3.select(element));
+    //ko.bindingHandlers.chart.b = d3.custom.barchart(d3.select(element));
+    ko.bindingHandlers.chart.b = d3.custom.barchart(element.id);
   },
   update: function(element, valueAccessor) {
     var data = ko.unwrap(valueAccessor())
