@@ -7,7 +7,8 @@
   </head>
   <body>
 
-    <div id="target" style="display: none"></div>
+    <!-- move the testing div out of the viewable area -->
+    <div id="target" style="width: 800px; height: 400px; position: absolute; top: -1000px"></div>
 
     <script src="http://pivotal.github.com/jasmine/lib/jasmine-1.3.1/jasmine.js"></script>
     <script src="http://pivotal.github.com/jasmine/lib/jasmine-1.3.1/jasmine-html.js"></script>
@@ -15,6 +16,7 @@
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
     <script src="/ui/js/chart.js"></script>
+    <script src="/ui/js/bar.js"></script>
     <script src="/ui/js/app.js"></script>
     <script src="/ui/js/tests.js"></script>
 

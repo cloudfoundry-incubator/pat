@@ -1,6 +1,6 @@
 d3.custom.barchart = function(el) {
-  var d3Obj = d3.select("#" + el);
-  var jqObj = $("#" + el);
+  var d3Obj = d3.select(el);
+  var jqObj = $(el);
   var xAxis, yAxis
   d3Obj.append("svg").attr("class","barchart").attr("width", jqObj.width() - 20).attr("height", jqObj.height() - 20);
 
