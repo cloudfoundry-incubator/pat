@@ -103,6 +103,63 @@ describe("Throughput chart", function() {
   })
 })
 
+describe("Bar chart", function() {
+  const sec = 1000000000;
+  var chart;
+
+  beforeEach(function() {
+    chart = d3.custom.barchart("#target");
+  })
+
+  it("should draw a bar for each element", function() {
+    var svg = d3.selectAll(".barchart");
+    var tasks = [];
+
+    for (var i = 0; i < 3; i ++) {
+        tasks.push( {"LastResult" : 1 * sec} );
+    }
+    chart(tasks);
+    expect(d3.selectAll('rect.bar').size()).toBe(3);
+  });
+
+  it("should show at least 10 tasks in the x-axis", function() {
+    var svg = d3.selectAll(".barchart");
+    var tasks = [];
+
+    for (var i = 0; i < 3; i ++) {
+        tasks.push( {"LastResult" : 1 * sec} );
+    }
+    chart(tasks);
+    expect( chart.xAxis_max() ).toBe(10);
+  });
+
+  it("should scale and show >10 tasks in the x-axis if >10 tasks has been performed", function() {
+    var svg = d3.selectAll(".barchart");
+    var tasks = [];
+
+    for (var i = 0; i < 15; i ++) {
+        tasks.push( {"LastResult" : 1 * sec} );
+    }
+    chart(tasks);
+    expect( chart.xAxis_max() ).toBe(15);
+  });
+
+
+  it("should show the maximum LastResult in seconds in the y-axis", function() {
+    var svg = d3.selectAll(".barchart");
+    var tasks = [];
+    var LastResult = 0;
+
+    for (var i = 1; i <= 10; i ++) {
+      LastResult = i * sec ;
+      tasks.push( {"LastResult" : LastResult} );
+    }
+    chart(tasks);
+    expect( chart.yAxis_max() ).toBe(10);
+  });
+
+});
+
 describe("The experiment list", function() {
 
   var self = this
