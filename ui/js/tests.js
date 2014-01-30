@@ -3,7 +3,7 @@ describe("The view", function() {
   var experimentList
 
   beforeEach(function() {
-    experiment = { run: function() {}, url: ko.observable(""), state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { pushes: ko.observable(1), concurrency: ko.observable(1)  } }
+    experiment = { run: function() {}, url: ko.observable(""), state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { iterations: ko.observable(1), concurrency: ko.observable(1)  } }
     experimentList = { experiments: [], refreshNow: function(){} }
     spyOn(experimentList, "refreshNow")
     spyOn(experiment, "view")
@@ -40,18 +40,18 @@ describe("The view", function() {
   })
 
   describe("validation", function() {
-    it("prevents pushes being <= 0", function() {
-      v.numPushes(-1)
+    it("prevents iterations being <= 0", function() {
+      v.numIterations(-1)
       v.numConcurrent(1)
-      expect(v.numPushesHasError()).toBe(true)
+      expect(v.numIterationsHasError()).toBe(true)
       expect(v.numConcurrentHasError()).toBe(false)
       expect(v.formHasNoErrors()).toBe(false)
     })
 
     it("prevents concurrency being <= 0", function() {
       v.numConcurrent(-1)
-      v.numPushes(1)
-      expect(v.numPushesHasError()).toBe(false)
+      v.numIterations(1)
+      expect(v.numIterationsHasError()).toBe(false)
       expect(v.numConcurrentHasError()).toBe(true)
       expect(v.formHasNoErrors()).toBe(false)
     })
@@ -216,7 +216,7 @@ describe("Running an experiment", function my() {
       $(document).on("experimentChanged", listener.onExperimentChanged)
 
       experiment = pat.experiment()
-      experiment.config.pushes(pushes)
+      experiment.config.iterations(pushes)
       experiment.config.concurrency(concurrency)
       experiment.data([1,2,3])
       experiment.run()
@@ -226,8 +226,8 @@ describe("Running an experiment", function my() {
       expect($.post).toHaveBeenCalledWith("/experiments/", jasmine.any(Object), jasmine.any(Function))
     })
 
-    it("sends the pushes and concurrency in the POST body", function() {
-      expect($.post.mostRecentCall.args[1].pushes).toBe(3)
+    it("sends the iterations and concurrency in the POST body", function() {
+      expect($.post.mostRecentCall.args[1].iterations).toBe(3)
       expect($.post.mostRecentCall.args[1].concurrency).toBe(5)
     })
 

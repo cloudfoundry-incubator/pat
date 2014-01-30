@@ -8,7 +8,7 @@ pat.experiment = function(refreshRate) {
   exports.url = ko.observable("")
   exports.csvUrl = ko.observable("")
   exports.data = ko.observableArray()
-  exports.config = { pushes: ko.observable(1), concurrency: ko.observable(1) }
+  exports.config = { iterations: ko.observable(1), concurrency: ko.observable(1) }
 
   var timer = null
 
@@ -31,19 +31,11 @@ pat.experiment = function(refreshRate) {
   exports.run = function() {
     exports.state("running")
     exports.data([])
-    if ($("#cmdSelect").val() == "Simple Push") {
-      $.post( "/experiments/", { "pushes": exports.config.pushes(), "concurrency": exports.config.concurrency() }, function(data) {
-      exports.url(data.Location)
-      exports.csvUrl(data.CsvLocation)
-      exports.refreshNow()
-      })
-    } else {
-      $.post( "/experiments/", { "pushes": exports.config.pushes(), "concurrency": exports.config.concurrency(), "workload": $("#cmdSelect").val() }, function(data) {
-      exports.url(data.Location)
-      exports.csvUrl(data.CsvLocation)
-      exports.refreshNow()
-      })
-    }	
+		$.post( "/experiments/", { "iterations": exports.config.iterations(), "concurrency": exports.config.concurrency(), "workload": $("#cmdSelect").val() }, function(data) {
+			exports.url(data.Location)
+			exports.csvUrl(data.CsvLocation)
+			exports.refreshNow()
+		})
   }
 
   exports.view = function(url) {
@@ -122,11 +114,11 @@ pat.view = function(experimentList, experiment) {
   this.canStop = ko.computed(function() { return experiment.state() === "running" })
   this.canDownloadCsv = ko.computed(function() { return experiment.csvUrl() !== "" })
   this.noExperimentRunning = ko.computed(function() { return self.canStart() })
-  this.numPushes = experiment.config.pushes
-  this.numPushesHasError = ko.computed(function() { return experiment.config.pushes() <= 0 })
+  this.numIterations = experiment.config.iterations
+  this.numIterationsHasError = ko.computed(function() { return experiment.config.iterations() <= 0 })
   this.numConcurrent = experiment.config.concurrency
   this.numConcurrentHasError = ko.computed(function() { return experiment.config.concurrency() <= 0 })
-  this.formHasNoErrors = ko.computed(function() { return ! ( this.numPushesHasError() | this.numConcurrentHasError() ) }, this)
+  this.formHasNoErrors = ko.computed(function() { return ! ( this.numIterationsHasError() | this.numConcurrentHasError() ) }, this)
   this.previousExperiments = experimentList.experiments
   this.data = experiment.data
 

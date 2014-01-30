@@ -1,12 +1,12 @@
-package output
+package store
 
 import (
 	"github.com/julz/pat/experiment"
 )
 
-type Multiplexer []func(chan *experiment.Sample)
+type Multiplexer []func(<-chan *experiment.Sample)
 
-func (out Multiplexer) Multiplex(in chan *experiment.Sample) {
+func (out Multiplexer) Multiplex(in <-chan *experiment.Sample) {
 	channels := make([]chan *experiment.Sample, 0)
 
 	for _, f := range out {

@@ -2,9 +2,13 @@ package pat
 
 import (
 	"fmt"
-	"github.com/julz/pat/experiment"
-	"github.com/julz/pat/output"
 	"strings"
+
+	"github.com/julz/pat/benchmarker"
+	. "github.com/julz/pat/experiment"
+	"github.com/julz/pat/experiments"
+	. "github.com/julz/pat/laboratory"
+	"github.com/julz/pat/store"
 )
 
 type Response struct {
@@ -13,20 +17,25 @@ type Response struct {
 }
 
 func RunCommandLine(concurrency int, iterations int, silent bool, name string, interval int, stop int, workload string) (err error) {
-	handlers := make([]func(chan *experiment.Sample), 0)
+	handlers := make([]func(<-chan *Sample), 0)
 
 	if !silent {
-		handlers = append(handlers, func(s chan *experiment.Sample) { display(concurrency, iterations, interval, stop, s) })
+		handlers = append(handlers, func(s <-chan *Sample) { display(concurrency, iterations, interval, stop, s) })
 	}
 
-	if len(name) > 0 {
-		handlers = append(handlers, output.NewCsvWriter(name).Write)
-	}
+	worker := benchmarker.NewWorker()
+	worker.AddExperiment("login", experiments.Dummy)
+	worker.AddExperiment("push", experiments.Dummy)
 
-	return experiment.Run(concurrency, iterations, interval, stop, workload, output.Multiplexer(handlers).Multiplex)
+	NewLaboratory(store.NewCsvStore("output/csvs")).RunWithHandlers(
+		NewRunnableExperiment(
+			NewExperimentConfiguration(
+				iterations, concurrency, interval, stop, worker, workload)), handlers)
+
+	return nil
 }
 
-func display(concurrency int, iterations int, interval int, stop int, samples chan *experiment.Sample) {
+func display(concurrency int, iterations int, interval int, stop int, samples <-chan *Sample) {
 	for s := range samples {
 		fmt.Print("\033[2J\033[;H")
 		fmt.Println("\x1b[32;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
@@ -46,6 +55,7 @@ func display(concurrency int, iterations int, interval int, stop int, samples ch
 		fmt.Printf("\x1b[1mRunning Workers\x1b[0m:   \x1b[36m%v\x1b[0m\n", s.TotalWorkers)
 		fmt.Println()
 		fmt.Println("\x1b[32;1mCommands Issued:\x1b[0m")
+		fmt.Println()
 		for key, command := range s.Commands {
 			fmt.Printf("\x1b[1m%v\x1b[0m:\n", key)
 			fmt.Printf("\x1b[1m\tCount\x1b[0m:      \x1b[36m%v\x1b[0m\n", command.Count)

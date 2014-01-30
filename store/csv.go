@@ -1,9 +1,8 @@
-package output
+package store
 
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/julz/pat/experiment"
 	"io/ioutil"
 	"os"
 	"path"
@@ -11,24 +10,43 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/julz/pat/experiment"
 )
 
-type CsvSampleFile struct {
-	output string
+type CsvStore struct {
+	dir string
 }
 
-func NewCsvWriter(name string) *CsvSampleFile {
-	return &CsvSampleFile{name}
+type csvFile struct {
+	outputPath string
+	guid       string
 }
 
-func (self *CsvSampleFile) Write(samples chan *experiment.Sample) {
-	f, err := os.Create(self.output)
+func NewCsvStore(dir string) *CsvStore {
+	return &CsvStore{dir}
+}
+
+func (store *CsvStore) Writer(guid string) func(samples <-chan *experiment.Sample) {
+	return store.newCsvFile(guid).Write
+}
+
+func (store *CsvStore) load(filename string, guid string) (experiment.Experiment, error) {
+	return &csvFile{path.Join(store.dir, filename), guid}, nil
+}
+
+func (store *CsvStore) newCsvFile(guid string) *csvFile {
+	return &csvFile{path.Join(store.dir, strconv.Itoa(int(time.Now().UnixNano()))+"-"+guid+".csv"), guid}
+}
+
+func (self *csvFile) Write(samples <-chan *experiment.Sample) {
+	f, err := os.Create(self.outputPath)
 	defer f.Close()
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println("Creating directory, ", self.output)
-			os.Mkdir(filepath.Dir(self.output), 0755)
-			f, err = os.Create(self.output)
+			fmt.Println("Creating directory, ", filepath.Dir(self.outputPath))
+			os.MkdirAll(filepath.Dir(self.outputPath), 0755)
+			f, err = os.Create(self.outputPath)
 		}
 
 		if err != nil {
@@ -55,9 +73,12 @@ func (self *CsvSampleFile) Write(samples chan *experiment.Sample) {
 	}
 }
 
-func (self *CsvSampleFile) Read() (samples []*experiment.Sample, err error) {
-	file, err := os.Open(self.output)
+func (self *csvFile) GetData() (samples []*experiment.Sample, err error) {
+	file, err := os.Open(self.outputPath)
 	defer file.Close()
+	if err != nil {
+		return nil, err
+	}
 
 	decoded, err := csv.NewReader(file).ReadAll()
 	if err != nil {
@@ -88,20 +109,29 @@ func (self *CsvSampleFile) Read() (samples []*experiment.Sample, err error) {
 	return
 }
 
-func ReloadCSVs(baseDir string) (samples map[string][]*experiment.Sample, order []string, err error) {
-	files, err := ioutil.ReadDir(baseDir)
+func (store *CsvStore) LoadAll() (samples []experiment.Experiment, err error) {
+	files, err := ioutil.ReadDir(store.dir)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	samples = make(map[string][]*experiment.Sample)
+	samples = make([]experiment.Experiment, 0)
 	for _, f := range files {
-		name := strings.Split(f.Name(), ".")[0]
-		samples[name], err = NewCsvWriter(path.Join(baseDir, f.Name())).Read()
-		order = append(order, name)
+		base := strings.Split(f.Name(), ".")[0]
+		name := strings.SplitN(base, "-", 2)[1]
+		if len(name) > 0 {
+			loaded, err := store.load(f.Name(), name)
+			if err == nil {
+				samples = append(samples, loaded)
+			}
+		}
 	}
 
 	return
+}
+
+func (csv *csvFile) GetGuid() string {
+	return csv.guid
 }
 
 func i64(s string) (int64, error) {
