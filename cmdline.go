@@ -32,11 +32,9 @@ func display(concurrency int, iterations int, interval int, stop int, samples ch
 		fmt.Println("\x1b[32;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
 		fmt.Printf("Test underway. Concurrency: \x1b[36m%v\x1b[0m  Workload iterations: \x1b[36m%v\x1b[0m  Interval: \x1b[36m%v\x1b[0m  Stop: \x1b[36m%v\x1b[0m\n", concurrency, iterations, interval, stop)
 		fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n")
-		if stop > 0 && interval > 0 {
-			fmt.Printf("\x1b[36mTotal iterations\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(s.Total, int64((iterations*stop)/interval), 25), s.Total, int64((iterations*stop)/interval))
-		} else {
-			fmt.Printf("\x1b[36mTotal iterations\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(s.Total, int64(iterations), 25), s.Total, int64(iterations))
-		}
+
+		fmt.Printf("\x1b[36mTotal iterations\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(s.Total, totalIterations(iterations, interval, stop), 25), s.Total, totalIterations(iterations, interval, stop))
+
 		fmt.Println()
 		fmt.Printf("\x1b[1mLatest iteration\x1b[0m:  \x1b[36m%v\x1b[0m\n", s.LastResult)
 		fmt.Printf("\x1b[1mWorst iteration\x1b[0m:   \x1b[36m%v\x1b[0m\n", s.WorstResult)
@@ -60,6 +58,18 @@ func display(concurrency int, iterations int, interval int, stop int, samples ch
 			fmt.Printf("Last error: %v\n", "")
 		}
 	}
+}
+
+func totalIterations(iterations int, interval int, stopTime int) int64 {
+	var totalIterations int
+
+	if stopTime > 0 && interval > 0 {
+		totalIterations = ((stopTime / interval) + 1) * iterations
+	} else {
+		totalIterations = iterations
+	}
+
+	return int64(totalIterations)
 }
 
 func bar(n int64, total int64, size int) (bar string) {

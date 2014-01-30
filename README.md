@@ -107,5 +107,7 @@ directory called config-template.yml and it details the current operations. To r
 configuration file. Also, if a user so wishes they can overwrite a seeting in the script by using the command line argument.
 
 example:
+	
 	# pat -config=config-template.yml
+	
 	# pat -config=config-template.yml -iterations=2 //set iterations to 2 even if the script has something else.
