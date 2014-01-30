@@ -122,7 +122,7 @@ describe("Bar chart", function() {
     expect(d3.selectAll('rect.bar').size()).toBe(3);
   });
 
-  it("should show at least 10 tasks in the x-axis", function() {
+  it("should show at least able to show 10 workloads in the x-axis", function() {
     var svg = d3.selectAll(".barchart");
     var tasks = [];
 
@@ -130,10 +130,10 @@ describe("Bar chart", function() {
         tasks.push( {"LastResult" : 1 * sec} );
     }
     chart(tasks);
-    expect( chart.xAxis_max() ).toBe(10);
+    expect( chart.xAxis_max_domain() ).toBe(10);
   });
 
-  it("should scale and show >10 tasks in the x-axis if >10 tasks has been performed", function() {
+  it("should scale and show >10 workloads in the x-axis if >10 workloads has been performed", function() {
     var svg = d3.selectAll(".barchart");
     var tasks = [];
 
@@ -141,9 +141,19 @@ describe("Bar chart", function() {
         tasks.push( {"LastResult" : 1 * sec} );
     }
     chart(tasks);
-    expect( chart.xAxis_max() ).toBe(15);
+    expect( chart.xAxis_max_domain() ).toBe(15);
   });
 
+  it("should not show extra ticks in x-axis when # of workload is <10 ", function() {
+    var svg = d3.selectAll(".barchart");
+    var tasks = [];
+
+    for (var i = 0; i < 5; i ++) {
+        tasks.push( {"LastResult" : 1 * sec} );
+    }
+    chart(tasks);
+    expect( chart.xAxis_max_value() ).toBe(5);
+  });
 
   it("should show the maximum LastResult in seconds in the y-axis", function() {
     var svg = d3.selectAll(".barchart");
@@ -155,7 +165,7 @@ describe("Bar chart", function() {
       tasks.push( {"LastResult" : LastResult} );
     }
     chart(tasks);
-    expect( chart.yAxis_max() ).toBe(10);
+    expect( chart.yAxis_max_domain() ).toBe(10);
   });
 
 });

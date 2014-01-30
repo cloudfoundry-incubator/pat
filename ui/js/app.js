@@ -43,7 +43,7 @@ pat.experiment = function(refreshRate) {
       exports.csvUrl(data.CsvLocation)
       exports.refreshNow()
       })
-    }	
+    }
   }
 
   exports.view = function(url) {
