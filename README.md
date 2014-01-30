@@ -7,7 +7,7 @@ Setting up PATs
 ==================================
 To setup this project, a number of requires need to be met for GO.
 
-1) Ensure that GO (64bit version) has been installed on the system.
+1) Ensure that GO1.2 (64bit version) has been installed on the system.
 
 2) Setup the GOPATH
 
@@ -99,3 +99,13 @@ Example calls:
 
 	pat -config=config/template.yml # include a configuration template specifying any number of command line arguments. The template file provides a basic format.
 
+
+Script Configure
+=====================================
+PATs currently accepts the ability to configure any command line argument via a configuration script. There is an example script at the root of this projects
+directory called config-template.yml and it details the current operations. To run a custom yaml configuration file, provide the full path to the 
+configuration file. Also, if a user so wishes they can overwrite a seeting in the script by using the command line argument.
+
+example:
+	# pat -config=config-template.yml
+	# pat -config=config-template.yml -iterations=2 //set iterations to 2 even if the script has something else.

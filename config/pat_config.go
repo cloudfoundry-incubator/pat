@@ -35,6 +35,7 @@ func NewConfig() *Config {
 }
 
 func (config *Config) Parse() error {
+	flag.Parse()
 	if config.Config != "" {
 		err := config.parseConfigParamFile()
 		if err != nil {
