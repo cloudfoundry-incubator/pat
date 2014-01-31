@@ -25,7 +25,8 @@ func RunCommandLine(concurrency int, iterations int, silent bool, name string, i
 
 	worker := benchmarker.NewWorker()
 	worker.AddExperiment("login", experiments.Dummy)
-	worker.AddExperiment("push", experiments.Dummy)
+	worker.AddExperiment("push", experiments.Push)
+	worker.AddExperiment("dummy", experiments.Dummy)
 
 	NewLaboratory(store.NewCsvStore("output/csvs")).RunWithHandlers(
 		NewRunnableExperiment(
