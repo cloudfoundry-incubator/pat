@@ -6,7 +6,7 @@ casper.test.begin 'Basic Flow', 4, (test) ->
     @log("Currently #{@.previous_experiments_count} experiments in the previous experiments list")
 
     @fill 'form', 
-      inputPushes: 2
+      inputIterations: 2
       inputConcurrency: 5
     @click 'button[type=submit]'
     @waitWhileVisible ".noexperimentrunning"
