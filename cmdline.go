@@ -2,6 +2,7 @@ package pat
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/julz/pat/benchmarker"
@@ -27,11 +28,20 @@ func RunCommandLine(concurrency int, iterations int, silent bool, name string, i
 	worker.AddExperiment("login", experiments.Dummy)
 	worker.AddExperiment("push", experiments.Push)
 	worker.AddExperiment("dummy", experiments.Dummy)
+	worker.AddExperiment("dummyWithErrors", experiments.DummyWithErrors)
 
 	NewLaboratory(store.NewCsvStore("output/csvs")).RunWithHandlers(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
 				iterations, concurrency, interval, stop, worker, workload)), handlers)
+
+	for {
+		in := make([]byte, 1)
+		os.Stdin.Read(in)
+		if string(in) == "q" {
+			return nil
+		}
+	}
 
 	return nil
 }
@@ -70,6 +80,8 @@ func display(concurrency int, iterations int, interval int, stop int, samples <-
 			fmt.Printf("\nTotal errors: %d\n", s.TotalErrors)
 			fmt.Printf("Last error: %v\n", "")
 		}
+		fmt.Println()
+		fmt.Println("Type q <Enter> (or ctrl-c) to exit")
 	}
 }
 
