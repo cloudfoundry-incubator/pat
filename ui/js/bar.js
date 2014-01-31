@@ -27,6 +27,14 @@ d3.custom.barchart = function(el) {
     xAxis = d3.svg.axis().scale(x).orient("bottom");
     yAxis = d3.svg.axis().scale(y).orient("left");
 
+    if (data.length < 10) {
+      var tickValues = [];
+      for (var i = 1; i <= data.length; i++) {
+        tickValues.push(i)
+      }
+      xAxis.tickValues(tickValues);
+    }
+
     var svg = d3.select(".barchart");
     svg.append("g").attr("class", "x axis").attr("transform", "translate(" + xOffset + "," + (h-yOffset) + ")").call(xAxis);
     svg.append("g").attr("class", "y axis").attr("transform", "translate(" + xOffset + ","+ yOffset + ")").call(yAxis);
@@ -50,8 +58,9 @@ d3.custom.barchart = function(el) {
 //    });
   }
 
-  barchart.xAxis_max = function() { return xAxis.scale().domain()[1]; }
-  barchart.yAxis_max = function() { return yAxis.scale().domain()[0]; }
+  barchart.xAxis_max_domain = function() { return xAxis.scale().domain()[1]; }
+  barchart.yAxis_max_domain = function() { return yAxis.scale().domain()[0]; }
+  barchart.xAxis_max_value = function() { return xAxis.tickValues()[xAxis.tickValues().length - 1]; }
 
   return barchart;
 }
