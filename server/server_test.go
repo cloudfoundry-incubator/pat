@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 
 	. "github.com/julz/pat/experiment"
 	. "github.com/julz/pat/laboratory"
@@ -24,7 +25,7 @@ var _ = Describe("Server", func() {
 		lab = &DummyLab{}
 		lab.experiments = experiments
 		http.DefaultServeMux = http.NewServeMux()
-		ServeWithLab(lab, "/var/test-output/csvs")
+		ServeWithLab(lab)
 	})
 
 	It("lists experiments", func() {
@@ -34,6 +35,22 @@ var _ = Describe("Server", func() {
 		Ω(items[0].(map[string]interface{})["Location"]).Should(Equal("/experiments/a"))
 		Ω(items[1].(map[string]interface{})["Location"]).Should(Equal("/experiments/b"))
 		Ω(items[2].(map[string]interface{})["Location"]).Should(Equal("/experiments/c"))
+	})
+
+	It("lists experiments with a Csv Url link", func() {
+		json := get("/experiments/")
+		Ω(json["Items"]).Should(HaveLen(3))
+		items := json["Items"].([]interface{})
+		Ω(items[0].(map[string]interface{})["CsvLocation"]).Should(
+			Equal("/experiments/a.csv"))
+	})
+
+	It("exports an experiment as a CSV", func() {
+		csv := req("GET", "/experiments/a.csv")
+		lines := strings.Split(string(csv), "\n")
+		Ω(lines).Should(HaveLen(1 + 3 + 1)) // header, rows, newline
+		Ω(lines[0]).Should(ContainSubstring("Average,TotalTime,Total"))
+		Ω(lines[1]).Should(ContainSubstring("0,0,0"))
 	})
 
 	It("Runs experiment with default arguments", func() {
@@ -62,9 +79,6 @@ var _ = Describe("Server", func() {
 		json := post("/experiments/")
 		Ω(json["Location"]).Should(Equal("/experiments/some-guid"))
 	})
-
-	PIt("Downloads CSVs", func() {
-	})
 })
 
 type DummyLab struct {
@@ -77,6 +91,7 @@ type DummyExperiment struct {
 }
 
 func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample)) (Experiment, error) {
+	Fail("called unexpected dummy function")
 	return nil, nil
 }
 
@@ -92,6 +107,9 @@ func (l *DummyLab) Visit(fn func(ex Experiment)) {
 }
 
 func (l *DummyLab) GetData(name string) ([]*Sample, error) {
+	if name == "a" {
+		return []*Sample{&Sample{}, &Sample{}, &Sample{}}, nil
+	}
 	return nil, nil
 }
 
@@ -103,20 +121,20 @@ func (e *DummyExperiment) GetGuid() string {
 	return e.guid
 }
 
+func post(url string) (json map[string]interface{}) {
+	return decode(req("POST", url))
+}
+
+func get(url string) (json map[string]interface{}) {
+	return decode(req("GET", url))
+}
+
 func decode(encoded []byte) (decoded map[string]interface{}) {
 	json.Unmarshal(encoded, &decoded)
 	return decoded
 }
 
-func post(url string) (json map[string]interface{}) {
-	return req("POST", url)
-}
-
-func get(url string) (json map[string]interface{}) {
-	return req("GET", url)
-}
-
-func req(method string, url string) (json map[string]interface{}) {
+func req(method string, url string) []byte {
 	resp := httptest.NewRecorder()
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
@@ -129,6 +147,6 @@ func req(method string, url string) (json map[string]interface{}) {
 		return nil
 	} else {
 		fmt.Printf("Body: %s", body)
-		return decode(body)
+		return body
 	}
 }
