@@ -1,6 +1,6 @@
 PATs (Performance Acceptance Tests)
 ==================================
-The goal of this project is to create a load generation testing framework.
+The goal of this project is to create a super-simple load generation testing framework for quickly and easily running load against Cloud Foundry.
 
 
 Setting up PATs
