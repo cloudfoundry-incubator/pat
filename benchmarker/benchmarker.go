@@ -97,8 +97,8 @@ func RepeatEveryUntil(repeatInterval int, runTime int, fn func(), quit <-chan bo
 			tickerQuit = time.NewTicker(time.Duration(runTime) * time.Second)
 		}
 		go func() {
-			ch <- fn
 			defer close(ch)
+			ch <- fn
 			for {
 				select {
 				case <-ticker.C:

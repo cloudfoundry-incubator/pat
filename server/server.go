@@ -3,17 +3,16 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/julz/pat/experiment"
-	"github.com/julz/pat/history"
-	"github.com/julz/pat/output"
-	"github.com/nu7hatch/gouuid"
 	"net/http"
 	"net/url"
-	"path"
-	"reflect"
 	"strconv"
-	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/julz/pat/benchmarker"
+	. "github.com/julz/pat/experiment"
+	"github.com/julz/pat/experiments"
+	. "github.com/julz/pat/laboratory"
+	"github.com/julz/pat/store"
 )
 
 type Response struct {
@@ -22,35 +21,29 @@ type Response struct {
 }
 
 type context struct {
-	router  *mux.Router
-	baseDir string
-	csvDir  string
-	running map[string][]*experiment.Sample
-	order   []string
+	router *mux.Router
+	lab    Laboratory
 }
 
 func Serve() {
-	ServeWithArgs("historical-runs", "output/csvs")
+	ServeWithArgs("output/csvs")
 }
 
-func ServeWithArgs(baseDir string, csvDir string) {
+func ServeWithArgs(csvDir string) {
+	ServeWithLab(NewLaboratory(store.NewCsvStore(csvDir)))
+}
+
+func ServeWithLab(lab Laboratory) {
 	r := mux.NewRouter()
-	ctx := &context{r, baseDir, csvDir, make(map[string][]*experiment.Sample), make([]string, 0)}
-	err := ctx.reload()
-	if err != nil {
-		fmt.Println("Couldn't load previous experiments, ", err)
-	}
+	ctx := &context{r, lab}
 
 	r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx.handleListExperiments))
+	r.Methods("GET").Path("/experiments/{name}.csv").HandlerFunc(csvHandler(ctx.handleGetExperiment)).Name("csv")
 	r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx.handleGetExperiment)).Name("experiment")
 	r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx.handlePush))
 
 	http.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui"))))
-	http.Handle("/csv/experiments/", http.StripPrefix("/csv/experiments/", http.FileServer(http.Dir(ctx.csvDir))))
 	http.Handle("/", r)
-}
-
-func Stop() {
 }
 
 func Bind() {
@@ -64,47 +57,24 @@ type listResponse struct {
 	Items interface{}
 }
 
-func (ctx *context) reload() (err error) {
-	// this is super-simple right now, we just load all the CSVs back in to memory
-	// will move to using REDIS / SQLite at some point
-	// also I'm aware server.go isn't well covered by tests and needs back-filling now that we
-	// lost the previous system tests
-	ctx.running, ctx.order, err = output.ReloadCSVs(ctx.csvDir)
-	return err
-}
-
-func (ctx *context) handleList(w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	from, err := strconv.Atoi(r.FormValue("from"))
-	to, err := strconv.Atoi(r.FormValue("to"))
-	if err == nil {
-		response, err := history.LoadBetween(ctx.baseDir, reflect.TypeOf(Response{}), time.Unix(0, int64(from)), time.Unix(0, int64(to)))
-		return &listResponse{response}, err
-	} else {
-		response, err := history.LoadAll(ctx.baseDir, reflect.TypeOf(Response{}))
-		return &listResponse{response}, err
-	}
-}
-
 func (ctx *context) handleListExperiments(w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	running := make([]map[string]string, 0, len(ctx.running))
-	for _, k := range ctx.order {
-		url, _ := ctx.router.Get("experiment").URL("name", k)
-		csvUrl := fmt.Sprintf("/csv/%v.csv", url.String())
+	experiments := make([]map[string]string, 0)
+	ctx.lab.Visit(func(e Experiment) {
 		json := make(map[string]string)
+		url, _ := ctx.router.Get("experiment").URL("name", e.GetGuid())
+		csvUrl, _ := ctx.router.Get("csv").URL("name", e.GetGuid())
 		json["Location"] = url.String()
-		json["CsvLocation"] = csvUrl
-		json["Name"] = "Simple Push"
+		json["CsvLocation"] = csvUrl.String()
+		json["Name"] = "Simple Push (" + e.GetGuid() + ")"
 		json["State"] = "Unknown"
-		running = append(running, json)
-	}
+		experiments = append(experiments, json)
+	})
 
-	return &listResponse{running}, nil
+	return &listResponse{experiments}, nil
 }
 
 func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	name, _ := uuid.NewV4()
-
-	pushes, err := strconv.Atoi(r.FormValue("pushes"))
+	pushes, err := strconv.Atoi(r.FormValue("iterations"))
 	if err != nil {
 		pushes = 1
 	}
@@ -119,33 +89,36 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		workload = "push"
 	}
 
-	handlers := make([]func(chan *experiment.Sample), 0)
-	handlers = append(handlers, output.NewCsvWriter(path.Join(ctx.csvDir, name.String())+".csv").Write)
-	handlers = append(handlers, func(samples chan *experiment.Sample) {
-		ctx.buffer(name.String(), samples)
-	})
-
 	//ToDo (simon): interval and stop is 0, repeating at interval is not yet exposed in Web UI
-	go experiment.Run(concurrency, pushes, 0, 0, workload, output.Multiplexer(handlers).Multiplex)
+	worker := benchmarker.NewWorker()
+	worker.AddExperiment("login", experiments.Dummy)
+	worker.AddExperiment("push", experiments.Push)
+	worker.AddExperiment("dummy", experiments.Dummy)
+	experiment, _ := ctx.lab.Run(NewRunnableExperiment(NewExperimentConfiguration(pushes, concurrency, 0, 0, worker, workload)))
 
-	return ctx.router.Get("experiment").URL("name", name.String())
+	return ctx.router.Get("experiment").URL("name", experiment.GetGuid())
 }
 
 func (ctx *context) handleGetExperiment(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	name := mux.Vars(r)["name"]
 	// TODO(jz) only send back since N
-	return &listResponse{ctx.running[name]}, nil
+	data, err := ctx.lab.GetData(name)
+	return &listResponse{data}, err
 }
 
-func (ctx *context) buffer(name string, samples chan *experiment.Sample) {
-	ctx.order = append(ctx.order, name)
-	for s := range samples {
-		// FIXME(jz) - need to clear this at some point, memory leak..
-		ctx.running[name] = append(ctx.running[name], s)
+func csvHandler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if response, err := fn(w, r); err == nil {
+			fmt.Fprintf(w, "Average,TotalTime,Total,TotalErrors,TotalWorkers,LastResult,LastError,WorstResult,WallTime,Type\n")
+			for _, line := range response.(*listResponse).Items.([]*Sample) {
+				fmt.Fprintf(w, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n",
+					line.Average, line.TotalTime, line.Total, line.TotalErrors, line.TotalWorkers, line.LastResult, line.LastError, line.WorstResult, line.WallTime, line.Type)
+			}
+		}
 	}
 }
 
-func handler(fn func(w http.ResponseWriter, r *http.Request) (interface{}, error)) http.HandlerFunc {
+func handler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		var response interface{}

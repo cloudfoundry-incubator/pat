@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"io/ioutil"
+
 	"launchpad.net/goyaml"
 )
 
