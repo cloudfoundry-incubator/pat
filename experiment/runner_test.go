@@ -2,10 +2,10 @@ package experiment
 
 import (
 	"errors"
-	"time"
 	. "github.com/julz/pat/benchmarker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 var _ = Describe("ExperimentConfiguration and Sampler", func() {
@@ -151,40 +151,106 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 	})
 
 	Describe("Sampling", func() {
-		It("Calculates the running average", func() {
-			iteration := make(chan IterationResult)
-			results := make(chan BenchmarkResult)
-			errors := make(chan error)
-			workers := make(chan int)
-			quit := make(chan bool)
+		var (
+			iteration chan IterationResult
+			results   chan BenchmarkResult
+			errors    chan error
+			workers   chan int
+			quit      chan bool
+			samples   chan *Sample
+		)
 
-			samples := make(chan *Sample)
+		BeforeEach(func() {
+			iteration = make(chan IterationResult)
+			results = make(chan BenchmarkResult)
+			errors = make(chan error)
+			workers = make(chan int)
+			quit = make(chan bool)
+			samples = make(chan *Sample)
 			go (&SamplableExperiment{iteration, results, errors, workers, samples, quit}).Sample()
+		})
+
+		It("Calculates the running average", func() {
 			go func() { iteration <- IterationResult{2 * time.Second} }()
 			go func() { iteration <- IterationResult{4 * time.Second} }()
 			go func() { iteration <- IterationResult{6 * time.Second} }()
 
-			Ω((<-samples).Average).Should(Equal(2 * time.Second))
-			Ω((<-samples).Average).Should(Equal(3 * time.Second))
-			Ω((<-samples).Average).Should(Equal(4 * time.Second))
+			count := 0
+			for s := range samples {
+				if s.Type == ResultSample {
+					if count == 0 {
+						Ω(s.Average).Should(Equal(2 * time.Second))
+					} else if count == 1 {
+						Ω(s.Average).Should(Equal(3 * time.Second))
+					} else if count == 2 {
+						Ω(s.Average).Should(Equal(4 * time.Second))
+						return
+					}
+					count += 1
+				}
+			}
 		})
 
 		It("Closes the samples channel when there are no more iterationResults", func() {
-			iteration := make(chan IterationResult)
-			results := make(chan BenchmarkResult)
-			errors := make(chan error)
-			workers := make(chan int)
-			quit := make(chan bool)
-
-			samples := make(chan *Sample)
-			go (&SamplableExperiment{iteration, results, errors, workers, samples, quit}).Sample()
 			go func() {
 				iteration <- IterationResult{2 * time.Second}
 				close(iteration)
 			}()
 
-			Ω((<-samples).Average).Should(Equal(2 * time.Second))
-			Ω((samples)).Should(BeClosed())
+			for s := range samples {
+				if s.Type == ResultSample {
+					Ω(s.Average).Should(Equal(2 * time.Second))
+					Ω(samples).Should(BeClosed())
+					return
+				}
+			}
+		})
+
+		It("Updates throughput each second", func() {
+			Ω((<-samples).Type).Should(Equal(ThroughputSample))
+			s := <-samples
+			Ω(s.Type).Should(Equal(ThroughputSample))
+			Ω(s.WallTime.Seconds()).Should(BeNumerically("~", 2, .05))
+		})
+
+		It("Calculates the throughput for a command every second", func() {
+			go func() {
+				results <- BenchmarkResult{Command: "push"}
+				time.Sleep(3 * time.Second)
+				results <- BenchmarkResult{Command: "push"}
+			}()
+
+			seconds := 1
+			for s := range samples {
+				if s.Type == ThroughputSample {
+					if seconds == 1 {
+						Ω(s.Commands["push"].Throughput).Should(BeNumerically("~", 1, 0.05))
+					} else if seconds == 2 {
+						Ω(s.Commands["push"].Throughput).Should(BeNumerically("~", 0.5, 0.05))
+					} else if seconds == 3 {
+						Ω(s.Commands["push"].Throughput).Should(BeNumerically("~", 0.33, 0.05))
+					} else if seconds == 4 {
+						Ω(s.Commands["push"].Throughput).Should(BeNumerically("~", 0.5, 0.05))
+						return
+					}
+					seconds += 1
+				}
+			}
+		})
+
+		It("Calculates a single commands throughput from multiple users", func() {
+			go func() {
+				for i := 0; i < 5; i++ {
+					go func() { results <- BenchmarkResult{Command: "push"} }()
+				}
+			}()
+
+			for s := range samples {
+				if s.Type == ThroughputSample {
+					Ω(s.Commands["push"].Throughput).Should(BeNumerically("~", 5, 0.05))
+					return
+				}
+			}
 		})
 
 		PIt("Worst, errors, workers etc.", func() {})

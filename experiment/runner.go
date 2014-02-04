@@ -1,9 +1,9 @@
 package experiment
 
 import (
+	. "github.com/julz/pat/benchmarker"
 	"strings"
 	"time"
-	. "github.com/julz/pat/benchmarker"
 )
 
 type SampleType int
@@ -11,16 +11,18 @@ type SampleType int
 const (
 	ResultSample SampleType = iota
 	WorkerSample
+	ThroughputSample
 	ErrorSample
 	OtherSample
 )
 
 type Command struct {
-	Count     int64
-	Average   time.Duration
-	TotalTime time.Duration
-	LastTime  time.Duration
-	WorstTime time.Duration
+	Count      int64
+	Throughput float64
+	Average    time.Duration
+	TotalTime  time.Duration
+	LastTime   time.Duration
+	WorstTime  time.Duration
 }
 
 type Sample struct {
@@ -128,6 +130,7 @@ func (ex *ExecutableExperiment) Execute() {
 	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func() {
 		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimeWorker(ex.iteration, ex.benchmark, ex.errors, ex.Worker, operations))))
 	}, ex.quit))
+	time.Sleep(1 * time.Second)
 	close(ex.iteration)
 }
 
@@ -141,6 +144,7 @@ func (ex *SamplableExperiment) Sample() {
 	var totalErrors int
 	var workers int
 	var worstResult time.Duration
+	commandsPerSecond := time.NewTicker(1 * time.Second)
 	startTime := time.Now()
 
 	for {
@@ -175,6 +179,13 @@ func (ex *SamplableExperiment) Sample() {
 			totalErrors = totalErrors + 1
 		case w := <-ex.workers:
 			workers = workers + w
+		case <-commandsPerSecond.C:
+			sampleType = ThroughputSample
+			for key, _ := range commands {
+				cmd := commands[key]
+				cmd.Throughput = float64(cmd.Count) / float64(time.Now().Sub(startTime).Seconds())
+				commands[key] = cmd
+			}
 		}
 
 		ex.samples <- &Sample{commands, avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}
