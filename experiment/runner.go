@@ -1,9 +1,9 @@
 package experiment
 
 import (
-	. "github.com/julz/pat/benchmarker"
 	"strings"
 	"time"
+	. "github.com/julz/pat/benchmarker"
 )
 
 type SampleType int
@@ -74,6 +74,7 @@ type SamplableExperiment struct {
 	errors    chan error
 	workers   chan int
 	samples   chan *Sample
+	ticks     <-chan int
 	quit      chan bool
 }
 
@@ -98,7 +99,19 @@ func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan I
 }
 
 func newRunningExperiment(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
-	return &SamplableExperiment{iterationResults, benchmarkResults, errors, workers, samples, quit}
+	return &SamplableExperiment{iterationResults, benchmarkResults, errors, workers, samples, newTicker(), quit}
+}
+
+func newTicker() <-chan int {
+	t := make(chan int)
+	go func() {
+		seconds := 0
+		for _ = range time.NewTicker(1 * time.Second).C {
+			seconds = seconds + 1
+			t <- seconds
+		}
+	}()
+	return t
 }
 
 func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
@@ -130,7 +143,7 @@ func (ex *ExecutableExperiment) Execute() {
 	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func() {
 		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimeWorker(ex.iteration, ex.benchmark, ex.errors, ex.Worker, operations))))
 	}, ex.quit))
-	time.Sleep(1 * time.Second)
+
 	close(ex.iteration)
 }
 
@@ -144,7 +157,6 @@ func (ex *SamplableExperiment) Sample() {
 	var totalErrors int
 	var workers int
 	var worstResult time.Duration
-	commandsPerSecond := time.NewTicker(1 * time.Second)
 	startTime := time.Now()
 
 	for {
@@ -179,11 +191,11 @@ func (ex *SamplableExperiment) Sample() {
 			totalErrors = totalErrors + 1
 		case w := <-ex.workers:
 			workers = workers + w
-		case <-commandsPerSecond.C:
+		case seconds := <-ex.ticks:
 			sampleType = ThroughputSample
 			for key, _ := range commands {
 				cmd := commands[key]
-				cmd.Throughput = float64(cmd.Count) / float64(time.Now().Sub(startTime).Seconds())
+				cmd.Throughput = float64(cmd.Count) / float64(seconds)
 				commands[key] = cmd
 			}
 		}
