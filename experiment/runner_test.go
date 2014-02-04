@@ -151,15 +151,28 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 	})
 
 	Describe("Sampling", func() {
-		It("Calculates the running average", func() {
-			iteration := make(chan IterationResult)
-			results := make(chan BenchmarkResult)
-			errors := make(chan error)
-			workers := make(chan int)
-			quit := make(chan bool)
+		var (
+			iteration chan IterationResult
+			results   chan BenchmarkResult
+			errors    chan error
+			workers   chan int
+			quit      chan bool
+			ticks     chan int
+			samples   chan *Sample
+		)
 
-			samples := make(chan *Sample)
-			go (&SamplableExperiment{iteration, results, errors, workers, samples, quit}).Sample()
+		BeforeEach(func() {
+			iteration = make(chan IterationResult)
+			results = make(chan BenchmarkResult)
+			errors = make(chan error)
+			workers = make(chan int)
+			quit = make(chan bool)
+			samples = make(chan *Sample)
+			ticks = make(chan int)
+			go (&SamplableExperiment{iteration, results, errors, workers, samples, ticks, quit}).Sample()
+		})
+
+		It("Calculates the running average", func() {
 			go func() { iteration <- IterationResult{2 * time.Second} }()
 			go func() { iteration <- IterationResult{4 * time.Second} }()
 			go func() { iteration <- IterationResult{6 * time.Second} }()
@@ -170,24 +183,40 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		})
 
 		It("Closes the samples channel when there are no more iterationResults", func() {
-			iteration := make(chan IterationResult)
-			results := make(chan BenchmarkResult)
-			errors := make(chan error)
-			workers := make(chan int)
-			quit := make(chan bool)
-
-			samples := make(chan *Sample)
-			go (&SamplableExperiment{iteration, results, errors, workers, samples, quit}).Sample()
 			go func() {
 				iteration <- IterationResult{2 * time.Second}
 				close(iteration)
 			}()
 
 			Ω((<-samples).Average).Should(Equal(2 * time.Second))
-			Ω((samples)).Should(BeClosed())
+			Ω(samples).Should(BeClosed())
+			return
 		})
 
-		PIt("Worst, errors, workers etc.", func() {})
+		It("Updates throughput when the timer ticks", func() {
+			go func() { ticks <- 1 }()
+			Eventually((<-samples).Type).Should(Equal(ThroughputSample))
+		})
+
+		It("Calculates the throughput for a command every tick", func() {
+			go func() {
+				results <- BenchmarkResult{Command: "push"}
+				results <- BenchmarkResult{Command: "push"}
+				ticks <- 2
+				results <- BenchmarkResult{Command: "push"}
+				ticks <- 3
+				results <- BenchmarkResult{Command: "push"}
+				ticks <- 6
+			}()
+
+			<-samples // ResultSample
+			<-samples // ResultSample
+			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 1))
+			<-samples // ResultSample
+			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 1))
+			<-samples // ResultSample
+			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 4.0/6.0))
+		})
 	})
 })
 

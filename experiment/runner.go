@@ -11,16 +11,18 @@ type SampleType int
 const (
 	ResultSample SampleType = iota
 	WorkerSample
+	ThroughputSample
 	ErrorSample
 	OtherSample
 )
 
 type Command struct {
-	Count     int64
-	Average   time.Duration
-	TotalTime time.Duration
-	LastTime  time.Duration
-	WorstTime time.Duration
+	Count      int64
+	Throughput float64
+	Average    time.Duration
+	TotalTime  time.Duration
+	LastTime   time.Duration
+	WorstTime  time.Duration
 }
 
 type Sample struct {
@@ -72,6 +74,7 @@ type SamplableExperiment struct {
 	errors    chan error
 	workers   chan int
 	samples   chan *Sample
+	ticks     <-chan int
 	quit      chan bool
 }
 
@@ -96,7 +99,19 @@ func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan I
 }
 
 func newRunningExperiment(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
-	return &SamplableExperiment{iterationResults, benchmarkResults, errors, workers, samples, quit}
+	return &SamplableExperiment{iterationResults, benchmarkResults, errors, workers, samples, newTicker(), quit}
+}
+
+func newTicker() <-chan int {
+	t := make(chan int)
+	go func() {
+		seconds := 0
+		for _ = range time.NewTicker(1 * time.Second).C {
+			seconds = seconds + 1
+			t <- seconds
+		}
+	}()
+	return t
 }
 
 func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
@@ -128,6 +143,7 @@ func (ex *ExecutableExperiment) Execute() {
 	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func() {
 		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimeWorker(ex.iteration, ex.benchmark, ex.errors, ex.Worker, operations))))
 	}, ex.quit))
+
 	close(ex.iteration)
 }
 
@@ -175,6 +191,13 @@ func (ex *SamplableExperiment) Sample() {
 			totalErrors = totalErrors + 1
 		case w := <-ex.workers:
 			workers = workers + w
+		case seconds := <-ex.ticks:
+			sampleType = ThroughputSample
+			for key, _ := range commands {
+				cmd := commands[key]
+				cmd.Throughput = float64(cmd.Count) / float64(seconds)
+				commands[key] = cmd
+			}
 		}
 
 		ex.samples <- &Sample{commands, avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}

@@ -67,11 +67,12 @@ func display(concurrency int, iterations int, interval int, stop int, samples <-
 		fmt.Println()
 		for key, command := range s.Commands {
 			fmt.Printf("\x1b[1m%v\x1b[0m:\n", key)
-			fmt.Printf("\x1b[1m\tCount\x1b[0m:      \x1b[36m%v\x1b[0m\n", command.Count)
-			fmt.Printf("\x1b[1m\tAverage\x1b[0m:    \x1b[36m%v\x1b[0m\n", command.Average)
-			fmt.Printf("\x1b[1m\tLast time\x1b[0m:  \x1b[36m%v\x1b[0m\n", command.LastTime)
-			fmt.Printf("\x1b[1m\tWorst time\x1b[0m: \x1b[36m%v\x1b[0m\n", command.WorstTime)
-			fmt.Printf("\x1b[1m\tTotal time\x1b[0m: \x1b[36m%v\x1b[0m\n", command.TotalTime)
+			fmt.Printf("\x1b[1m\tCount\x1b[0m:                 \x1b[36m%v\x1b[0m\n", command.Count)
+			fmt.Printf("\x1b[1m\tAverage\x1b[0m:               \x1b[36m%v\x1b[0m\n", command.Average)
+			fmt.Printf("\x1b[1m\tLast time\x1b[0m:             \x1b[36m%v\x1b[0m\n", command.LastTime)
+			fmt.Printf("\x1b[1m\tWorst time\x1b[0m:            \x1b[36m%v\x1b[0m\n", command.WorstTime)
+			fmt.Printf("\x1b[1m\tTotal time\x1b[0m:            \x1b[36m%v\x1b[0m\n", command.TotalTime)
+			fmt.Printf("\x1b[1m\tPer second throughput\x1b[0m: \x1b[36m%v\x1b[0m\n", command.Throughput)
 		}
 		fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
 		if s.TotalErrors > 0 {
