@@ -1,0 +1,24 @@
+language: go
+go:
+  - 1.2
+
+before_install:
+  - git submodule update --init --recursive
+
+install:
+  - npm install -g grunt-cli
+  - npm install
+  - export PATH=$HOME/gopath/bin:$PATH
+  - go get github.com/vito/gocart
+
+before_script:
+  # - git clone -q git://github.com/n1k0/casperjs.git
+  # - cd casperjs; git checkout -q tags/1.1-beta1; cd ../
+  # - export PATH=$PATH:`pwd`/casperjs/bin
+  - gocart
+  - go install github.com/onsi/ginkgo/ginkgo
+  - go run pat/main.go -server &
+  - npm install -g casperjs
+  - phantomjs --version; casperjs --version
+
+script: ginkgo -r && casperjs test ./features/basic_flow.coffee
