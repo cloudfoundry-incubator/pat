@@ -63,6 +63,12 @@ func display(concurrency int, iterations int, interval int, stop int, samples <-
 		fmt.Printf("\x1b[1mWall time\x1b[0m:         \x1b[36m%v\x1b[0m\n", s.WallTime)
 		fmt.Printf("\x1b[1mRunning Workers\x1b[0m:   \x1b[36m%v\x1b[0m\n", s.TotalWorkers)
 		fmt.Println()
+		fmt.Println("\x1b[32;1mThroughput:\x1b[0m")
+		fmt.Printf("\x1b[1m\tTotal workload throughput\x1b[0m: \x1b[36m%v\x1b[0m\n", s.Throughput.Total)
+		for key, value := range s.Throughput.Commands {
+			fmt.Printf("\x1b[1m\t%v throughput\x1b[0m: \x1b[36m%v\x1b[0m\n", key, value)
+		}
+		fmt.Println()
 		fmt.Println("\x1b[32;1mCommands Issued:\x1b[0m")
 		fmt.Println()
 		for key, command := range s.Commands {
@@ -72,7 +78,6 @@ func display(concurrency int, iterations int, interval int, stop int, samples <-
 			fmt.Printf("\x1b[1m\tLast time\x1b[0m:             \x1b[36m%v\x1b[0m\n", command.LastTime)
 			fmt.Printf("\x1b[1m\tWorst time\x1b[0m:            \x1b[36m%v\x1b[0m\n", command.WorstTime)
 			fmt.Printf("\x1b[1m\tTotal time\x1b[0m:            \x1b[36m%v\x1b[0m\n", command.TotalTime)
-			fmt.Printf("\x1b[1m\tPer second throughput\x1b[0m: \x1b[36m%v\x1b[0m\n", command.Throughput)
 		}
 		fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
 		if s.TotalErrors > 0 {

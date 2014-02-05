@@ -1,9 +1,10 @@
 package experiment
 
 import (
+	. "github.com/julz/pat/benchmarker"
+	"math"
 	"strings"
 	"time"
-	. "github.com/julz/pat/benchmarker"
 )
 
 type SampleType int
@@ -17,15 +18,21 @@ const (
 )
 
 type Command struct {
-	Count      int64
-	Throughput float64
-	Average    time.Duration
-	TotalTime  time.Duration
-	LastTime   time.Duration
-	WorstTime  time.Duration
+	Count     int64
+	Average   time.Duration
+	TotalTime time.Duration
+	LastTime  time.Duration
+	WorstTime time.Duration
+}
+
+type Throughput struct {
+	Total         float64
+	Commands      map[string]float64
+	TimedCommands map[float64]map[string]int
 }
 
 type Sample struct {
+	Throughput   Throughput
 	Commands     map[string]Command
 	Average      time.Duration
 	TotalTime    time.Duration
@@ -55,8 +62,8 @@ type ExperimentConfiguration struct {
 
 type RunnableExperiment struct {
 	ExperimentConfiguration
-	executerFactory func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, quit chan bool) Executable
-	samplerFactory  func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable
+	executerFactory func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, quit chan bool, end chan bool) Executable
+	samplerFactory  func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool, end chan bool) Samplable
 }
 
 type ExecutableExperiment struct {
@@ -66,6 +73,7 @@ type ExecutableExperiment struct {
 	errors    chan error
 	workers   chan int
 	quit      chan bool
+	end       chan bool
 }
 
 type SamplableExperiment struct {
@@ -74,7 +82,7 @@ type SamplableExperiment struct {
 	errors    chan error
 	workers   chan int
 	samples   chan *Sample
-	ticks     <-chan int
+	ticks     <-chan float64
 	quit      chan bool
 }
 
@@ -94,23 +102,29 @@ func NewRunnableExperiment(config ExperimentConfiguration) *RunnableExperiment {
 	return &RunnableExperiment{config, config.newExecutableExperiment, newRunningExperiment}
 }
 
-func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, quit chan bool) Executable {
-	return &ExecutableExperiment{c, iterationResults, benchmarkResults, errors, workers, quit}
+func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, quit chan bool, end chan bool) Executable {
+	return &ExecutableExperiment{c, iterationResults, benchmarkResults, errors, workers, quit, end}
 }
 
-func newRunningExperiment(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
-	return &SamplableExperiment{iterationResults, benchmarkResults, errors, workers, samples, newTicker(), quit}
+func newRunningExperiment(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool, end chan bool) Samplable {
+	return &SamplableExperiment{iterationResults, benchmarkResults, errors, workers, samples, newTicker(end), quit}
 }
 
-func newTicker() <-chan int {
-	t := make(chan int)
-	go func() {
-		seconds := 0
-		for _ = range time.NewTicker(1 * time.Second).C {
-			seconds = seconds + 1
-			t <- seconds
+func newTicker(end chan bool) <-chan float64 {
+	t := make(chan float64)
+	go func(end chan bool) {
+		startTime := time.Now()
+		ticker := time.NewTicker(1 * time.Second).C
+		for {
+			select {
+			case curTime := <-ticker:
+				t <- curTime.Sub(startTime).Seconds()
+			case <-end:
+				t <- time.Now().Sub(startTime).Seconds()
+				return
+			}
 		}
-	}()
+	}(end)
 	return t
 }
 
@@ -122,14 +136,15 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
 	samples := make(chan *Sample)
 	quit := make(chan bool)
 	done := make(chan bool)
-	sampler := config.samplerFactory(iteration, benchmark, errors, workers, samples, quit)
+	end := make(chan bool)
+	sampler := config.samplerFactory(iteration, benchmark, errors, workers, samples, quit, end)
 	go sampler.Sample()
 	go func(d chan bool) {
 		tracker(samples)
 		d <- true
 	}(done)
 
-	config.executerFactory(iteration, benchmark, errors, workers, quit).Execute()
+	config.executerFactory(iteration, benchmark, errors, workers, quit, end).Execute()
 	<-done
 	return nil
 }
@@ -143,12 +158,15 @@ func (ex *ExecutableExperiment) Execute() {
 	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func() {
 		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimeWorker(ex.iteration, ex.benchmark, ex.errors, ex.Worker, operations))))
 	}, ex.quit))
-
+	ex.end <- true
+	time.Sleep(1 * time.Second)
 	close(ex.iteration)
 }
 
 func (ex *SamplableExperiment) Sample() {
 	commands := make(map[string]Command)
+	throughput := Throughput{0, make(map[string]float64), make(map[float64]map[string]int)}
+	var count float64
 	var iterations int64
 	var totalTime time.Duration
 	var avg time.Duration
@@ -185,6 +203,13 @@ func (ex *SamplableExperiment) Sample() {
 				cmd.WorstTime = benchmark.Duration
 			}
 
+			inner, ok := throughput.TimedCommands[math.Floor(benchmark.StopTime.Sub(startTime).Seconds())]
+			if !ok {
+				inner = make(map[string]int)
+				throughput.TimedCommands[math.Floor(benchmark.StopTime.Sub(startTime).Seconds())] = inner
+			}
+			inner[benchmark.Command]++
+
 			commands[benchmark.Command] = cmd
 		case e := <-ex.errors:
 			lastError = e
@@ -193,13 +218,16 @@ func (ex *SamplableExperiment) Sample() {
 			workers = workers + w
 		case seconds := <-ex.ticks:
 			sampleType = ThroughputSample
+			count = 0
 			for key, _ := range commands {
 				cmd := commands[key]
-				cmd.Throughput = float64(cmd.Count) / float64(seconds)
-				commands[key] = cmd
+				throughput.Commands[key] = float64(cmd.Count) / float64(seconds)
+				count += float64(cmd.Count)
 			}
+
+			throughput.Total = count / float64(seconds)
 		}
 
-		ex.samples <- &Sample{commands, avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}
+		ex.samples <- &Sample{throughput, commands, avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}
 	}
 }

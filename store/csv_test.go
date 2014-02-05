@@ -34,8 +34,8 @@ var _ = Describe("Csv Store", func() {
 			store = NewCsvStore(dir)
 			writer := store.Writer("foo")
 			write(writer, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
+				&experiment.Sample{experiment.Throughput{}, nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
+				&experiment.Sample{experiment.Throughput{}, nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
 			})
 			files, err := ioutil.ReadDir(dir)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -62,6 +62,10 @@ var _ = Describe("Csv Store", func() {
 					continue
 				}
 
+				if meta.Field(i).Name == "Throughput" {
+					continue
+				}
+
 				Ω(strings.Split(output, "\n")[0]).Should(ContainSubstring(meta.Field(i).Name))
 			}
 		})
@@ -72,7 +76,7 @@ var _ = Describe("Csv Store", func() {
 			samples, err := ex[0].GetData()
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(samples[0]).Should(Equal(&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample}))
+			Ω(samples[0]).Should(Equal(&experiment.Sample{experiment.Throughput{}, nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample}))
 		})
 
 		It("Does not save error text, to avoid huge files", func() {
@@ -87,15 +91,15 @@ var _ = Describe("Csv Store", func() {
 		It("Loads multiple CSVs from a directory, in order", func() {
 			foo := store.Writer("bar")
 			write(foo, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
+				&experiment.Sample{experiment.Throughput{}, nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
+				&experiment.Sample{experiment.Throughput{}, nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
 			})
 
 			bar := store.Writer("baz")
 			write(bar, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
+				&experiment.Sample{experiment.Throughput{}, nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
+				&experiment.Sample{experiment.Throughput{}, nil, 1, 2, 3, 4, 5, 6, nil, 7, 8, experiment.ResultSample},
+				&experiment.Sample{experiment.Throughput{}, nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 2, experiment.ResultSample},
 			})
 
 			samples, err := store.LoadAll()
