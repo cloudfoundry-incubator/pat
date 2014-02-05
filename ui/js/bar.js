@@ -1,57 +1,121 @@
-d3.custom.barchart = function(el) {
-  var d3Obj = d3.select(el);
-  var jqObj = $(el);
-  var xAxis, yAxis
-  d3Obj.append("svg").attr("class","barchart").attr("width", jqObj.width() - 20).attr("height", jqObj.height() - 20);
+d3.custom.barchart = function(el, observableArray) {
+  const d3_id = "d3_workload",
+        d3_container = "d3_workload_container";
+        
+  var margin = {top: 30, right: 30, bottom: 30, left: 30},
+      d3Obj = d3.select(el),
+      jqObj = $(el);
 
-  function barchart(data) {
-    if (data.length === 0) return;
-    const second = 1000000000;
-    var xRange = 10;
-    var yRange = 0;
-    $(".barchart").html("");
+  this.barWidth = 30;
+  this.svgWidth = jqObj.width() - margin.left - margin.right;
+  this.svgHeight = jqObj.height() - margin.top - margin.bottom;
+  this.x = d3.scale.linear().range([0, this.svgWidth], 1),
+  this.y = d3.scale.linear().range([0, this.svgHeight], 1);
+  this.xAxis = d3.svg.axis().scale(this.x).orient("bottom").ticks(0),
+  this.yAxis = d3.svg.axis().scale(this.y).orient("right").tickSize(-this.svgWidth + 30);
+  this.zoom = d3.behavior.zoom()
+    .x(this.x)
+    .scaleExtent([1, 10])
+    .on("zoom", this.zoomed());
 
-    data.forEach(function(d) {
-      if (d.LastResult > yRange) yRange = d.LastResult;
-    });
-    yRange = yRange / second;
-    if (data.length > xRange) {
-      xRange = data.length
-    }
+  d3Obj.append("div")
+    .attr("id",d3_container)
+    .attr("width", "100%")
+    .attr("height", "100%")
+  .append("svg")
+    .attr("id", d3_id)
+    .attr("width", jqObj.width())    
+    .attr("height", jqObj.height());
+    
+    
+  this.svg = d3.select("#" + d3_id)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    var xOffset = 50, yOffset = 50, barWidth = 30;
-    var h = $('.barchart').height();
+  this.outterBody = this.svg.append("g");
 
-    var x = d3.scale.linear().domain([0, xRange]).range([0, $('.barchart').width() - (xOffset*2)], 1);
-    var y = d3.scale.linear().domain([yRange, 0]).range([0, h - (yOffset*2)]);
-    xAxis = d3.svg.axis().scale(x).orient("bottom");
-    yAxis = d3.svg.axis().scale(y).orient("left");
+  this.svg.append("defs").append("clipPath")
+    .attr("id", "clip")
+  .append("rect")
+    .attr("x", 15)
+    .attr("y", 1)
+    .attr("width", this.svgWidth - 50)
+    .attr("height", this.svgHeight + 30);   
 
-    var svg = d3.select(".barchart");
-    svg.append("g").attr("class", "x axis").attr("transform", "translate(" + xOffset + "," + (h-yOffset) + ")").call(xAxis);
-    svg.append("g").attr("class", "y axis").attr("transform", "translate(" + xOffset + ","+ yOffset + ")").call(yAxis);
-    svg.append("text").attr("x",30).attr("y", 30).attr("dy", ".85em").text("Seconds");
-    svg.append("text").attr("x",$('.barchart').width() - xOffset).attr("y", h - 20).attr("dy", ".85em").text("App Pushes");
+ var chartBody = this.svg.append("g")
+    .attr("clip-path", "url(#clip)")
+    .call(this.zoom);      
+  chartBody.append("rect").attr("width","100%").attr("height","100%").attr("style","fill:none;pointer-events: all;");
+      
+  this.outterBody.append("g").attr("class", "x axis").attr("transform", "translate(0," + this.svgHeight + ")");
+  this.outterBody.append("g").attr("class", "y axis").attr("transform", "translate(" + (this.svgWidth - 20) + ", 0)");
+  this.barCon = chartBody.append("g").attr("transform", "translate(30,0)");     
 
-    var bars = svg.selectAll("rect.bar").data(data)
+  var self = this;
+  observableArray.subscribe(function() {        
+      if (!self.data) {
+          self.svg.append("text").attr("x", -60).attr("y", 30).attr("dy", ".6em").attr("transform", "rotate(-90)").text("Seconds");
+          self.svg.append("text").attr("x", self.svgWidth - 60).attr("y", self.svgHeight + 5).attr("dy", ".6em").text("App Pushes").attr("text-anchor","middle");    
+          self.data = observableArray();  
+          self.refresh()();
+      } else {
+        self.data = observableArray();            
+        self.refresh()();
+      }
+  });
+};
+
+d3.custom.barchart.prototype.refresh = function() {
+  const second = 1000000000;
+  var self = this;
+  
+  return function(){            
+    var len = self.data.length;
+    var x = self.x.domain( [len, 1] ).range([len * (self.barWidth + 1), self.barWidth + 1]);
+    var y = self.y.domain([d3.max(self.data, function(d) { return d.LastResult / second}), 0] );
+    console.log (len); 
+    var bars = self.barCon.selectAll("rect.bar").data(self.data);
+    var labels = self.barCon.selectAll("text").data(self.data);
+    
+    bars.transition()
+      .attr("x", function(d, i) { return x(len - i ) })
+      .attr("y", function(d) { return y(d.LastResult / second) } )
+      .attr("height", function(d) { return (self.svgHeight - y(d.LastResult / second)) } );
+    labels.transition().attr("x", function(d, i) { return (x(len - i ) + (self.barWidth / 2)) })
+
     bars.enter().append("rect")
-      .attr("width", barWidth)
-      .attr("class", "bar")
-    bars.exit().remove()
-    bars
-      .attr("x", function(d) { return x(d.Total) + xOffset - (barWidth/2) })
-      .attr("y", function(d) { return y(d.LastResult / second) + yOffset })
-      .attr("height", function(d) { return h - y(d.LastResult / second) - (yOffset * 2) })
+      .attr("x", function(d, i) { return x(len - i) })
+      .attr("y", function(d) { return y(d.LastResult / second) } )      
+      .attr("height", function(d) { return (self.svgHeight - y(d.LastResult / second)) } )      
+      .attr("width", self.barWidth)
+      .attr("class", "bar");
+      
+    bars.enter().append("text")         
+      .attr("x", function(d, i) { return (x(len - i ) + (self.barWidth / 2)) })
+      .attr("y", self.svgHeight + 3 )
+      .attr("dy", ".7em")
+      .text(function(d, i){ return i + 1 });
+  
+    self.outterBody.select(".x.axis").call(self.xAxis);
+    self.outterBody.select(".y.axis").call(self.yAxis);    
 
-//    data.forEach(function(d){
-//      svg.append("rect").attr("x",x(d.Total) + xOffset - (barWidth/2)).attr("y",  y(d.LastResult / 1000000000) + yOffset ).attr("width", barWidth)
-//        .attr("height", h - y(d.LastResult / 1000000000) - (yOffset * 2)).attr("class","bar");
-//      svg.append("text").attr("x",x(d.Total) + xOffset ).attr("y", y(d.LastResult / 1000000000) + yOffset - 10).attr("dy", ".75em").text((d.LastResult / 1000000000).toFixed(2) + " sec");
-//    });
+    bars.exit().remove();      
+    labels.exit().remove();
   }
+}
 
-  barchart.xAxis_max = function() { return xAxis.scale().domain()[1]; }
-  barchart.yAxis_max = function() { return yAxis.scale().domain()[0]; }
+d3.custom.barchart.prototype.zoomed = function() {
+  var self = this;
+  return function() {    
+    var svg = self.svg;        
+    self.barCon.attr("transform", "translate(" + d3.event.translate[0] + ",0)scale(1, 1)");     
+  }
+}
 
-  return barchart;
+d3.custom.barchart.prototype.yAxis_max = function() {
+  return this.yAxis.scale().domain()[0]; 
+}
+
+d3.custom.barchart.prototype.xAxis_max = function() {
+  return this.xAxis.scale().domain()[0]; 
 }

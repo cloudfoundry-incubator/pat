@@ -85,6 +85,7 @@ tr, td {
   font: 10px sans-serif;
   text-anchor: middle;
 }
+
 #graph .axis text {
   font: 10px sans-serif;
 }
@@ -92,7 +93,7 @@ tr, td {
 #graph .axis path,
 #graph .axis line {
   fill: none;
-  stroke: #000;
+  stroke: #eee;
   shape-rendering: crispEdges;
 }
 
