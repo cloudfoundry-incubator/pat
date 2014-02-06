@@ -1,8 +1,8 @@
 github.com/onsi/ginkgo origin/master
 github.com/onsi/gomega origin/master
 github.com/nu7hatch/gouuid origin/master
-github.com/pivotal-cf-experimental/cf-acceptance-tests/helpers origin/master
 github.com/vito/cmdtest origin/master
+github.com/pivotal-cf-experimental/cf-test-helpers/cf origin/master
 github.com/gorilla/mux origin/master
 github.com/garyburd/redigo/redis origin/master
 launchpad.net/goyaml last:1
