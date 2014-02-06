@@ -1,7 +1,8 @@
-github.com/onsi/ginkgo	d6b13df1865f79525395c741a261633103dc1bb0
+github.com/onsi/ginkgo	d16fe2b14fad464d5edde7b591b031e884ae478c
+github.com/onsi/gomega	eb4854fbb3636f8ca054586384addf7f1b048466
 github.com/nu7hatch/gouuid	179d4d0c4d8d407a32af483c2354df1d2c91e6c3
-github.com/pivotal-cf-experimental/cf-acceptance-tests/helpers	accec453e017a39c7d42459af8b110b8b19a88d3
-github.com/vito/cmdtest	a720969567219160e78fdf5f1486b6887771f311
+github.com/vito/cmdtest	4b86f8c2259c55e86e4b971cd7dc5dfb03e41b80
+github.com/pivotal-cf-experimental/cf-test-helpers/cf	430a0c8fc34acb4e09e54c22b61c0cd07311a262
 github.com/gorilla/mux	9ede152210fa25c1377d33e867cb828c19316445
 github.com/garyburd/redigo/redis	ed54f4ed86a815cf09870e4bd1a10a2ee39a4308
 launchpad.net/goyaml	50

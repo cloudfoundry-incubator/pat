@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/nu7hatch/gouuid"
-	. "github.com/pivotal-cf-experimental/cf-acceptance-tests/helpers"
+	. "github.com/pivotal-cf-experimental/cf-test-helpers/cf"
 )
 
 //Todo(simon) Remove, for dev testing only
