@@ -11,8 +11,14 @@ d3.custom.barchart = function(el, observableArray) {
   this.svgHeight = jqObj.height() - margin.top - margin.bottom;
   this.x = d3.scale.linear().range([0, this.svgWidth], 1),
   this.y = d3.scale.linear().range([0, this.svgHeight], 1);
-  this.xAxis = d3.svg.axis().scale(this.x).orient("bottom").ticks(0),
-  this.yAxis = d3.svg.axis().scale(this.y).orient("right").tickSize(-this.svgWidth + 30);
+  this.xAxis = d3.svg.axis()
+    .scale(this.x)
+    .orient("bottom")
+    .ticks(0);
+  this.yAxis = d3.svg.axis()
+    .scale(this.y)
+    .orient("right")
+    .tickSize(-this.svgWidth + 30);
   this.zoom = d3.behavior.zoom()
     .x(this.x)
     .scaleExtent([1, 10])
@@ -27,7 +33,6 @@ d3.custom.barchart = function(el, observableArray) {
     .attr("width", jqObj.width())    
     .attr("height", jqObj.height());
     
-    
   this.svg = d3.select("#" + d3_id)
     .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -39,23 +44,39 @@ d3.custom.barchart = function(el, observableArray) {
   .append("rect")
     .attr("x", 15)
     .attr("y", 1)
-    .attr("width", this.svgWidth - 50)
+    .attr("width", this.svgWidth - 40)
     .attr("height", this.svgHeight + 30);   
 
  var chartBody = this.svg.append("g")
     .attr("clip-path", "url(#clip)")
     .call(this.zoom);      
-  chartBody.append("rect").attr("width","100%").attr("height","100%").attr("style","fill:none;pointer-events: all;");
+  chartBody.append("rect")
+    .attr("width","100%")
+    .attr("height","100%")
+    .attr("style","fill:none;pointer-events: all;");
       
-  this.outterBody.append("g").attr("class", "x axis").attr("transform", "translate(0," + this.svgHeight + ")");
-  this.outterBody.append("g").attr("class", "y axis").attr("transform", "translate(" + (this.svgWidth - 20) + ", 0)");
+  this.outterBody.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + this.svgHeight + ")");
+  this.outterBody.append("g")
+    .attr("class", "y axis")
+    .attr("transform", "translate(" + (this.svgWidth - 20) + ", 0)");
+  
   this.barCon = chartBody.append("g").attr("transform", "translate(30,0)");     
 
   var self = this;
   observableArray.subscribe(function() {        
       if (!self.data) {
-          self.svg.append("text").attr("x", -60).attr("y", 30).attr("dy", ".6em").attr("transform", "rotate(-90)").text("Seconds");
-          self.svg.append("text").attr("x", self.svgWidth - 60).attr("y", self.svgHeight + 5).attr("dy", ".6em").text("App Pushes").attr("text-anchor","middle");    
+          self.svg.append("text")
+            .attr("x", -60)
+            .attr("y", 0)
+            .attr("transform", "rotate(-90)")
+            .text("Seconds");
+          self.svg.append("text")
+            .attr("x", self.svgWidth - 60)
+            .attr("y", self.svgHeight + 15)
+            .text("Task #")
+            .attr("text-anchor","middle");    
           self.data = observableArray();  
           self.refresh()();
       } else {
@@ -72,8 +93,7 @@ d3.custom.barchart.prototype.refresh = function() {
   return function(){            
     var len = self.data.length;
     var x = self.x.domain( [len, 1] ).range([len * (self.barWidth + 1), self.barWidth + 1]);
-    var y = self.y.domain([d3.max(self.data, function(d) { return d.LastResult / second}), 0] );
-    console.log (len); 
+    var y = self.y.domain([d3.max(self.data, function(d) { return d.LastResult / second}), 0] ); 
     var bars = self.barCon.selectAll("rect.bar").data(self.data);
     var labels = self.barCon.selectAll("text").data(self.data);
     
@@ -81,6 +101,7 @@ d3.custom.barchart.prototype.refresh = function() {
       .attr("x", function(d, i) { return x(len - i ) })
       .attr("y", function(d) { return y(d.LastResult / second) } )
       .attr("height", function(d) { return (self.svgHeight - y(d.LastResult / second)) } );
+    
     labels.transition().attr("x", function(d, i) { return (x(len - i ) + (self.barWidth / 2)) })
 
     bars.enter().append("rect")

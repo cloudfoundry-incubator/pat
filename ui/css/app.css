@@ -71,38 +71,6 @@ tr, td {
    box-shadow: inset 0 0 3px #555;
 }
 
-/*** Todo(simon), move to d3.css ***/
-#graph {
-}
-#graph .barchart {
-  fill: steelblue;
-}
-#graph .bar:hover {
-    fill: brown;
-}
-#graph .barchart text {
-  fill: red;
-  font: 10px sans-serif;
-  text-anchor: middle;
-}
-
-#graph .axis text {
-  font: 10px sans-serif;
-}
-
-#graph .axis path,
-#graph .axis line {
-  fill: none;
-  stroke: #eee;
-  shape-rendering: crispEdges;
-}
-
-/* override bootstrip css */
-.popover-content {
-    font-size: 1em;
-    font-weight:normal;
-}
-
 .shadowLight {
     text-shadow: 0 1px #fff;
 }

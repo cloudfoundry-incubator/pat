@@ -146,7 +146,7 @@ body { padding: 8px; }
 
   <!-- **************** footer ******************* -->
   <script>
-    var patview = new pat.view( new pat.experimentList(), pat.experiment(800) )
+    var patview = new pat.view( new pat.experimentList(), pat.experiment(800) );
     var barchart = new d3.custom.barchart(document.getElementById("graph"), patview.data);
     ko.applyBindings(patview);
   </script>

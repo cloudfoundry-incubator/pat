@@ -1,0 +1,26 @@
+
+/*   Bar chart   */
+#graph {  
+}
+#graph #d3_workload {
+  fill: steelblue;
+}
+#graph #d3_workload .bar:hover {
+    fill: brown;
+}
+#graph #d3_workload text {
+  fill: brown;
+  font: 10px sans-serif;
+  text-anchor: middle;
+}
+
+#graph #d3_workload .axis text {
+  font: 10px sans-serif;  
+}
+
+#graph #d3_workload .axis path,
+#graph #d3_workload .axis line {
+  fill: none;
+  stroke: #eee;
+  shape-rendering: crispEdges;
+}
