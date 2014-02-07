@@ -134,14 +134,6 @@ describe("Bar chart", function() {
     expect(svg.selectAll('rect.bar').size()).toBe(3);
   });
 
-  it("should scale and show >10 tasks in the x-axis if >10 tasks has been performed", function() {        
-    for (var i = 0; i < 15; i ++) {
-        data.push( {"LastResult" : 1 * sec} );
-    }    
-    expect( barchart.xAxis_max() ).toBe(15);
-  });
-
-
   it("should show the maximum LastResult in seconds in the y-axis", function() {
      var LastResult = 0;
 
