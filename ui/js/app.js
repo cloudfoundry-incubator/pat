@@ -88,6 +88,7 @@ pat.experimentList = function() {
 ko.bindingHandlers.chart = {
   c: {},
   init: function(element, valueAccessor) {    
+    ko.bindingHandlers.chart.b = new barchart(element);
   },
   update: function(element, valueAccessor) {
     var data = ko.unwrap(valueAccessor())
@@ -95,7 +96,8 @@ ko.bindingHandlers.chart = {
       for (k in obj) {
         if (k == "Average" || k == "WallTime" || k == "LastResult" || k == "TotalTime") obj[k + '_fmt'] = (obj[k] / 1000000000).toFixed(2) + " sec";
       }
-    });    
+    });
+    ko.bindingHandlers.chart.b(data);    
   }
 }
 
