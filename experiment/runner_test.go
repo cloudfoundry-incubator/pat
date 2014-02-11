@@ -25,12 +25,12 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			sample1 = &Sample{}
 			sample2 = &Sample{}
 			worker = NewWorker()
-			executorFactory := func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, quit chan bool) Executable {
-				executor = &DummyExecutor{iterationResults, benchmarkResults, workers, errors, executorFunc}
+			executorFactory := func(iterationResults chan IterationResult, errors chan error, workers chan int, quit chan bool) Executable {
+				executor = &DummyExecutor{iterationResults, workers, errors, executorFunc}
 				return executor
 			}
-			samplerFactory := func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
-				sampler = &DummySampler{samples, iterationResults, benchmarkResults, workers, errors, sampleFunc}
+			samplerFactory := func(iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
+				sampler = &DummySampler{samples, iterationResults, workers, errors, sampleFunc}
 				return sampler
 			}
 			config = &RunnableExperiment{ExperimentConfiguration{5, 2, 1, 1, worker, "push"}, executorFactory, samplerFactory}
@@ -75,28 +75,6 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 				}
 			})
 			Ω(got).Should(HaveLen(3))
-		})
-
-		It("Sends BenchmarkResults from Executor to the Sampler", func() {
-			executorFunc = func(e *DummyExecutor) {
-				e.BenchmarkResults <- BenchmarkResult{}
-				e.BenchmarkResults <- BenchmarkResult{}
-				close(e.BenchmarkResults)
-			}
-
-			got := make([]BenchmarkResult, 0)
-			sampleFunc = func(s *DummySampler) {
-				defer close(s.samples)
-				for r := range s.BenchmarkResults {
-					got = append(got, r)
-				}
-			}
-
-			config.Run(func(samples <-chan *Sample) {
-				for _ = range samples {
-				}
-			})
-			Ω(got).Should(HaveLen(2))
 		})
 
 		It("Sends Worker events from Executor to the Sampler", func() {
@@ -153,8 +131,6 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 	Describe("Sampling", func() {
 		var (
 			iteration chan IterationResult
-			results   chan BenchmarkResult
-			errors    chan error
 			workers   chan int
 			quit      chan bool
 			ticks     chan int
@@ -163,19 +139,17 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 		BeforeEach(func() {
 			iteration = make(chan IterationResult)
-			results = make(chan BenchmarkResult)
-			errors = make(chan error)
 			workers = make(chan int)
 			quit = make(chan bool)
 			samples = make(chan *Sample)
 			ticks = make(chan int)
-			go (&SamplableExperiment{iteration, results, errors, workers, samples, ticks, quit}).Sample()
+			go (&SamplableExperiment{iteration, workers, samples, ticks, quit}).Sample()
 		})
 
 		It("Calculates the running average", func() {
-			go func() { iteration <- IterationResult{2 * time.Second} }()
-			go func() { iteration <- IterationResult{4 * time.Second} }()
-			go func() { iteration <- IterationResult{6 * time.Second} }()
+			go func() { iteration <- IterationResult{2 * time.Second, nil, nil} }()
+			go func() { iteration <- IterationResult{4 * time.Second, nil, nil} }()
+			go func() { iteration <- IterationResult{6 * time.Second, nil, nil} }()
 
 			Ω((<-samples).Average).Should(Equal(2 * time.Second))
 			Ω((<-samples).Average).Should(Equal(3 * time.Second))
@@ -184,7 +158,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 		It("Closes the samples channel when there are no more iterationResults", func() {
 			go func() {
-				iteration <- IterationResult{2 * time.Second}
+				iteration <- IterationResult{2 * time.Second, nil, nil}
 				close(iteration)
 			}()
 
@@ -198,14 +172,24 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			Eventually((<-samples).Type).Should(Equal(ThroughputSample))
 		})
 
+		It("Counts errors", func() {
+			go func() {
+				iteration <- IterationResult{0, nil, errors.New("fishfingers burnt")}
+				iteration <- IterationResult{0, nil, errors.New("toast not buttered")}
+			}()
+
+			Ω((<-samples).TotalErrors).Should(Equal(1))
+			Ω((<-samples).TotalErrors).Should(Equal(2))
+		})
+
 		It("Calculates the throughput for a command every tick", func() {
 			go func() {
-				results <- BenchmarkResult{Command: "push"}
-				results <- BenchmarkResult{Command: "push"}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push"}}, nil}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push"}}, nil}
 				ticks <- 2
-				results <- BenchmarkResult{Command: "push"}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push"}}, nil}
 				ticks <- 3
-				results <- BenchmarkResult{Command: "push"}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push"}}, nil}
 				ticks <- 6
 			}()
 
@@ -223,7 +207,6 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 type DummySampler struct {
 	samples          chan *Sample
 	IterationResults chan IterationResult
-	BenchmarkResults chan BenchmarkResult
 	Workers          chan int
 	Errors           chan error
 	sampleFunc       func(*DummySampler)
@@ -231,7 +214,6 @@ type DummySampler struct {
 
 type DummyExecutor struct {
 	IterationResults chan IterationResult
-	BenchmarkResults chan BenchmarkResult
 	Workers          chan int
 	Errors           chan error
 	executorFunc     func(*DummyExecutor)

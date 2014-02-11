@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/julz/pat/benchmarker"
+	"github.com/julz/pat/config"
 	. "github.com/julz/pat/experiment"
 	"github.com/julz/pat/experiments"
 	. "github.com/julz/pat/laboratory"
@@ -17,23 +18,29 @@ type Response struct {
 	Timestamp int64
 }
 
-func RunCommandLine(concurrency int, iterations int, silent bool, name string, interval int, stop int, workload string) (err error) {
+func RunCommandLine(config *config.Config) (err error) {
 	handlers := make([]func(<-chan *Sample), 0)
 
-	if !silent {
-		handlers = append(handlers, func(s <-chan *Sample) { display(concurrency, iterations, interval, stop, s) })
+	if !config.Silent {
+		handlers = append(handlers, func(s <-chan *Sample) {
+			display(config.Concurrency, config.Iterations, config.Interval, config.Stop, s)
+		})
 	}
 
 	worker := benchmarker.NewWorker()
-	worker.AddExperiment("login", experiments.Dummy)
-	worker.AddExperiment("push", experiments.Push)
+
+	var rest = experiments.NewContext()
+	worker.AddExperiment("rest:login", func() error { return rest.Login(config.Username, config.Password) })
+	worker.AddExperiment("rest:push", func() error { return rest.Push() })
+
+	worker.AddExperiment("gcf:Push", experiments.Push)
 	worker.AddExperiment("dummy", experiments.Dummy)
 	worker.AddExperiment("dummyWithErrors", experiments.DummyWithErrors)
 
 	NewLaboratory(store.NewCsvStore("output/csvs")).RunWithHandlers(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
-				iterations, concurrency, interval, stop, worker, workload)), handlers)
+				config.Iterations, config.Concurrency, config.Interval, config.Stop, worker, config.Workload)), handlers)
 
 	for {
 		in := make([]byte, 1)

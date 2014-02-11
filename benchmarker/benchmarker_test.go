@@ -2,74 +2,22 @@ package benchmarker
 
 import (
 	"errors"
+	"time"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
 var _ = Describe("Benchmarker", func() {
 	Describe("#Time", func() {
 		It("times an arbitrary function", func() {
 			time, _ := Time(func() error { time.Sleep(2 * time.Second); return nil })
-			Ω(time.Duration.Seconds()).Should(BeNumerically("~", 2, 0.5))
-		})
-	})
-
-	Describe("TimeWorker", func() {
-		It("allows a worker to execute a set of operations to run and sends timing information for each command in the operation set to a channel", func() {
-			chBench := make(chan BenchmarkResult)
-			resultBench := make(chan BenchmarkResult)
-			go func(resultBench chan BenchmarkResult) {
-				defer close(chBench)
-				for t := range chBench {
-					resultBench <- t
-				}
-			}(resultBench)
-
-			worker := NewWorker()
-			worker.AddExperiment("one", func() error { time.Sleep(1 * time.Second); return nil })
-			worker.AddExperiment("two", func() error { time.Sleep(1 * time.Second); return nil })
-			operations := []string{"one", "two"}
-
-			go TimeWorker(nil, resultBench, nil, worker, operations)()
-			Ω((<-resultBench).Duration.Seconds()).Should(BeNumerically("~", 1, 0.5))
-			Ω((<-resultBench).Duration.Seconds()).Should(BeNumerically("~", 1, 0.5))
-		})
-
-		It("times how long it takes a worker to issues all operations.", func() {
-			ch := make(chan IterationResult)
-			result := make(chan IterationResult)
-			go func(result chan IterationResult) {
-				defer close(ch)
-				for t := range ch {
-					result <- t
-				}
-			}(result)
-
-			chBench := make(chan BenchmarkResult)
-			resultBench := make(chan BenchmarkResult)
-			go func(resultBench chan BenchmarkResult) {
-				defer close(chBench)
-				for t := range chBench {
-					resultBench <- t
-				}
-			}(resultBench)
-
-			worker := NewWorker()
-			worker.AddExperiment("one", func() error { time.Sleep(1 * time.Second); return nil })
-			worker.AddExperiment("two", func() error { time.Sleep(1 * time.Second); return nil })
-			operations := []string{"one", "two"}
-
-			go TimeWorker(result, resultBench, nil, worker, operations)()
-			Ω((<-resultBench).Duration.Seconds()).Should(BeNumerically("~", 1, 0.5))
-			Ω((<-resultBench).Duration.Seconds()).Should(BeNumerically("~", 1, 0.5))
-			Ω((<-result).Duration.Seconds()).Should(BeNumerically("~", 2, 0.5))
+			Ω(time.Seconds()).Should(BeNumerically("~", 2, 0.5))
 		})
 	})
 
 	Describe("TimedWithWorker", func() {
 		It("sends the timing information retrieved from a worker to a channel", func() {
-			ch := make(chan BenchmarkResult)
+			ch := make(chan IterationResult)
 			result := make(chan time.Duration)
 			go func(result chan time.Duration) {
 				defer close(ch)
@@ -78,7 +26,7 @@ var _ = Describe("Benchmarker", func() {
 				}
 			}(result)
 
-			TimedWithWorker(ch, nil, &DummyWorker{}, "three")()
+			TimedWithWorker(ch, &DummyWorker{}, "three")()
 			Ω((<-result).Seconds()).Should(BeNumerically("==", 3))
 		})
 	})
@@ -90,22 +38,77 @@ var _ = Describe("Benchmarker", func() {
 			Ω(worker.Experiments["foo"]).ShouldNot(BeNil())
 		})
 
-		It("Times a function by name", func() {
-			worker := NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
-			result, _ := worker.Time("foo")
-			Ω(result.Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
+		Describe("When a single experiment is provided", func() {
+			It("Times a function by name", func() {
+				worker := NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
+				result := worker.Time("foo")
+				Ω(result.Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
+			})
+
+			It("Sets the function command name in the response struct", func() {
+				worker := NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
+				result := worker.Time("foo")
+				Ω(result.Steps[0].Command).Should(Equal("foo"))
+			})
+
+			It("Returns any errors", func() {
+				worker := NewWorker().AddExperiment("foo", func() error { return errors.New("Foo") })
+				result := worker.Time("foo")
+				Ω(result.Error).Should(HaveOccurred())
+			})
 		})
 
-		It("Sets the function command name in the response struct", func() {
-			worker := NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
-			result, _ := worker.Time("foo")
-			Ω(result.Command).Should(Equal("foo"))
+		Describe("When multiple steps are provided separated by commas", func() {
+			var worker *LocalWorker
+			var result IterationResult
+
+			BeforeEach(func() {
+				worker = NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
+				worker.AddExperiment("bar", func() error { time.Sleep(1 * time.Second); return nil })
+				result = worker.Time("foo,bar")
+			})
+
+			It("Reports the total time", func() {
+				Ω(result.Duration.Seconds()).Should(BeNumerically("~", 2, 0.1))
+			})
+
+			It("Records each step seperately", func() {
+				Ω(result.Steps).Should(HaveLen(2))
+				Ω(result.Steps[0].Command).Should(Equal("foo"))
+				Ω(result.Steps[1].Command).Should(Equal("bar"))
+			})
+
+			It("Times each step seperately", func() {
+				Ω(result.Steps).Should(HaveLen(2))
+				Ω(result.Steps[0].Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
+				Ω(result.Steps[1].Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
+			})
 		})
 
-		It("Returns any errors", func() {
-			worker := NewWorker().AddExperiment("foo", func() error { return errors.New("Foo") })
-			_, err := worker.Time("foo")
-			Ω(err).Should(HaveOccurred())
+		Describe("When a step returns an error", func() {
+			var worker *LocalWorker
+			var result IterationResult
+
+			BeforeEach(func() {
+				worker = NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
+				worker.AddExperiment("bar", func() error { time.Sleep(1 * time.Second); return nil })
+				worker.AddExperiment("errors", func() error { return errors.New("fishfinger system overflow") })
+				result = worker.Time("foo,errors,bar")
+			})
+
+			It("Records the error", func() {
+				Ω(result.Error).Should(HaveOccurred())
+			})
+
+			It("Records all steps up to the error step", func() {
+				Ω(result.Steps).Should(HaveLen(2))
+				Ω(result.Steps[0].Command).Should(Equal("foo"))
+				Ω(result.Steps[1].Command).Should(Equal("errors"))
+			})
+
+			It("Reports the time as the time up to the error", func() {
+				Ω(result.Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
+			})
 		})
 	})
 
@@ -186,7 +189,7 @@ var _ = Describe("Benchmarker", func() {
 					ExecuteConcurrently(1, Repeat(3, func() { time.Sleep(1 * time.Second) }))
 					return nil
 				})
-				Ω(result.Duration.Seconds()).Should(BeNumerically("~", 3, 1))
+				Ω(result.Seconds()).Should(BeNumerically("~", 3, 1))
 			})
 		})
 
@@ -196,7 +199,7 @@ var _ = Describe("Benchmarker", func() {
 					ExecuteConcurrently(3, Repeat(3, func() { time.Sleep(2 * time.Second) }))
 					return nil
 				})
-				Ω(result.Duration.Seconds()).Should(BeNumerically("~", 2, 1))
+				Ω(result.Seconds()).Should(BeNumerically("~", 2, 1))
 			})
 		})
 	})
@@ -204,12 +207,12 @@ var _ = Describe("Benchmarker", func() {
 
 type DummyWorker struct{}
 
-func (*DummyWorker) Time(experiment string) (BenchmarkResult, error) {
-	var result BenchmarkResult
+func (*DummyWorker) Time(experiment string) IterationResult {
+	var result IterationResult
 	if experiment == "three" {
 		result.Duration = 3 * time.Second
-		return result, nil
+		return result
 	}
 	result.Duration = 0 * time.Second
-	return result, nil
+	return result
 }

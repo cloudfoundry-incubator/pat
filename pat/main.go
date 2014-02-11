@@ -19,6 +19,6 @@ func main() {
 		server.Serve()
 		server.Bind()
 	} else {
-		pat.RunCommandLine(config.Concurrency, config.Iterations, config.Silent, config.Output, config.Interval, config.Stop, config.Workload)
+		pat.RunCommandLine(config)
 	}
 }
