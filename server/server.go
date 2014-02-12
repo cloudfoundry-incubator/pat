@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/julz/pat/benchmarker"
+	"github.com/julz/pat/config"
 	. "github.com/julz/pat/experiment"
 	"github.com/julz/pat/experiments"
 	. "github.com/julz/pat/laboratory"
@@ -25,8 +26,16 @@ type context struct {
 	lab    Laboratory
 }
 
+var params = struct {
+	csvDir string
+}{}
+
+func InitCommandLineFlags(flags config.Config) {
+	flags.StringVar(&params.csvDir, "csvDir", "output/csvs", "Directory to Store CSVs")
+}
+
 func Serve() {
-	ServeWithArgs("output/csvs")
+	ServeWithArgs(params.csvDir)
 }
 
 func ServeWithArgs(csvDir string) {

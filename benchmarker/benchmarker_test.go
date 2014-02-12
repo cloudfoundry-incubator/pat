@@ -59,7 +59,7 @@ var _ = Describe("Benchmarker", func() {
 		})
 
 		Describe("When multiple steps are provided separated by commas", func() {
-			var worker *LocalWorker
+			var worker Worker
 			var result IterationResult
 
 			BeforeEach(func() {
@@ -86,7 +86,7 @@ var _ = Describe("Benchmarker", func() {
 		})
 
 		Describe("When a step returns an error", func() {
-			var worker *LocalWorker
+			var worker Worker
 			var result IterationResult
 
 			BeforeEach(func() {
@@ -215,4 +215,8 @@ func (*DummyWorker) Time(experiment string) IterationResult {
 	}
 	result.Duration = 0 * time.Second
 	return result
+}
+
+func (d *DummyWorker) AddExperiment(name string, fn func() error) Worker {
+	return nil
 }

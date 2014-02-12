@@ -19,6 +19,7 @@ type IterationResult struct {
 
 type Worker interface {
 	Time(experiment string) IterationResult
+	AddExperiment(name string, fn func() error) Worker
 }
 
 type LocalWorker struct {
@@ -29,7 +30,7 @@ func NewWorker() *LocalWorker {
 	return &LocalWorker{make(map[string]func() error)}
 }
 
-func (self *LocalWorker) AddExperiment(name string, fn func() error) *LocalWorker {
+func (self *LocalWorker) AddExperiment(name string, fn func() error) Worker {
 	self.Experiments[name] = fn
 	return self
 }

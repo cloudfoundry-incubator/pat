@@ -12,29 +12,50 @@ import (
 	"strings"
 	"time"
 
+	"github.com/julz/pat/config"
 	"github.com/nu7hatch/gouuid"
 )
 
 type Context struct {
+	username      string
+	password      string
+	target        string
 	loginEndpoint string
 	apiEndpoint   string
 	token         string
 }
 
 func NewContext() *Context {
-	return &Context{"http://login.stage1.ng.w3.bluemix.net/UAALoginServerWAR/", "http://api.stage1.ng.w3.bluemix.net", ""}
+	return &Context{}
 }
 
-func (context *Context) Login(username string, password string) error {
+func (c *Context) DescribeParameters(config config.Config) {
+	config.StringVar(&c.target, "rest:target", "", "the target for the REST api")
+	config.StringVar(&c.username, "rest:username", "", "username for REST api")
+	config.StringVar(&c.password, "rest:password", "", "password for REST api")
+}
+
+func (context *Context) Target() error {
+	resp, err := http.Get(context.target + "/v2/info")
+	info := make(map[string]interface{})
+	err = json.NewDecoder(resp.Body).Decode(&info)
+	fmt.Println(info)
+	context.loginEndpoint = info["authorization_endpoint"].(string)
+	context.apiEndpoint = context.target
+	fmt.Println("login endpoint: " + context.loginEndpoint)
+	return err
+}
+
+func (context *Context) Login() error {
 	values := make(url.Values)
 	values.Add("grant_type", "password")
-	values.Add("username", username)
-	values.Add("password", password)
+	values.Add("username", context.username)
+	values.Add("password", context.password)
 	values.Add("scope", "")
 
 	client := &http.Client{}
-	fmt.Println("Accessing: " + context.loginEndpoint + "oauth/token")
-	req, _ := http.NewRequest("POST", context.loginEndpoint+"oauth/token", strings.NewReader(values.Encode()))
+	fmt.Println("Accessing: " + context.loginEndpoint + "/oauth/token")
+	req, _ := http.NewRequest("POST", context.loginEndpoint+"/oauth/token", strings.NewReader(values.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth("cf", "")
 	resp, err := client.Do(req)

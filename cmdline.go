@@ -18,37 +18,66 @@ type Response struct {
 	Timestamp int64
 }
 
-func RunCommandLine(config *config.Config) (err error) {
-	handlers := make([]func(<-chan *Sample), 0)
+var params = struct {
+	iterations  int
+	concurrency int
+	silent      bool
+	output      string
+	workload    string
+	interval    int
+	stop        int
+	csvDir      string
+}{}
 
-	if !config.Silent {
-		handlers = append(handlers, func(s <-chan *Sample) {
-			display(config.Concurrency, config.Iterations, config.Interval, config.Stop, s)
-		})
-	}
+var restContext = experiments.NewContext()
 
+func InitCommandLineFlags(config config.Config) {
+	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
+	config.IntVar(&params.concurrency, "concurrency", 1, "max number of pushes to attempt in parallel")
+	config.BoolVar(&params.silent, "silent", false, "true to run the commands and print output the terminal")
+	config.StringVar(&params.output, "output", "", "if specified, writes benchmark results to a CSV file")
+	config.StringVar(&params.workload, "workload", "", "The set of operations a user should issue (ex. login,push,push)")
+	config.IntVar(&params.interval, "interval", 0, "repeat a workload at n second interval, to be used with -stop")
+	config.IntVar(&params.stop, "stop", 0, "stop a repeating interval after n second, to be used with -interval")
+	config.StringVar(&params.csvDir, "csvDir", "output/csvs", "Directory to Store CSVs")
+	restContext.DescribeParameters(config)
+}
+
+func RunCommandLine() error {
+	lab := NewLaboratory(store.NewCsvStore("output/csvs"))
 	worker := benchmarker.NewWorker()
-
-	var rest = experiments.NewContext()
-	worker.AddExperiment("rest:login", func() error { return rest.Login(config.Username, config.Password) })
-	worker.AddExperiment("rest:push", func() error { return rest.Push() })
-
-	worker.AddExperiment("gcf:Push", experiments.Push)
-	worker.AddExperiment("dummy", experiments.Dummy)
-	worker.AddExperiment("dummyWithErrors", experiments.DummyWithErrors)
-
-	NewLaboratory(store.NewCsvStore("output/csvs")).RunWithHandlers(
-		NewRunnableExperiment(
-			NewExperimentConfiguration(
-				config.Iterations, config.Concurrency, config.Interval, config.Stop, worker, config.Workload)), handlers)
+	err := RunCommandLineWithLabAndWorker(lab, worker)
 
 	for {
 		in := make([]byte, 1)
 		os.Stdin.Read(in)
 		if string(in) == "q" {
-			return nil
+			return err
 		}
 	}
+}
+
+func RunCommandLineWithLabAndWorker(lab Laboratory, worker benchmarker.Worker) (err error) {
+	handlers := make([]func(<-chan *Sample), 0)
+
+	if !params.silent {
+		handlers = append(handlers, func(s <-chan *Sample) {
+			display(params.concurrency, params.iterations, params.interval, params.stop, s)
+		})
+	}
+
+	rest := restContext
+	worker.AddExperiment("rest:login", rest.Login)
+	worker.AddExperiment("rest:push", rest.Push)
+	worker.AddExperiment("rest:target", rest.Target)
+	worker.AddExperiment("gcf:Push", experiments.Push)
+	worker.AddExperiment("dummy", experiments.Dummy)
+	worker.AddExperiment("dummyWithErrors", experiments.DummyWithErrors)
+
+	lab.RunWithHandlers(
+		NewRunnableExperiment(
+			NewExperimentConfiguration(
+				params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
 
 	return nil
 }
