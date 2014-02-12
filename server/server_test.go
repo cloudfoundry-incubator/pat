@@ -57,6 +57,8 @@ var _ = Describe("Server", func() {
 		post("/experiments/")
 		Ω(lab.config.Iterations).Should(Equal(1))
 		Ω(lab.config.Concurrency).Should(Equal(1))
+		Ω(lab.config.Interval).Should(Equal(0))
+		Ω(lab.config.Stop).Should(Equal(0))
 		Ω(lab.config.Workload).Should(Equal("push"))
 	})
 
@@ -68,6 +70,16 @@ var _ = Describe("Server", func() {
 	It("Supports a 'concurrency' parameter", func() {
 		post("/experiments/?concurrency=3")
 		Ω(lab.config.Concurrency).Should(Equal(3))
+	})
+
+	It("Supports an 'interval' parameter", func() {
+		post("/experiments/?interval=3")
+		Ω(lab.config.Interval).Should(Equal(3))
+	})
+
+	It("Supports a 'stop' parameter", func() {
+		post("/experiments/?stop=3")
+		Ω(lab.config.Stop).Should(Equal(3))
 	})
 
 	It("Supports a 'workload' parameter", func() {
