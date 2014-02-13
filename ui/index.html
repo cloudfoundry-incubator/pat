@@ -96,6 +96,18 @@ body { padding: 8px; }
             <input type="number" class="form-control" id="inputConcurrency" name="inputConcurrency" placeholder="1" data-bind="value: numConcurrent">
           </div>
         </div>
+        <div class="form-group" data-bind="css: { 'has-error': numIntervalHasError }">
+          <label for="inputInterval" class="col-sm-2 control-label">Interval</label>
+          <div class="col-sm-6">
+            <input type="number" class="form-control" id="inputInterval" name="inputInterval" placeholder="0" data-bind="value: numInterval">
+          </div>
+        </div>
+        <div class="form-group" data-bind="css: { 'has-error': numStopHasError }">
+          <label for="inputStop" class="col-sm-2 control-label">Stop</label>
+          <div class="col-sm-6">
+            <input type="number" class="form-control" id="inputStop" name="inputStop" placeholder="0" data-bind="value: numStop">
+          </div>
+        </div>
         <div class="form-group">
           <div class="col-sm-offset-2 col-sm-10">
             <button data-bind="click: start, enable: formHasNoErrors" id="startbtn" type="submit" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>

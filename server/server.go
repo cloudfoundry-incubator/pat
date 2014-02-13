@@ -84,6 +84,15 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		concurrency = 1
 	}
 
+	interval, err := strconv.Atoi(r.FormValue("interval"))
+	if err != nil {
+		interval = 0
+	}
+	stop, err := strconv.Atoi(r.FormValue("stop"))
+	if err != nil {
+		stop = 0
+	}
+
 	workload := r.FormValue("workload")
 	if workload == "" {
 		workload = "push"
@@ -94,7 +103,10 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 	worker.AddExperiment("login", experiments.Dummy)
 	worker.AddExperiment("push", experiments.Push)
 	worker.AddExperiment("dummy", experiments.Dummy)
-	experiment, _ := ctx.lab.Run(NewRunnableExperiment(NewExperimentConfiguration(pushes, concurrency, 0, 0, worker, workload)))
+	experiment, _ := ctx.lab.Run(
+		NewRunnableExperiment(
+			NewExperimentConfiguration(
+				pushes, concurrency, interval, stop, worker, workload)))
 
 	return ctx.router.Get("experiment").URL("name", experiment.GetGuid())
 }

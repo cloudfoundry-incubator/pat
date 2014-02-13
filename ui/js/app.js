@@ -8,7 +8,7 @@ pat.experiment = function(refreshRate) {
   exports.url = ko.observable("")
   exports.csvUrl = ko.observable("")
   exports.data = ko.observableArray()
-  exports.config = { iterations: ko.observable(1), concurrency: ko.observable(1) }
+  exports.config = { iterations: ko.observable(1), concurrency: ko.observable(1), interval: ko.observable(0), stop: ko.observable(0) }
 
   var timer = null
 
@@ -31,7 +31,7 @@ pat.experiment = function(refreshRate) {
   exports.run = function() {
     exports.state("running")
     exports.data([])
-		$.post( "/experiments/", { "iterations": exports.config.iterations(), "concurrency": exports.config.concurrency(), "workload": $("#cmdSelect").val() }, function(data) {
+		$.post( "/experiments/", { "iterations": exports.config.iterations(), "concurrency": exports.config.concurrency(), "interval": exports.config.interval(), "stop": exports.config.stop(),  "workload": $("#cmdSelect").val() }, function(data) {
 			exports.url(data.Location)
 			exports.csvUrl(data.CsvLocation)
 			exports.refreshNow()
@@ -118,7 +118,11 @@ pat.view = function(experimentList, experiment) {
   this.numIterationsHasError = ko.computed(function() { return experiment.config.iterations() <= 0 })
   this.numConcurrent = experiment.config.concurrency
   this.numConcurrentHasError = ko.computed(function() { return experiment.config.concurrency() <= 0 })
-  this.formHasNoErrors = ko.computed(function() { return ! ( this.numIterationsHasError() | this.numConcurrentHasError() ) }, this)
+  this.numInterval = experiment.config.interval
+  this.numIntervalHasError = ko.computed(function() { return experiment.config.interval() < 0 })
+  this.numStop = experiment.config.stop
+  this.numStopHasError = ko.computed(function() { return experiment.config.stop() < 0 })
+  this.formHasNoErrors = ko.computed(function() { return ! ( this.numIterationsHasError() | this.numConcurrentHasError() | this.numIntervalHasError() | this.numStopHasError() ) }, this)
   this.previousExperiments = experimentList.experiments
   this.data = experiment.data
 

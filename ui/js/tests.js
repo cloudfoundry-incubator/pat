@@ -3,7 +3,7 @@ describe("The view", function() {
   var experimentList
 
   beforeEach(function() {
-    experiment = { run: function() {}, url: ko.observable(""), state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { iterations: ko.observable(1), concurrency: ko.observable(1)  } }
+    experiment = { run: function() {}, url: ko.observable(""), state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { iterations: ko.observable(1), concurrency: ko.observable(1), interval: ko.observable(0), stop: ko.observable(0) } }
     experimentList = { experiments: [], refreshNow: function(){} }
     spyOn(experimentList, "refreshNow")
     spyOn(experiment, "view")
@@ -53,6 +53,18 @@ describe("The view", function() {
       v.numIterations(1)
       expect(v.numIterationsHasError()).toBe(false)
       expect(v.numConcurrentHasError()).toBe(true)
+      expect(v.formHasNoErrors()).toBe(false)
+    })
+
+    it("prevents interval being < 0", function() {
+      v.numInterval(-1)
+      expect(v.numIntervalHasError()).toBe(true)
+      expect(v.formHasNoErrors()).toBe(false)
+    })
+
+    it("prevents stop being < 0", function() {
+      v.numStop(-1)
+      expect(v.numStopHasError()).toBe(true)
       expect(v.formHasNoErrors()).toBe(false)
     })
   })
