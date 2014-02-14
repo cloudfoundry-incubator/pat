@@ -25,7 +25,9 @@ To setup this project, a number of requires need to be met for GO.
 
         cd $GOPATH/src/github.com/julz
 
-        git clone "This project" and change into the new pat directory
+        git clone https://github.com/julz/pat
+
+        cd pat
 
         gocart
 
@@ -89,13 +91,15 @@ Example calls:
 
 	pat -h  # will output all of the command line options if installed the recommended way
 
-	pat -concurrency=5 -iteration=5 # This will start 5 concurrent threads all pushing 1 application
+	pat -concurrency=5 -iterations=5 # This will start 5 concurrent threads all pushing 1 application
 
-	pat -concurrency=5 -iteration=1 # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
+	pat -concurrency=5 -iterations=1 # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
 
 	pat -silent # if you don't want all the fancy output use the silent flag
  
 	pat -workload=push,push,... #list the gcf operations you want to run
+
+	pat -workload=dummy    # run the tool with dummy operations (not against a CF environment)
 
 	pat -config=config/template.yml # include a configuration template specifying any number of command line arguments. The template file provides a basic format.
 
