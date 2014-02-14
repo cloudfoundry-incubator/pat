@@ -36,6 +36,9 @@ body { padding: 8px; }
   <div class="row panel panel-default">
     <div class="panel-heading">
       Experiment Results
+      <button class="btn btn-primary btn-xs" style="float: right" data-toggle="modal" data-target="#historyPopup">
+        <span class="glyphicon glyphicon-time"></span> Histories
+      </button>
     </div>
     <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data">
       <p data-bind="visible: noExperimentRunning" class="noexperimentrunning text-muted text-center" style="position: relative; top: 20%">(No Experiment Running)</p>
@@ -119,34 +122,42 @@ body { padding: 8px; }
     </div>
   </div>
 
-  <div class="row panel panel-default">
-    <div class="panel-heading">
-      Previous Experiments
-    </div>
-    <div class="panel-body">
-      <table class="table table-striped">
-        <thead>
-          <th>Name</th>
-          <th>State</th>
-          <th>Actions</th>
-        </thead>
-        <tbody id="previousExperiments" data-bind="foreach: previousExperiments">
-        <tr data-bind="css: { warning: active }">
-          <td data-bind="text: Name"></td>
-          <td data-bind="text: State, css: 'state-'+State "></td>
-          <td>
-            <a data-bind="attr: { href: '#' + Location }"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;&nbsp;Show</a> &nbsp;
-            <a data-bind="attr: { href: CsvLocation }"><span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp;Download CSV</a>
-          </td>
-        </tr>
-        </tbody>
-      </table>
+  <div class="modal fade" id="historyPopup" tabindex="-1" role="dialog" aria-labelledby="historyPopupLabel" aria-hidden="true" >
+    <div class="modal-dialog" style="width: 90%; max-width: 900px;">
+      <div class="modal-content" style="background:rgba(255,255,255,0.75);">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title" >Previous Experiments</h4>
+        </div>
+        <div class="modal-body">
+          <table class="table table-hover">
+            <thead>
+              <th>Name</th>
+              <th>State</th>
+              <th>Actions</th>
+            </thead>
+            <tbody id="previousExperiments" data-bind="foreach: previousExperiments">
+              <tr data-bind="css: { warning: active }">
+                <td data-bind="text: Name"></td>
+                <td data-bind="text: State, css: 'state-'+State "></td>
+                <td>
+                  <a data-bind="attr: { href: '#' + Location }"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;&nbsp;Show</a> &nbsp;
+                  <a data-bind="attr: { href: CsvLocation }"><span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp;Download CSV</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>        
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>          
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- **************** footer ******************* -->
   <script>
-ko.applyBindings(new pat.view( new pat.experimentList(), pat.experiment(800) ));
+    ko.applyBindings(new pat.view( new pat.experimentList(), pat.experiment(800) ));
   </script>
 </div>
 </body>

@@ -4,17 +4,30 @@
     <meta charset=utf-8 />
     <title>Tests</title>
     <link href="http://pivotal.github.com/jasmine/lib/jasmine-1.3.1/jasmine.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/bootstrap.min.css"type="text/css" media="screen" />
+    <link rel="stylesheet" href="css/bootstrap-theme.min.css"type="text/css" media="screen" />
   </head>
   <body>
 
     <!-- move the testing div out of the viewable area -->
     <div id="target" style="width: 800px; height: 400px; position: absolute; top: -1000px"></div>
 
+    <button class="btn btn-primary btn-xs" style="position: absolute; top: -1000px" data-toggle="modal" data-target="#historyPopup">Histories</button> 
+
+    <div class="modal fade" id="historyPopup" tabindex="-1" role="dialog" aria-labelledby="historyPopupLabel" aria-hidden="true" >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><div>
+        </div>
+      </div>
+    </div>
+
     <script src="http://pivotal.github.com/jasmine/lib/jasmine-1.3.1/jasmine.js"></script>
     <script src="http://pivotal.github.com/jasmine/lib/jasmine-1.3.1/jasmine-html.js"></script>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>    
+    <script src="js/bootstrap.min.js"></script>
     <script src="/ui/js/chart.js"></script>
     <script src="/ui/js/bar.js"></script>
     <script src="/ui/js/app.js"></script>
