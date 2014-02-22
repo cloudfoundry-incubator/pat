@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" media="screen" />
 <link rel="stylesheet" href="css/bootstrap-theme.min.css" type="text/css" media="screen" />
 <link rel="stylesheet" href="css/app.css" type="text/css" media="screen" />
+<link rel="stylesheet" href="css/graphs.css" type="text/css" media="screen" />
 <script type="text/javascript" src="js/jquery-1.10.1.min.js"></script>
 <script type="text/javascript" src="js/d3.v3.min.js"></script>
 <script type="text/javascript" src="js/knockout-min.js"></script>
@@ -38,7 +39,7 @@ body { padding: 8px; }
       Experiment Results
     </div>
     <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data">
-      <p data-bind="visible: noExperimentRunning" class="noexperimentrunning text-muted text-center" style="position: relative; top: 20%">(No Experiment Running)</p>
+      <p data-bind="visible: noExperimentRunning" class="noexperimentrunning text-muted text-center" style="position: absolute; width: 300px; margin-left: -150px; left: 50%; top: 20%">(No Experiment Running)</p>
     </div>
     <div style="border-top: 2px solid #ddd">
       <table class="table table-striped" style="table-layout: fixed; margin-bottom: 0px">
@@ -146,7 +147,7 @@ body { padding: 8px; }
 
   <!-- **************** footer ******************* -->
   <script>
-ko.applyBindings(new pat.view( new pat.experimentList(), pat.experiment(800) ));
+    ko.applyBindings(new pat.view( new pat.experimentList(), pat.experiment(800) ));
   </script>
 </div>
 </body>
