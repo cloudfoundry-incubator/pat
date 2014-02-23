@@ -44,7 +44,7 @@ var barchart = function(el) {
 
   this.drawBoxWidth = parseInt(this.svgWidth - this.clipMarginRight);
   this.svg.append("defs").append("clipPath")
-    .attr("id", "clip")
+    .attr("id", d3_id + "clip")
   .append("rect")
     .attr("x", 0)
     .attr("y", 0)

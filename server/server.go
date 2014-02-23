@@ -128,7 +128,6 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		workload = "push"
 	}
 
-	//ToDo (simon): interval and stop is 0, repeating at interval is not yet exposed in Web UI
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(

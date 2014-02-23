@@ -123,21 +123,37 @@ describe("The view", function() {
 })
 
 describe("Throughput chart", function() {
+  const chartId = "d3_throughput"  
   var chart
 
   beforeEach(function() {
-    chart = d3.custom.pats.throughput(d3.select("#target"))
+    $("#target").html("");
+    chart = new throughput(document.getElementById("target"));
   })
 
-  it("should have a default width (300) and height (500)", function() {
-    expect(chart.width()).toBe(800)
-    expect(chart.height()).toBe(400)
+  it("should draw a bar for each command in a workload", function() {
+    var workload = [{ Commands: {
+        "login": {"Throughput": 0.5}, 
+        "push": {"Throughput": 0.1},
+        "list": {"Throughput": 0.3}
+      } }];
+
+    chart(workload);
+    var svg = d3.select("#" + chartId);
+    expect(svg.selectAll('rect.bar').size()).toBe(3);
   })
 
-  it("should create a point for each element", function() {
-    chart([1, 2, 3])
-    expect(d3.selectAll('circle').size()).toBe(3)
-  })
+  it("should show the maximum command throughput in seconds in the x-axis", function() {
+    var workload = [{ Commands: {
+        "login": {"Throughput": 0.5}, 
+        "push": {"Throughput": 0.1},
+        "list": {"Throughput": 0.9}
+      } }];
+    chart(workload);
+
+    expect( chart.xAxisMax() ).toBe(0.9);
+  });    
+
 })
 
 describe("Bar chart", function() {
