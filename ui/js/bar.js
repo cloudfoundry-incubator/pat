@@ -82,6 +82,11 @@ var barchart = function(el) {
     .attr("y", this.svgHeight + 25)
     .text("Task #")
     .attr("text-anchor","middle");
+  this.svg.append("text")
+    .attr("x", this.svgWidth / 2)
+    .attr("y", -10)
+    .text("Experiment Duration (seconds)")
+    .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");  
 
   var exports = function(data) {
     const second = 1000000000;

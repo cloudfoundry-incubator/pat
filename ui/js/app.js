@@ -100,7 +100,6 @@ ko.bindingHandlers.chart = {
     });
     ko.bindingHandlers.chart.b(data);
     ko.bindingHandlers.chart.t(data);
-    console.log(JSON.stringify(data))
   }
 }
 

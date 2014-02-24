@@ -4,12 +4,14 @@
 <head>
 <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" media="screen" />
 <link rel="stylesheet" href="css/bootstrap-theme.min.css" type="text/css" media="screen" />
+<link rel="stylesheet" href="css/dom.css"type="text/css" media="screen" />
 <link rel="stylesheet" href="css/app.css" type="text/css" media="screen" />
 <link rel="stylesheet" href="css/graphs.css" type="text/css" media="screen" />
 <script type="text/javascript" src="js/jquery-1.10.1.min.js"></script>
 <script type="text/javascript" src="js/d3.v3.min.js"></script>
 <script type="text/javascript" src="js/knockout-min.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
+<script type="text/javascript" src="js/dom.js"></script>
 <script type="text/javascript" src="js/app.js"></script>
 <script type="text/javascript" src="js/chart.js"></script>
 <script type="text/javascript" src="js/bar.js"></script>
@@ -43,6 +45,17 @@ body { padding: 8px; }
       </button>
     </div>
     <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data">
+      <div class="btn-group-vertical" style="position:absolute; right:-62px; top: 0px;">
+        <button type="button" onclick="dom.contentIn('d3_workload_container');" class="btn btn-default btn-lg">
+          <span class="glyphicon"><img src="images/glyphicons_bars.png" /></span>
+        </button>
+        <button type="button" onclick="dom.contentIn('d3_throughput_container');" class="btn btn-default btn-lg">
+          <span class="glyphicon"><img src="images/glyphicons_lines.png" /></span>
+        </button>
+        <button type="button" onclick="alert('feature coming soon');" class="btn btn-default btn-lg">
+          <span class="glyphicon"><img src="images/glyphicons_pie.png" /></span>
+        </button>
+      </div>
       <p data-bind="visible: noExperimentRunning" class="noexperimentrunning text-muted text-center" style="position: absolute; width: 300px; margin-left: -150px; left: 50%; top: 20%">(No Experiment Running)</p>
     </div>
     <div style="border-top: 2px solid #ddd">
@@ -162,6 +175,8 @@ body { padding: 8px; }
   <!-- **************** footer ******************* -->
   <script>
     ko.applyBindings(new pat.view( new pat.experimentList(), pat.experiment(800) ));
+    var dom = new DOM();
+    dom.hideContent(["d3_throughput_container"]);
   </script>
 </div>
 </body>

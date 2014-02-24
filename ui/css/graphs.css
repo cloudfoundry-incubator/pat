@@ -26,3 +26,32 @@
   stroke: #eee;
   shape-rendering: crispEdges;
 }
+
+#graph #d3_throughput {
+  fill: steelblue;
+}
+#graph #d3_throughput .bar:hover {
+    fill: brown;
+}
+#graph #d3_throughput text {
+  fill: brown;
+  font: 10px sans-serif;
+  text-anchor: middle;
+}
+
+#graph #d3_throughput .line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+#graph #d3_throughput .axis text {
+  font: 10px sans-serif;  
+}
+
+#graph #d3_throughput .axis path,
+#graph #d3_throughput .axis line {
+  fill: none;
+  stroke: #eee;
+  shape-rendering: crispEdges;
+}

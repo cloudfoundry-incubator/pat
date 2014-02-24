@@ -59,13 +59,13 @@ var throughput = function(el) {
   this.svg.append("text")
     .attr("x", this.svgWidth - 60)
     .attr("y", this.svgHeight + 25)
-    .text("Commands / sec")
+    .text("throughput / sec")
     .attr("text-anchor","middle");
   this.svg.append("text")
     .attr("x", this.svgWidth / 2)
     .attr("y", -20)
     .text("Commands Throughput / sec")
-    .attr("style", "text-anchor: middle; font-size: 15pt; fill: #000;");
+    .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");
 
   var exports = function(data) {
     if (!data[0]) return;

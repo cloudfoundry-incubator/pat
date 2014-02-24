@@ -122,8 +122,28 @@ describe("The view", function() {
   })
 })
 
+describe("DOM elements manipulation", function(){  
+  const bar_chart = "d3_workload_container";
+  const throughput_chart = "d3_throughput_container";
+  new barchart(document.getElementById("target"));
+  new throughput(document.getElementById("target"));
+  var dom = new DOM();    
+  dom.hideContent([throughput_chart]);
+    
+  it("shows barchart as the default graph", function(){
+    expect( $('#' + throughput_chart).css('display') ).toBe("none")
+    expect(  $('#' + bar_chart).css('display') ).toBe("block")
+  })
+
+  it("hides all other graphs when a new graph is swapped into view", function(){
+    dom.contentIn(throughput_chart);
+    expect( $('#' + throughput_chart).css('display') ).toBe("block")
+    expect(  $('#' + bar_chart).css('display') ).toBe("none")
+  })
+})
+
 describe("Throughput chart", function() {
-  const chartId = "d3_throughput"  
+  const chartId = "d3_throughput"  ;  
   var chart
 
   beforeEach(function() {
