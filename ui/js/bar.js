@@ -1,172 +1,174 @@
-var barchart = function(el) {
-  
-  var margin = {top: 30, right: 30, bottom: 30, left: 30},
-      d3Obj = d3.select(el),
-      jqObj = $(el);
+d3_workload = function() {
+  const barWidth = 30,
+        clipMarginRight = 40;
 
-  self = this;
-  this.barWidth = 30;
-  this.clipMarginRight = 40;
-  this.svgWidth = jqObj.width() - margin.left - margin.right;
-  this.svgHeight = jqObj.height() - margin.top - margin.bottom;
-  this.x = d3.scale.linear().range([0, this.svgWidth], 1),
-  this.y = d3.scale.linear().range([0, this.svgHeight], 1);
+  var margin = {top: 50, right: 30, bottom: 30, left: 30};
+  var svgWidth, svgHeight, jqObj, d3Obj, drawArea, drawBoxWidth;
+  var x, y, xAxis, yAxis, svg, outerBody, barCon;
 
-  this.xAxis = d3.svg.axis()
-    .scale(this.x)
-    .orient("bottom")
-    .ticks(0);
-  this.yAxis = d3.svg.axis()
-    .scale(this.y)
-    .orient("right")
-    .tickSize(-this.svgWidth + 30);
-  this.zoom = d3.behavior.zoom()
-    .x(this.x)
-    .scaleExtent([1, 10])
-    .on("zoom", function(){
-      self.barCon.attr("transform", "translate(" + d3.event.translate[0] + ",0)scale(1, 1)");
-    })
+  var d3Graph = document.createElement('div');
+  d3Graph.width = "100%";
+  d3Graph.height = "100%";
 
-  var d3Graph = d3.select(el).append("div")
-    .attr("width", "100%")
-    .attr("height", "100%")
-    .attr("class", "workload")
-    .node();
+  var initDOM = function(el) {
 
-  this.svg = d3.select(d3Graph)
-    .append("svg")      
-      .attr("width", jqObj.width())
-      .attr("height", jqObj.height())
-    .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    d3Obj = d3.select(el);
+    jqObj = $(el);
 
-  this.outerBody = this.svg.append("g");
+    svgWidth = jqObj.width() - margin.left - margin.right;
+    svgHeight = jqObj.height() - margin.top - margin.bottom;
+    x = d3.scale.linear().range([0, svgWidth], 1),
+    y = d3.scale.linear().range([0, svgHeight], 1);
 
-  this.drawBoxWidth = parseInt(this.svgWidth - this.clipMarginRight);
-  this.svg.append("defs").append("clipPath")
-    .attr("id", d3_id + "clip")
-  .append("rect")
-    .attr("x", 0)
-    .attr("y", 0)
-    .attr("width", this.drawBoxWidth)
-    .attr("height", this.svgHeight + 30);
+    xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom")
+      .ticks(0);
+    yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("right")
+      .tickSize(-svgWidth + 30);
+    zoom = d3.behavior.zoom()
+      .x(x)
+      .scaleExtent([1, 10])
+      .on("zoom", function(){
+        barCon.attr("transform", "translate(" + d3.event.translate[0] + ",0)scale(1, 1)");
+      })
 
-  var chartBody = this.svg.append("g")
-    .attr("clip-path", "url(#clip)")
-    .call(this.zoom);
+    el.appendChild(d3Graph);
 
-  chartBody.append("rect")
-    .attr("width","100%")
-    .attr("height","100%")
-    .attr("style","fill:none;pointer-events: all;");
+    svg = d3.select(d3Graph)
+      .append("svg")      
+        .attr("width", jqObj.width())
+        .attr("height", jqObj.height())
+        .attr("class", "workload")
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  this.outerBody.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + this.svgHeight + ")");
-  this.outerBody.append("g")
-    .attr("class", "y axis")
-    .attr("transform", "translate(" + (this.svgWidth - 20) + ", 0)");
+    outerBody = svg.append("g");
 
-  this.barCon = chartBody.append("g")    
-    .attr("transform", "translate(0,0)");
+    drawBoxWidth = parseInt(svgWidth - clipMarginRight);
+    svg.append("defs").append("clipPath")
+      .attr("id", "workloadclip6235")
+    .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", drawBoxWidth)
+      .attr("height", svgHeight + 30);
 
-  this.drawArea = this.barCon.node();
+    var chartBody = svg.append("g")
+      .attr("clip-path", "url(#workloadclip)")
+      .call(zoom);
 
-  this.svg.append("text")
-    .attr("x", 20)
-    .attr("y", -this.svgWidth - 10)
-    .attr("transform", "rotate(90)")
-    .text("Seconds");
-  this.svg.append("text")
-    .attr("x", 20)
-    .attr("y", this.svgHeight + 25)
-    .text("Task #")
-    .attr("text-anchor","middle");
-  this.svg.append("text")
-    .attr("x", this.svgWidth / 2)
-    .attr("y", -10)
-    .text("Experiment Duration (seconds)")
-    .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");  
+    chartBody.append("rect")
+      .attr("width","100%")
+      .attr("height","100%")
+      .attr("style","fill:none;pointer-events: all;");
 
-  var exports = function(data) {
+    outerBody.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + svgHeight + ")");
+    outerBody.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(" + (svgWidth - 20) + ", 0)");
+
+    barCon = chartBody.append("g")    
+      .attr("transform", "translate(0,0)");
+
+    drawArea = barCon.node();
+
+    svg.append("text")
+      .attr("x", 20)
+      .attr("y", -svgWidth - 10)
+      .attr("transform", "rotate(90)")
+      .text("Seconds");
+    svg.append("text")
+      .attr("x", 20)
+      .attr("y", svgHeight + 25)
+      .text("Task #")
+      .attr("text-anchor","middle");
+    svg.append("text")
+      .attr("x", svgWidth / 2)
+      .attr("y", -10)
+      .text("Experiment Duration (seconds)")
+      .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");  
+
+  } //end initDOM
+
+  var drawGraph = function(data) {
     const second = 1000000000;
     var len = data.length;
-    var x = self.x.domain( [1, len, 1] ).range([self.barWidth + 1, len * (self.barWidth + 1)]);
-    var y = self.y.domain([d3.max(data, function(d) { return d.LastResult / second} ), 0] );
-    var bars = self.barCon.selectAll("rect.bar").data(data);
-    var labels = self.barCon.selectAll("text").data(data);
+    x = x.domain( [1, len, 1] ).range([barWidth + 1, len * (barWidth + 1)]);
+    y = y.domain([d3.max(data, function(d) { return d.LastResult / second} ), 0] );
+    var bars = barCon.selectAll("rect.bar").data(data);
+    var labels = barCon.selectAll("text").data(data);
 
     panToViewable();
 
     bars.transition()
       .attr("x", function(d, i) { return x(i) })
       .attr("y", function(d) { return y(d.LastResult / second) } )
-      .attr("height", function(d) { return (self.svgHeight - y(d.LastResult / second)) } );
+      .attr("height", function(d) { return (svgHeight - y(d.LastResult / second)) } );
 
     labels.transition()
-      .attr("x", function(d, i) { return (x(i) + (self.barWidth / 2)) })
-      .attr("y", self.svgHeight + 3 );
+      .attr("x", function(d, i) { return (x(i) + (barWidth / 2)) })
+      .attr("y", svgHeight + 3 );
 
     bars.enter()
       .append("rect")
         .attr("x", function(d, i) { return x(i) + 10 })
         .attr("y", function(d) { return y(d.LastResult / second) } )
-        .attr("height", function(d) { return (self.svgHeight - y(d.LastResult / second)) } )
-        .attr("width", self.barWidth)
+        .attr("height", function(d) { return (svgHeight - y(d.LastResult / second)) } )
+        .attr("width", barWidth)
         .attr("class", "bar")
         .attr("data-shift", function(){
-            var bodyWidth = len * (self.barWidth + 1);
-            if (bodyWidth + getTranslateX(self.barCon) > self.drawBoxWidth) {
-              transformChart(self.barCon, self.drawBoxWidth - bodyWidth  - 25, 0);
-              self.zoom = adjustZoomX(self.zoom, self.drawBoxWidth - bodyWidth  - 25, bodyWidth);
+            var bodyWidth = len * (barWidth + 1);
+            if (bodyWidth + getTranslateX(barCon) > drawBoxWidth) {
+              transformChart(barCon, drawBoxWidth - bodyWidth  - 25, 0);
+              zoom = adjustZoomX(zoom, drawBoxWidth - bodyWidth  - 25, bodyWidth);
             }
         })
       .transition()
         .duration(1000)
         .attr("x", function(d, i) { return x(i) })
         .attr("y", function(d) { return y(d.LastResult / second) })
-        .attr("height", function(d) { return (self.svgHeight - y(d.LastResult / second) ) } );
+        .attr("height", function(d) { return (svgHeight - y(d.LastResult / second) ) } );
 
     bars.enter()
       .append("text")
-        .attr("x", function(d, i) { return (x(i) + (self.barWidth / 2)) })
-        .attr("y", self.svgHeight + 20 )
+        .attr("x", function(d, i) { return (x(i) + (barWidth / 2)) })
+        .attr("y", svgHeight + 20 )
         .attr("dy", ".7em")
         .text(function(d, i){ return i + 1 })
       .transition()
-        .attr("y", self.svgHeight + 3 );
+        .attr("y", svgHeight + 3 );
 
-    self.outerBody.select(".x.axis").call(self.xAxis);
-    self.outerBody.select(".y.axis").call(self.yAxis);
+    outerBody.select(".x.axis").call(xAxis);
+    outerBody.select(".y.axis").call(yAxis);
 
     hightlightErrors();
    
     bars.exit().remove();
     labels.exit().remove();
 
-  } //end exports
-
-  exports.yAxisMax = function() { return self.yAxis.scale().domain()[0]; }
-  exports.xAxisMax = function() { return self.xAxis.scale().domain()[0]; }
-  exports.drawBoxWidth = function() { return self.drawBoxWidth; }  
-  exports.drawArea = function() { return self.drawArea; }
+  } //end drawGraph
 
   function panToViewable() {
-    var bodyWidth = getNodeWidth(self.barCon[0][0]);
-    var barsPan = getTranslateX(self.barCon);
+    var bodyWidth = getNodeWidth(barCon[0][0]);
+    var barsPan = getTranslateX(barCon);
 
     if (bodyWidth + barsPan <= 0 && bodyWidth > 0) {
-      transformChart(self.barCon, ( 0 - bodyWidth) + self.drawBoxWidth / 3, 0);
-      self.zoom = adjustZoomX(self.zoom, ((0 - bodyWidth) + self.drawBoxWidth / 3), bodyWidth);
-    } else if (barsPan > self.drawBoxWidth) {
-      transformChart(self.barCon, self.drawBoxWidth - (self.drawBoxWidth / 3), 0);
-      self.zoom = adjustZoomX(self.zoom, self.drawBoxWidth - (self.drawBoxWidth / 3), bodyWidth);
+      transformChart(barCon, ( 0 - bodyWidth) + drawBoxWidth / 3, 0);
+      zoom = adjustZoomX(zoom, ((0 - bodyWidth) + drawBoxWidth / 3), bodyWidth);
+    } else if (barsPan > drawBoxWidth) {
+      transformChart(barCon, drawBoxWidth - (drawBoxWidth / 3), 0);
+      zoom = adjustZoomX(zoom, drawBoxWidth - (drawBoxWidth / 3), bodyWidth);
     }
   }
 
   function hightlightErrors() {
     var errorCount = 0;
-    var bars = d3.select(self.drawArea).selectAll("rect.bar");
+    var bars = d3.select(drawArea).selectAll("rect.bar");
     bars.each(function(d,i) {
       if (d.TotalErrors > errorCount) {
         var bar = d3.select(this);     
@@ -205,12 +207,23 @@ var barchart = function(el) {
     return zoom;
   }
 
-  return exports;
+  var changeState = function(fn) {
+    fn(d3Graph)
+  }
 
-}; //end barchart
+  return {
+    init: function(el){
+      initDOM(el);
+      return drawGraph;
+    },
+    node: d3Graph,
+    changeState: changeState,
+    totalBars: function() { return $(d3Graph).find("rect.bar").length },
+    yAxisMax: function() { return yAxis.scale().domain()[0] },
+    chartAreaWidth: function() { return drawBoxWidth },
+    chartArea: function(){ return drawArea },
+    display: function() { return $(d3Graph).css('display') },
+  }
 
-
-
-
-
+}()
 

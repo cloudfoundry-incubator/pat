@@ -25,7 +25,7 @@ casper.test.begin 'Basic Flow', 5, (test) ->
 
   casper.then ->
     @test.assertElementCount "#data tr", 7, "As many rows in the data table as requested pushes"
-    @test.assertElementCount "svg rect.bar", 7, "As many bars in the graph as requested pushes"
+    @test.assertElementCount ".workload rect.bar", 7, "As many bars in the graph as requested pushes"
     @waitFor ->
       @evaluate experimentCountEquals, @previous_experiments_count + 1
 

@@ -19,6 +19,32 @@ describe("The view", function() {
     })
   })
 
+  describe("showThroughput()", function() {
+    it("shows throughput graph and hides others when called", function() {
+      v.showThroughput()
+      expect( d3_throughput.display() ).toBe("block")
+      expect( d3_workload.display() ).toBe("none")
+    })
+
+    it("sets throughputVisible to true", function() {
+      v.showThroughput()
+      expect(v.throughputVisible()).toBe(true)
+    })
+  })
+
+  describe("showWorkload()", function() {
+    it("shows workload graph and hides others when called", function() {
+      v.showWorkload()
+      expect( d3_throughput.display() ).toBe("none")
+      expect( d3_workload.display() ).toBe("block")
+    })
+
+    it("sets workloadVisible to true", function() {
+      v.showWorkload()
+      expect(v.workloadVisible()).toBe(true)
+    })
+  })
+
   describe("when the state of the experiment changes to running", function() {
     beforeEach(function() { experiment.state("running") })
 
@@ -123,33 +149,32 @@ describe("The view", function() {
 })
 
 describe("DOM elements manipulation", function(){  
-  const bar_chart = "d3_workload_container";
-  const throughput_chart = "d3_throughput_container";
-  new barchart(document.getElementById("target"));
-  new throughput(document.getElementById("target"));
+  d3_workload.init(document.getElementById("target"));
+  d3_throughput.init(document.getElementById("target"));
+
+  var workload = d3_workload;
+  var throughput = d3_throughput;
   var dom = new DOM();    
-  dom.hideContent([throughput_chart]);
-    
-  it("shows barchart as the default graph", function(){
-    expect( $('#' + throughput_chart).css('display') ).toBe("none")
-    expect(  $('#' + bar_chart).css('display') ).toBe("block")
+
+  it("hides the graph node when hideContent() is used", function(){
+    throughput.changeState(dom.showGraph)
+    expect( d3_throughput.display() ).toBe("block")
+    throughput.changeState(dom.hideContent)
+    expect( d3_throughput.display() ).toBe("none")
+  })
+  
+  it("hides current graph when a new graph is swapped into view", function(){
+    workload.changeState(dom.showGraph)
+    expect( d3_workload.display() ).toBe("block")
+    throughput.changeState(dom.contentIn)
+    expect( d3_throughput.display() ).toBe("block")
+    expect( d3_workload.display() ).toBe("none")
   })
 
-  it("hides all other graphs when a new graph is swapped into view", function(){
-    dom.contentIn(throughput_chart);
-    expect( $('#' + throughput_chart).css('display') ).toBe("block")
-    expect(  $('#' + bar_chart).css('display') ).toBe("none")
-  })
 })
 
-describe("Throughput chart", function() {
-  const chartId = "d3_throughput"  ;  
-  var chart
-
-  beforeEach(function() {
-    $("#target").html("");
-    chart = new throughput(document.getElementById("target"));
-  })
+describe("Throughput chart", function() {  
+  var chart = d3_throughput.init(document.getElementById("target"));
 
   it("should draw a bar for each command in a workload", function() {
     var workload = [{ Commands: {
@@ -159,8 +184,8 @@ describe("Throughput chart", function() {
       } }];
 
     chart(workload);
-    var svg = d3.select("#" + chartId);
-    expect(svg.selectAll('rect.bar').size()).toBe(3);
+
+    expect( d3_throughput.totalBars() ).toBe(3);
   })
 
   it("should show the maximum command throughput in seconds in the x-axis", function() {
@@ -171,7 +196,7 @@ describe("Throughput chart", function() {
       } }];
     chart(workload);
 
-    expect( chart.xAxisMax() ).toBe(0.9);
+    expect( d3_throughput.xAxisMax() ).toBe(0.9);
   });    
 
 })
@@ -181,12 +206,7 @@ describe("Bar chart", function() {
   const gap = 1;
 
   var barWidth = 30;
-  var chart;
-
-  beforeEach(function() {
-    $("#target").html("");
-    chart = new barchart(document.getElementById("target"));
-  });
+  var chart = d3_workload.init(document.getElementById("target"));
 
   it("should draw a bar for each element", function() {  
     var data = [];
@@ -194,8 +214,8 @@ describe("Bar chart", function() {
         data.push( {"LastResult" : 1 * sec} );
     }
     chart(data);        
-    var svg = d3.select(chart.drawArea());
-    expect(svg.selectAll('rect.bar').size()).toBe(3);
+    
+    expect( d3_workload.totalBars() ).toBe(3);
   });
 
   it("should show the maximum LastResult in seconds in the y-axis", function() {
@@ -207,7 +227,7 @@ describe("Bar chart", function() {
     }    
     chart(data);
 
-    expect( chart.yAxisMax() ).toBe(10);
+    expect( d3_workload.yAxisMax() ).toBe(10);
   });
 
   it("should show error by drawing the bar in the color brown with the CSS class 'error'", function() {
@@ -216,9 +236,9 @@ describe("Bar chart", function() {
                 {"LastResult" : 1 * sec, "TotalErrors": 1}];
     chart(data);
 
-    var bars = d3.select( chart.drawArea() ).selectAll("rect.bar");
+    var bars = d3.select( d3_workload.node ).selectAll("rect.bar");
     
-    bars.each(function(d,i) {
+    bars.each(function(d,i) {      
       if (d.TotalErrors == 0) {
         expect( d3.select(this).classed("error") ).toBe(false)
       } else {
@@ -229,8 +249,7 @@ describe("Bar chart", function() {
     
   it("should auto-pan to the left when new data is drawn outside of the viewable area", function() {
     var data = [];
-    
-    var viewableWidth = chart.drawBoxWidth();
+    var viewableWidth = d3_workload.chartAreaWidth();
     
     var max_data = parseInt(viewableWidth / (barWidth + gap));    
     for (var i = 1; i <= max_data; i ++) {
@@ -240,7 +259,7 @@ describe("Bar chart", function() {
     
     waits(500);
     runs(function () {
-      expect(parseInt(getTranslateX(d3.select( chart.drawArea() )))).toBe(0);         
+      expect(parseInt(getTranslateX(d3.select( d3_workload.chartArea() )))).toBe(0);         
     }, 500);
 
     var extra_data = 5;
@@ -254,13 +273,13 @@ describe("Bar chart", function() {
     
     waits(500);    
     runs(function() {
-      expect(parseInt(getTranslateX(d3.select( chart.drawArea() )))).toBeLessThan(-1 * extra_data * (barWidth + gap));  
+      expect(parseInt(getTranslateX(d3.select( d3_workload.chartArea() )))).toBeLessThan(-1 * extra_data * (barWidth + gap));  
     });
   });
 
   it("should auto-pan back into view if the chart is panned out of the viewable area", function() {
     var data = [];    
-    var viewableWidth = chart.drawBoxWidth(); 
+    var viewableWidth = d3_workload.chartAreaWidth();
 
     var interval = setInterval(function() {
       data.push( {"LastResult" : 5} );
@@ -270,13 +289,13 @@ describe("Bar chart", function() {
   
     waits(500);
     runs(function(){
-      d3.select(chart.drawArea())
+      d3.select( d3_workload.chartArea() )
         .attr("transform","translate(" + (viewableWidth * 2) + ", 0)");
     }, 500);
       
     waits(1000);
     runs(function () {
-      expect(parseInt(getTranslateX(d3.select( chart.drawArea() )))).toBeLessThan( viewableWidth );         
+      expect(parseInt(getTranslateX(d3.select( d3_workload.chartArea() )))).toBeLessThan( viewableWidth );         
       clearInterval(interval);
     }, 1000);
 

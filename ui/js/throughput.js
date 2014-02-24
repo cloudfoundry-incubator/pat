@@ -1,83 +1,89 @@
-var throughput = function(el) {
- const d3_id = "d3_throughput",
-       d3_container = d3_id + "_container";
-   
-  var self = this;      
-  var margin = {top: 50, right: 30, bottom: 30, left: 30},
-      d3Obj = d3.select(el),
-      jqObj = $(el);
+d3_throughput = function() {
+  const barWidth = 30;
+  var margin = {top: 50, right: 30, bottom: 30, left: 30};  
+  var svgWidth, svgHeight, jqObj, d3Obj, drawArea;
+  var x, y, xAxis, yAxis, svg, outerBody, graphBox;
 
-  this.barWidth = 30;
-  this.svgWidth = jqObj.width() - margin.left - margin.right;
-  this.svgHeight = jqObj.height() - margin.top - margin.bottom;
-  this.x = d3.scale.linear().range([0, this.svgWidth], 1);
-  this.y = d3.scale.linear().range([0, this.svgHeight], 1);
-  this.color = d3.scale.category10();
+  var d3Graph = document.createElement('div');
+  d3Graph.width = "100%";
+  d3Graph.height = "100%";
 
-  this.xAxis = d3.svg.axis()
-    .scale(this.x)
-    .orient("bottom")
-    .tickSize(-this.svgHeight);  
+  // size and draw svg elements onto DOM
+  var initDOM = function(el) {
 
-  d3Obj.append("div")
-    .attr("id", d3_container)
-    .attr("width", "100%")
-    .attr("height", "100%")
-  .append("svg")
-    .attr("id", d3_id)
-    .attr("width", jqObj.width())
-    .attr("height", jqObj.height());
+    var d3Obj = d3.select(el),
+    jqObj = $(el);
 
-  this.svg = d3.select("#" + d3_id)
-    .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    svgWidth = jqObj.width() - margin.left - margin.right;
+    svgHeight = jqObj.height() - margin.top - margin.bottom;
+    x = d3.scale.linear().range([0, svgWidth], 1);
+    y = d3.scale.linear().range([0, svgHeight], 1);
+    color = d3.scale.category10();
 
-  this.outerBody = this.svg.append("g");
+    xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom")
+      .tickSize(-svgHeight);  
 
-  this.svg.append("defs").append("clipPath")
-    .attr("id", d3_id + "clip")
-  .append("rect")
-    .attr("x", 0)
-    .attr("y", 0)
-    .attr("width", this.svgWidth)
-    .attr("height", this.svgHeight);
+    el.appendChild(d3Graph);
 
-  var chartBody = this.svg.append("g")
-    .attr("clip-path", "url(#" + d3_id + "clip)");    
-  chartBody.append("rect")
-    .attr("width","100%")
-    .attr("height","100%")
-    .attr("style","fill:none;pointer-events: all;");
+    svg = d3.select(d3Graph)
+      .append("svg")
+        .attr("width", jqObj.width())
+        .attr("height", jqObj.height())
+        .attr("class", "throughput")
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  this.outerBody.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + this.svgHeight + ")");
+    outerBody = svg.append("g");
 
-  this.graphBox = chartBody.append("g")
-    .attr("id", d3_id + "_box")
-    .attr("transform", "translate(0,0)");  
-  this.svg.append("text")
-    .attr("x", this.svgWidth - 60)
-    .attr("y", this.svgHeight + 25)
-    .text("throughput / sec")
-    .attr("text-anchor","middle");
-  this.svg.append("text")
-    .attr("x", this.svgWidth / 2)
-    .attr("y", -20)
-    .text("Commands Throughput / sec")
-    .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");
+    svg.append("defs").append("clipPath")
+      .attr("id", "throughputclip2132")
+    .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", svgWidth)
+      .attr("height", svgHeight);
 
-  var exports = function(data) {
+    var chartBody = svg.append("g")
+      .attr("clip-path", "url(#" + "throughputclip");    
+    chartBody.append("rect")
+      .attr("width","100%")
+      .attr("height","100%")
+      .attr("style","fill:none;pointer-events: all;");
+
+    outerBody.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + svgHeight + ")");
+
+    graphBox = chartBody.append("g")
+      .attr("transform", "translate(0,0)");  
+    svg.append("text")
+      .attr("x", svgWidth - 60)
+      .attr("y", svgHeight + 25)
+      .text("throughput / sec")
+      .attr("text-anchor","middle");
+    svg.append("text")
+      .attr("x", svgWidth / 2)
+      .attr("y", -20)
+      .text("Commands Throughput / sec")
+      .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");   
+
+    drawArea = graphBox.node();  
+  } //end initDOM
+
+  // functions to be called for graph plotting
+  var drawGraph = function(data) {
     if (!data[0]) return;
 
     var cmds = flattenJSON(data);
-    self.color.domain(cmds.map(function (d) { return d.cmd; }));
+    color.domain(cmds.map(function (d) { return d.cmd; }));
 
     var len = cmds.length;
-    var y = self.y.domain( [1, len, 1] ).range([self.barWidth + 1, len * (self.barWidth + 1)]);
-    var x = self.x.domain([0, d3.max(cmds, function(d) { return d.throughput } )]).range([0, self.svgWidth]);
-    var bars = self.graphBox.selectAll("rect.bar").data(cmds);
-    var labels = self.graphBox.selectAll("text").data(cmds);
+    y = y.domain( [1, len, 1] ).range([barWidth + 1, len * (barWidth + 1)]);
+    x = x.domain([0, d3.max(cmds, function(d) { return d.throughput } )]).range([0, svgWidth]);
+    var bars = graphBox.selectAll("rect.bar").data(cmds);
+    var labels = graphBox.selectAll("text").data(cmds);
 
     bars.transition()
       .attr("x", x(0))
@@ -86,7 +92,7 @@ var throughput = function(el) {
 
     labels.transition()
       .attr("x", function(d) { return x(d.throughput) - 20} )
-      .attr("y", function(d, i) { return y(i) + (self.barWidth / 2 ) + 4 } )
+      .attr("y", function(d, i) { return y(i) + (barWidth / 2 ) + 4 } )
       .text(function(d){ return (d.cmd + ": " + d.throughput.toFixed(3) + " / sec") });
 
     bars.enter()
@@ -94,9 +100,9 @@ var throughput = function(el) {
         .attr("x", x(0) )  
         .attr("y", function(d, i) { return y(i) + 10 })        
         .attr("width", function(d) { return x(d.throughput) } )
-        .attr("height", self.barWidth)
+        .attr("height", barWidth)
         .attr("class", "bar")
-        .style("fill", function (d) { return self.color(d.cmd) })
+        .style("fill", function (d) { return color(d.cmd) })
       .transition()        
         .duration(1000)
         .attr("y", function(d, i) { return y(i) + 10 })        
@@ -105,29 +111,42 @@ var throughput = function(el) {
     bars.enter()
       .append("text")
         .attr("x", function(d) { return x(d.throughput) -20 })
-        .attr("y", function(d, i) { return y(i) + (self.barWidth / 2 ) + 4 } )
+        .attr("y", function(d, i) { return y(i) + (barWidth / 2 ) + 4 } )
         .attr("dy", ".7em")
         .text(function(d){ return (d.cmd + ": " + d.throughput.toFixed(3) + " / sec") })
         .attr("style", "text-anchor: end; font-size: 12pt; fill: #fff")       
 
-    self.outerBody.select(".x.axis").call(self.xAxis);   
+    outerBody.select(".x.axis").call(xAxis);   
 
     bars.exit().remove();   
-    labels.exit().remove();       
+    labels.exit().remove();     
 
-  } //end exports
+    function flattenJSON(data) {
+      var cmds = [];
+      for (var command in data[data.length - 1].Commands) {
+        cmds.push({"cmd": command, "throughput": data[data.length - 1].Commands[command].Throughput})
+      }
+      return cmds;
+    }  
 
-  exports.xAxisMax = function() { return self.xAxis.scale().domain()[1]; }  
+  } //end drawGraph
 
-  function flattenJSON(data) {
-    var cmds = [];
-    for (var command in data[data.length - 1].Commands) {
-      cmds.push({"cmd": command, "throughput": data[data.length - 1].Commands[command].Throughput})
-    }
-    return cmds;
+  var changeState = function(fn) { 
+    fn(d3Graph) 
   }
 
-  return exports;
+  // Public Properties
+  return {        
+    init: function(el){ //draw DOM elements and return function 'drawGraph' for graph drawing
+      initDOM(el);
+      return drawGraph;
+    },
+    changeState: changeState,
+    totalBars: function() { return $(d3Graph).find("rect.bar").length },
+    xAxisMax: function() { return xAxis.scale().domain()[1] },
+    display: function() { return $(d3Graph).css('display') },
+  } //end return
 
-}; //end throughput
+}()
+
 
