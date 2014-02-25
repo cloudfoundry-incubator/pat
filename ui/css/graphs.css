@@ -6,7 +6,10 @@
   fill: steelblue;
 }
 #graph #d3_workload .bar:hover {
-    fill: brown;
+    fill: green;
+}
+#graph #d3_workload .error {
+	fill: brown;
 }
 #graph #d3_workload text {
   fill: brown;

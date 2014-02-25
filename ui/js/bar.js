@@ -70,7 +70,7 @@ var barchart = function(el) {
     .attr("transform", "translate(" + (this.svgWidth - 20) + ", 0)");
 
   this.barCon = chartBody.append("g")
-    .attr("id", "chart_box")
+    .attr("id", d3_id + "_box")
     .attr("transform", "translate(0,0)");
 
   this.svg.append("text")
@@ -135,12 +135,14 @@ var barchart = function(el) {
     self.outerBody.select(".x.axis").call(self.xAxis);
     self.outerBody.select(".y.axis").call(self.yAxis);
 
+    hightlightErrors();
+   
     bars.exit().remove();
     labels.exit().remove();
 
   } //end exports
 
-  exports.yAxisMax = function() { return self.yAxis.scale().domain()[0]; };
+  exports.yAxisMax = function() { return self.yAxis.scale().domain()[0]; }
   exports.xAxisMax = function() { return self.xAxis.scale().domain()[0]; }
   exports.drawBoxWidth = function() { return self.drawBoxWidth; }
 
@@ -155,6 +157,27 @@ var barchart = function(el) {
       transformChart(self.barCon, self.drawBoxWidth - (self.drawBoxWidth / 3), 0);
       self.zoom = adjustZoomX(self.zoom, self.drawBoxWidth - (self.drawBoxWidth / 3), bodyWidth);
     }
+  }
+
+  function hightlightErrors() {
+    var errorCount = 0;
+    var bars = d3.select("#" + d3_id).selectAll("rect.bar");
+    bars.each(function(d,i) {
+      if (d.TotalErrors > errorCount) {
+        var bar = d3.select(this);     
+        bar.classed("error", true)
+          .attr("data-toggle","tooltip")
+          .attr("title", "Error: " + d.LastError);
+          
+        errorCount += 1;
+        $(this).tooltip({
+          "placement": "top",
+          "container": "body"
+        });
+      } else {
+        d3.select(this).classed("error", false);
+      }
+    })
   }
 
   function getTranslateX(node) {

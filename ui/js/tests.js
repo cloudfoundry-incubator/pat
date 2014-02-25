@@ -143,7 +143,8 @@ describe("Throughput chart", function() {
 describe("Bar chart", function() {
   const sec = 1000000000;
   const gap = 1;
-  const chartAreaId = "chart_box";
+  const chartId = "d3_workload";
+  const chartAreaId = chartId + "_box";
 
   var barWidth = 30;
   var chart;
@@ -173,7 +174,24 @@ describe("Bar chart", function() {
     chart(data);
 
     expect( chart.yAxisMax() ).toBe(10);
-  });    
+  });
+
+  it("should show error by drawing the bar in the color brown with the CSS class 'error'", function() {
+    var data = [{"LastResult" : 2 * sec, "TotalErrors": 0},
+                {"LastResult" : 5 * sec, "TotalErrors": 0},
+                {"LastResult" : 1 * sec, "TotalErrors": 1}];
+    chart(data);
+
+    var bars = d3.select("#" + chartAreaId).selectAll("rect.bar");
+    
+    bars.each(function(d,i) {
+      if (d.TotalErrors == 0) {
+        expect( d3.select(this).classed("error") ).toBe(false)
+      } else {
+        expect( d3.select(this).classed("error") ).toBe(true)
+      }
+    })
+  })
     
   it("should auto-pan to the left when new data is drawn outside of the viewable area", function() {
     var data = [];
