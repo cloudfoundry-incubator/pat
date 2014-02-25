@@ -1,7 +1,5 @@
 var barchart = function(el) {
-  const d3_id = "d3_workload",
-        d3_container = "d3_workload_container";
-
+  
   var margin = {top: 30, right: 30, bottom: 30, left: 30},
       d3Obj = d3.select(el),
       jqObj = $(el);
@@ -29,16 +27,16 @@ var barchart = function(el) {
       self.barCon.attr("transform", "translate(" + d3.event.translate[0] + ",0)scale(1, 1)");
     })
 
-  d3Obj.append("div")
-    .attr("id",d3_container)
+  var d3Graph = d3.select(el).append("div")
     .attr("width", "100%")
     .attr("height", "100%")
-  .append("svg")
-    .attr("id", d3_id)
-    .attr("width", jqObj.width())
-    .attr("height", jqObj.height());
+    .attr("class", "workload")
+    .node();
 
-  this.svg = d3.select("#" + d3_id)
+  this.svg = d3.select(d3Graph)
+    .append("svg")      
+      .attr("width", jqObj.width())
+      .attr("height", jqObj.height())
     .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -69,9 +67,10 @@ var barchart = function(el) {
     .attr("class", "y axis")
     .attr("transform", "translate(" + (this.svgWidth - 20) + ", 0)");
 
-  this.barCon = chartBody.append("g")
-    .attr("id", d3_id + "_box")
+  this.barCon = chartBody.append("g")    
     .attr("transform", "translate(0,0)");
+
+  this.drawArea = this.barCon.node();
 
   this.svg.append("text")
     .attr("x", 20)
@@ -144,7 +143,8 @@ var barchart = function(el) {
 
   exports.yAxisMax = function() { return self.yAxis.scale().domain()[0]; }
   exports.xAxisMax = function() { return self.xAxis.scale().domain()[0]; }
-  exports.drawBoxWidth = function() { return self.drawBoxWidth; }
+  exports.drawBoxWidth = function() { return self.drawBoxWidth; }  
+  exports.drawArea = function() { return self.drawArea; }
 
   function panToViewable() {
     var bodyWidth = getNodeWidth(self.barCon[0][0]);
@@ -161,7 +161,7 @@ var barchart = function(el) {
 
   function hightlightErrors() {
     var errorCount = 0;
-    var bars = d3.select("#" + d3_id).selectAll("rect.bar");
+    var bars = d3.select(self.drawArea).selectAll("rect.bar");
     bars.each(function(d,i) {
       if (d.TotalErrors > errorCount) {
         var bar = d3.select(this);     

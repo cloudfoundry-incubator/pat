@@ -143,8 +143,6 @@ describe("Throughput chart", function() {
 describe("Bar chart", function() {
   const sec = 1000000000;
   const gap = 1;
-  const chartId = "d3_workload";
-  const chartAreaId = chartId + "_box";
 
   var barWidth = 30;
   var chart;
@@ -159,8 +157,8 @@ describe("Bar chart", function() {
     for (var i = 0; i < 3; i ++) {
         data.push( {"LastResult" : 1 * sec} );
     }
-    chart(data);    
-    var svg = d3.select("#d3_workload");
+    chart(data);        
+    var svg = d3.select(chart.drawArea());
     expect(svg.selectAll('rect.bar').size()).toBe(3);
   });
 
@@ -182,7 +180,7 @@ describe("Bar chart", function() {
                 {"LastResult" : 1 * sec, "TotalErrors": 1}];
     chart(data);
 
-    var bars = d3.select("#" + chartAreaId).selectAll("rect.bar");
+    var bars = d3.select( chart.drawArea() ).selectAll("rect.bar");
     
     bars.each(function(d,i) {
       if (d.TotalErrors == 0) {
@@ -206,7 +204,7 @@ describe("Bar chart", function() {
     
     waits(500);
     runs(function () {
-      expect(parseInt(getTranslateX(d3.select('#' + chartAreaId)))).toBe(0);         
+      expect(parseInt(getTranslateX(d3.select( chart.drawArea() )))).toBe(0);         
     }, 500);
 
     var extra_data = 5;
@@ -220,7 +218,7 @@ describe("Bar chart", function() {
     
     waits(500);    
     runs(function() {
-      expect(parseInt(getTranslateX(d3.select('#' + chartAreaId)))).toBeLessThan(-1 * extra_data * (barWidth + gap));  
+      expect(parseInt(getTranslateX(d3.select( chart.drawArea() )))).toBeLessThan(-1 * extra_data * (barWidth + gap));  
     });
   });
 
@@ -236,13 +234,13 @@ describe("Bar chart", function() {
   
     waits(500);
     runs(function(){
-      d3.select('#' + chartAreaId)
+      d3.select(chart.drawArea())
         .attr("transform","translate(" + (viewableWidth * 2) + ", 0)");
     }, 500);
       
     waits(1000);
     runs(function () {
-      expect(parseInt(getTranslateX(d3.select('#' + chartAreaId)))).toBeLessThan( viewableWidth );         
+      expect(parseInt(getTranslateX(d3.select( chart.drawArea() )))).toBeLessThan( viewableWidth );         
       clearInterval(interval);
     }, 1000);
 
