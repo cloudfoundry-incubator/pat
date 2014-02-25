@@ -93,6 +93,31 @@ describe("The view", function() {
         v.downloadCsv()
         expect(v.redirectTo).toHaveBeenCalledWith("some-url.csv")
       })
+    })    
+  })
+
+  describe("Previous Histories Popup", function() {
+    it("should be hidden from the view by default", function() {    
+      var property = $('#historyPopup').css('display');
+      expect(property).toBe("none")
+    })
+
+    it("should be visible when histories button is clicked", function() {    
+      $('[data-target = "#historyPopup"]').trigger("click");
+      waits(300);
+      runs(function() {
+        var property = $('#historyPopup').css('display');
+        expect(property).toBe("block")  
+      });
+    })
+
+    it("should hide from view when close button is clicked", function() {    
+      $('#historyPopup').find('.close').trigger("click");
+      waits(600);
+      runs(function() {
+        var property = $('#historyPopup').css('display');          
+        expect(property).toBe("none")  
+      });
     })
   })
 })
