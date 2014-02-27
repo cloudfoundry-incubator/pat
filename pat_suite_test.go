@@ -1,4 +1,4 @@
-package pat
+package main
 
 import (
 	. "github.com/onsi/ginkgo"

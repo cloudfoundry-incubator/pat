@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/julz/pat"
+	"github.com/julz/pat/cmdline"
 	"github.com/julz/pat/config"
 	"github.com/julz/pat/server"
 )
@@ -19,6 +19,6 @@ func main() {
 		server.Serve()
 		server.Bind()
 	} else {
-		pat.RunCommandLine(config.Concurrency, config.Iterations, config.Silent, config.Output, config.Interval, config.Stop, config.Workload)
+		cmdline.RunCommandLine(config.Concurrency, config.Iterations, config.Silent, config.Output, config.Interval, config.Stop, config.Workload)
 	}
 }

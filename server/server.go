@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
+	"strconv"	
 
 	"github.com/gorilla/mux"
 	"github.com/julz/pat/benchmarker"
@@ -47,27 +47,41 @@ func ServeWithLab(lab Laboratory) {
 	r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx.handleGetExperiment)).Name("experiment")
 	r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx.handlePush))
 
-	http.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui"))))
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./ui/")))
+	//r.PathPrefix("/").Handler(http.FileServer(http.Dir("/tmp/staged/app/.cf/go/src/pat/ui/")))
+	//r.PathPrefix("/").Handler(http.FileServer(http.Dir("/Users/simonleung/go/src/github.com/julz/pat/ui/")))
+	
+	//http.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui"))))
 	http.Handle("/", r)
 }
 
-
 func Bind() {
-	port := GetPort()	
-	fmt.Printf("Starting web ui on http://localhost:%s/ui/\n", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		fmt.Printf("ListenAndServe: %s\n", err)
-	}
-}
-
-func GetPort() string {
-	port := os.Getenv(PortVar)
-	if port == "" {
+	var port string	
+	if port = os.Getenv(PortVar); port == "" {
 		port = "8080"
 	}
 
-	return port
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		panic(err)
+	}
 }
+
+// func Bind() {
+// 	port := GetPort()	
+// 	fmt.Printf("Starting web ui on http://localhost:%s/ui/\n", port)
+// 	if err := http.ListenAndServe(":"+port, nil); err != nil {
+// 		fmt.Printf("ListenAndServe: %s\n", err)
+// 	}
+// }
+
+// func GetPort() string {
+// 	port := os.Getenv(PortVar)
+// 	if port == "" {
+// 		port = "8080"
+// 	}
+
+// 	return port
+// }
 
 type listResponse struct {
 	Items interface{}
