@@ -103,6 +103,7 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 	worker.AddExperiment("login", experiments.Dummy)
 	worker.AddExperiment("push", experiments.Push)
 	worker.AddExperiment("dummy", experiments.Dummy)
+	worker.AddExperiment("dummywitherrors", experiments.DummyWithErrors)
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(

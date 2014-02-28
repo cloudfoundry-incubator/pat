@@ -1,25 +1,27 @@
 
-/*   Bar chart   */
 #graph {  
 }
-#graph #d3_workload {
+
+/*   Workload Bar chart   */
+#graph .workload {
   fill: steelblue;
 }
-#graph #d3_workload .bar:hover {
-    fill: brown;
+#graph .workload .bar:hover {
+    fill: #FFFF66;
 }
-#graph #d3_workload text {
+#graph .workload .error {
+	fill: brown;
+}
+#graph .workload text {
   fill: brown;
   font: 10px sans-serif;
   text-anchor: middle;
 }
-
-#graph #d3_workload .axis text {
+#graph .workload .axis text {
   font: 10px sans-serif;  
 }
-
-#graph #d3_workload .axis path,
-#graph #d3_workload .axis line {
+#graph .workload .axis path,
+#graph .workload .axis line {
   fill: none;
   stroke: #eee;
   shape-rendering: crispEdges;
