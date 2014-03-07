@@ -17,7 +17,7 @@ before_script:
   # - export PATH=$PATH:`pwd`/casperjs/bin
   - gocart
   - go install github.com/onsi/ginkgo/ginkgo
-  - go run pat/main.go -server &
+  - go run main.go -server &
   - npm install -g casperjs
   - phantomjs --version; casperjs --version
 

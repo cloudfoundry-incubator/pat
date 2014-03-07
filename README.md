@@ -3,7 +3,23 @@ PATs (Performance Acceptance Tests)
 The goal of this project is to create a super-simple load generation testing framework for quickly and easily running load against Cloud Foundry.
 
 
-Setting up PATs
+Running PATs as a Cloud Foundry App
+==================================
+Ensure your Cloud Foundry version is current and running
+
+1) Clone the project
+
+        git clone https://github.com/julz/pat
+
+2) Push the project to Cloud Foundry with the 'go' buildpack
+
+        cf push -b https://github.com/jberkhahn/cloudfoundry-buildpack-go pat
+
+3) Open the browser and go to the provided URL
+
+
+
+Setting up PATs to run locally
 ==================================
 To setup this project, a number of requires need to be met for GO.
 
@@ -54,6 +70,8 @@ functionality and provide an example of how to use it.
 
 Run
 ==================================
+If you wish to run PATs as a Cloud Foundry app, please refer to the section in the beginning of this guide.
+
 To run this project, you will first need to go the "Setting up PATs" section. Afterwards, you can
 change into the pat directory and run:
 
@@ -61,31 +79,37 @@ change into the pat directory and run:
 
 2) Make sure that you have targeted a cloud foundry environment from the gcf tool (# gcf login)
 
-Option 1
+There are 3 options to run PATs locally:
+1) Run the source code directly. 2) Compile and run an executable. 3) Run PATs with a web user interface.
 
-3) change into the top level of this project
+- Option 1
 
-	cd $GOPATH/src/github.com/julz/pat
+change into the top level of this project
 
-4) execute the command line
+        cd $GOPATH/src/github.com/julz/pat
 
-	go run pat/main.go -workload gcf:push
+execute the command line
 
-Option 2
+        go run main.go -workload gcf:push
 
-3) Change into the main directory
+- Option 2
 
-	cd $GOPATH/src/github.com/julz/pat/pat
+Change into the main directory
 
-	go install
+        cd $GOPATH/src/github.com/julz/pat/
 
-4) Run PATs from the command line
+        go install
 
-	pat
+Run PATs executable from the command line
 
-5) Run PATs as an HTTP server (work in progress)
+        pat
 
-	go run pat/main.go -server # must be called in this fashion due to static file location
+- Option 3
+
+Run PATs as an HTTP server with web user interface
+
+        go run main.go -server
+        (open browser and goto http://localhost:8080)
 
 Example calls:
 
@@ -105,7 +129,7 @@ Example calls:
 
 	## Using the REST api:
 
-	go run pat/main.go -rest:target http://api.xyz.abc.net \
+	go run main.go -rest:target http://api.xyz.abc.net \
 	  -rest:username=ibmtestuser1@us.ibm.com \
 	  -rest:password=PASSWORD \
 	  -workload rest:login,rest:push,rest:push,rest:push \
