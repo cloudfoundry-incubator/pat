@@ -8,6 +8,7 @@ import (
 type BenchmarkResult struct {
 	Command  string
 	Duration time.Duration
+	StopTime time.Time
 }
 
 type IterationResult struct {
@@ -41,6 +42,7 @@ func Time(experiment func() error) (benchmark BenchmarkResult, err error) {
 	t0 := time.Now()
 	err = experiment()
 	t1 := time.Now()
+	benchmark.StopTime = t1
 	benchmark.Duration = t1.Sub(t0)
 	return benchmark, err
 }

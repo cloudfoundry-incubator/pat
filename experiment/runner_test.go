@@ -2,10 +2,10 @@ package experiment
 
 import (
 	"errors"
-	"time"
 	. "github.com/julz/pat/benchmarker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 var _ = Describe("ExperimentConfiguration and Sampler", func() {
@@ -25,11 +25,11 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			sample1 = &Sample{}
 			sample2 = &Sample{}
 			worker = NewWorker()
-			executorFactory := func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, quit chan bool) Executable {
+			executorFactory := func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, quit chan bool, end chan bool) Executable {
 				executor = &DummyExecutor{iterationResults, benchmarkResults, workers, errors, executorFunc}
 				return executor
 			}
-			samplerFactory := func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
+			samplerFactory := func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool, end chan bool) Samplable {
 				sampler = &DummySampler{samples, iterationResults, benchmarkResults, workers, errors, sampleFunc}
 				return sampler
 			}
@@ -148,6 +148,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		PIt("Closes the iterationResults channel when the executorFunc has finished", func() {})
 		PIt("Runs a given number of times", func() {})
 		PIt("Uses the passed worker", func() {})
+		PIt("Calculates the final throughput when the executorFunc has finished", func() {})
 	})
 
 	Describe("Sampling", func() {
@@ -157,7 +158,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			errors    chan error
 			workers   chan int
 			quit      chan bool
-			ticks     chan int
+			ticks     chan float64
 			samples   chan *Sample
 		)
 
@@ -168,7 +169,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			workers = make(chan int)
 			quit = make(chan bool)
 			samples = make(chan *Sample)
-			ticks = make(chan int)
+			ticks = make(chan float64)
 			go (&SamplableExperiment{iteration, results, errors, workers, samples, ticks, quit}).Sample()
 		})
 
@@ -193,6 +194,14 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			return
 		})
 
+		It("Records the BenchmarkResult command for throughput calculations the second it is recieved rounded down", func() {
+			go func() {
+				results <- BenchmarkResult{Command: "push", StopTime: time.Now()}
+			}()
+
+			Ω((<-samples).Throughput.TimedCommands[0]["push"]).Should(Equal(1))
+		})
+
 		It("Updates throughput when the timer ticks", func() {
 			go func() { ticks <- 1 }()
 			Eventually((<-samples).Type).Should(Equal(ThroughputSample))
@@ -211,11 +220,23 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 			<-samples // ResultSample
 			<-samples // ResultSample
-			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 1))
+			Ω((<-samples).Throughput.Commands["push"]).Should(BeNumerically("==", 1))
 			<-samples // ResultSample
-			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 1))
+			Ω((<-samples).Throughput.Commands["push"]).Should(BeNumerically("==", 1))
 			<-samples // ResultSample
-			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 4.0/6.0))
+			Ω((<-samples).Throughput.Commands["push"]).Should(BeNumerically("==", 4.0/6.0))
+		})
+
+		It("Calculates the total throughput of a workload every tick", func() {
+			go func() {
+				results <- BenchmarkResult{Command: "login"}
+				results <- BenchmarkResult{Command: "push"}
+				ticks <- 2
+			}()
+
+			<-samples // ResultsSample
+			<-samples // ResultsSample
+			Ω((<-samples).Throughput.Total).Should(BeNumerically("==", 1))
 		})
 	})
 })

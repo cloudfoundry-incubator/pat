@@ -13,6 +13,12 @@ var _ = Describe("Benchmarker", func() {
 			time, _ := Time(func() error { time.Sleep(2 * time.Second); return nil })
 			Ω(time.Duration.Seconds()).Should(BeNumerically("~", 2, 0.5))
 		})
+
+		It("records the time of when the application finishes", func() {
+			before := time.Now()
+			t, _ := Time(func() error { time.Sleep(2 * time.Second); return nil })
+			Ω(t.StopTime.Sub(before).Seconds()).Should(BeNumerically("~", 2, 0.5))
+		})
 	})
 
 	Describe("TimeWorker", func() {
