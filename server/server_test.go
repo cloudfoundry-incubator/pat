@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"os"
 
 	. "github.com/julz/pat/experiment"
 	. "github.com/julz/pat/laboratory"
@@ -26,6 +27,10 @@ var _ = Describe("Server", func() {
 		lab.experiments = experiments
 		http.DefaultServeMux = http.NewServeMux()
 		ServeWithLab(lab)
+	})
+
+	AfterEach(func() {
+		os.Clearenv()
 	})
 
 	It("lists experiments", func() {
@@ -90,6 +95,17 @@ var _ = Describe("Server", func() {
 	It("Returns Location based on assigned experiment GUID", func() {
 		json := post("/experiments/")
 		Ω(json["Location"]).Should(Equal("/experiments/some-guid"))
+	})
+
+	It("Checks if VCAP_APP_PORT exists and returns the port if true", func() {
+		os.Setenv("VCAP_APP_PORT", "1234")
+		port := GetPort()
+		Ω(port).Should(Equal("1234"))
+	})
+
+	It("Defaults to listening on port 8080 if the VCAP_APP_PORT environment variable is not set", func() {
+			port := GetPort()
+			Ω(port).Should(Equal("8080"))
 	})
 })
 

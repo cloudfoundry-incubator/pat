@@ -1,6 +1,7 @@
 package server
 
 import (
+	"os"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +14,10 @@ import (
 	"github.com/julz/pat/experiments"
 	. "github.com/julz/pat/laboratory"
 	"github.com/julz/pat/store"
+)
+
+const (
+	PortVar = "VCAP_APP_PORT"
 )
 
 type Response struct {
@@ -46,11 +51,22 @@ func ServeWithLab(lab Laboratory) {
 	http.Handle("/", r)
 }
 
+
 func Bind() {
-	fmt.Println("Starting web ui on http://localhost:8080/ui/")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	port := GetPort()	
+	fmt.Printf("Starting web ui on http://localhost:%s/ui/\n", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		fmt.Printf("ListenAndServe: %s\n", err)
 	}
+}
+
+func GetPort() string {
+	port := os.Getenv(PortVar)
+	if port == "" {
+		port = "8080"
+	}
+
+	return port
 }
 
 type listResponse struct {
