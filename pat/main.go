@@ -2,23 +2,26 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/julz/pat"
 	"github.com/julz/pat/config"
 	"github.com/julz/pat/server"
 )
 
 func main() {
-	config := config.NewConfig()
-	err := config.Parse()
-	if err != nil {
-		panic(err)
-	}
+	useServer := false
+	flags := config.ConfigAndFlags
+	flags.BoolVar(&useServer, "server", false, "true to run the HTTP server interface")
 
-	if config.Server == true {
+	pat.InitCommandLineFlags(flags)
+	flags.Parse(os.Args[1:])
+
+	if useServer == true {
 		fmt.Println("Starting in server mode")
 		server.Serve()
 		server.Bind()
 	} else {
-		pat.RunCommandLine(config.Concurrency, config.Iterations, config.Silent, config.Output, config.Interval, config.Stop, config.Workload)
+		pat.RunCommandLine()
 	}
 }

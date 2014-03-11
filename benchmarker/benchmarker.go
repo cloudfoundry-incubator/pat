@@ -1,21 +1,25 @@
 package benchmarker
 
 import (
+	"strings"
 	"sync"
 	"time"
 )
 
-type BenchmarkResult struct {
+type StepResult struct {
 	Command  string
 	Duration time.Duration
 }
 
 type IterationResult struct {
 	Duration time.Duration
+	Steps    []StepResult
+	Error    error
 }
 
 type Worker interface {
-	Time(experiment string) (BenchmarkResult, error)
+	Time(experiment string) IterationResult
+	AddExperiment(name string, fn func() error) Worker
 }
 
 type LocalWorker struct {
@@ -26,23 +30,31 @@ func NewWorker() *LocalWorker {
 	return &LocalWorker{make(map[string]func() error)}
 }
 
-func (self *LocalWorker) AddExperiment(name string, fn func() error) *LocalWorker {
+func (self *LocalWorker) AddExperiment(name string, fn func() error) Worker {
 	self.Experiments[name] = fn
 	return self
 }
 
-func (self *LocalWorker) Time(experiment string) (BenchmarkResult, error) {
-	benchmark, err := Time(self.Experiments[experiment])
-	benchmark.Command = experiment
-	return benchmark, err
+func (self *LocalWorker) Time(experiment string) (result IterationResult) {
+	experiments := strings.Split(experiment, ",")
+	var start = time.Now()
+	for _, e := range experiments {
+		stepTime, err := Time(self.Experiments[e])
+		result.Steps = append(result.Steps, StepResult{e, stepTime})
+		if err != nil {
+			result.Error = err
+			break
+		}
+	}
+	result.Duration = time.Now().Sub(start)
+	return
 }
 
-func Time(experiment func() error) (benchmark BenchmarkResult, err error) {
+func Time(experiment func() error) (result time.Duration, err error) {
 	t0 := time.Now()
 	err = experiment()
 	t1 := time.Now()
-	benchmark.Duration = t1.Sub(t0)
-	return benchmark, err
+	return t1.Sub(t0), err
 }
 
 func Counted(out chan<- int, fn func()) func() {
@@ -53,32 +65,10 @@ func Counted(out chan<- int, fn func()) func() {
 	}
 }
 
-func TimeWorker(out chan<- IterationResult, bench chan<- BenchmarkResult, errOut chan<- error, worker Worker, operations []string) func() {
+func TimedWithWorker(out chan<- IterationResult, worker Worker, experiment string) func() {
 	return func() {
-		tStart := time.Now()
-		for _, operation := range operations {
-			result, err := worker.Time(operation)
-
-			if err == nil {
-				bench <- result
-			} else {
-				errOut <- err
-			}
-		}
-
-		iter := IterationResult{time.Now().Sub(tStart)}
-		out <- iter
-	}
-}
-
-func TimedWithWorker(out chan<- BenchmarkResult, errOut chan<- error, worker Worker, experiment string) func() {
-	return func() {
-		time, err := worker.Time(experiment)
-		if err == nil {
-			out <- time
-		} else {
-			errOut <- err
-		}
+		time := worker.Time(experiment)
+		out <- time
 	}
 }
 

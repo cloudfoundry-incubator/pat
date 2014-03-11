@@ -1,7 +1,6 @@
 package experiment
 
 import (
-	"strings"
 	"time"
 	. "github.com/julz/pat/benchmarker"
 )
@@ -55,23 +54,19 @@ type ExperimentConfiguration struct {
 
 type RunnableExperiment struct {
 	ExperimentConfiguration
-	executerFactory func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, quit chan bool) Executable
-	samplerFactory  func(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable
+	executerFactory func(iterationResults chan IterationResult, errors chan error, workers chan int, quit chan bool) Executable
+	samplerFactory  func(iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable
 }
 
 type ExecutableExperiment struct {
 	ExperimentConfiguration
 	iteration chan IterationResult
-	benchmark chan BenchmarkResult
-	errors    chan error
 	workers   chan int
 	quit      chan bool
 }
 
 type SamplableExperiment struct {
 	iteration chan IterationResult
-	benchmark chan BenchmarkResult
-	errors    chan error
 	workers   chan int
 	samples   chan *Sample
 	ticks     <-chan int
@@ -94,12 +89,12 @@ func NewRunnableExperiment(config ExperimentConfiguration) *RunnableExperiment {
 	return &RunnableExperiment{config, config.newExecutableExperiment, newRunningExperiment}
 }
 
-func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, quit chan bool) Executable {
-	return &ExecutableExperiment{c, iterationResults, benchmarkResults, errors, workers, quit}
+func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan IterationResult, errors chan error, workers chan int, quit chan bool) Executable {
+	return &ExecutableExperiment{c, iterationResults, workers, quit}
 }
 
-func newRunningExperiment(iterationResults chan IterationResult, benchmarkResults chan BenchmarkResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
-	return &SamplableExperiment{iterationResults, benchmarkResults, errors, workers, samples, newTicker(), quit}
+func newRunningExperiment(iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
+	return &SamplableExperiment{iterationResults, workers, samples, newTicker(), quit}
 }
 
 func newTicker() <-chan int {
@@ -116,32 +111,26 @@ func newTicker() <-chan int {
 
 func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
 	iteration := make(chan IterationResult)
-	benchmark := make(chan BenchmarkResult)
 	errors := make(chan error)
 	workers := make(chan int)
 	samples := make(chan *Sample)
 	quit := make(chan bool)
 	done := make(chan bool)
-	sampler := config.samplerFactory(iteration, benchmark, errors, workers, samples, quit)
+	sampler := config.samplerFactory(iteration, errors, workers, samples, quit)
 	go sampler.Sample()
 	go func(d chan bool) {
 		tracker(samples)
 		d <- true
 	}(done)
 
-	config.executerFactory(iteration, benchmark, errors, workers, quit).Execute()
+	config.executerFactory(iteration, errors, workers, quit).Execute()
 	<-done
 	return nil
 }
 
 func (ex *ExecutableExperiment) Execute() {
-	operations := strings.Split(ex.Workload, ",")
-	if len(operations) == 1 && operations[0] == "" {
-		operations[0] = "push"
-	}
-
 	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func() {
-		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimeWorker(ex.iteration, ex.benchmark, ex.errors, ex.Worker, operations))))
+		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))))
 	}, ex.quit))
 
 	close(ex.iteration)
@@ -175,20 +164,24 @@ func (ex *SamplableExperiment) Sample() {
 			if iteration.Duration > worstResult {
 				worstResult = iteration.Duration
 			}
-		case benchmark := <-ex.benchmark:
-			cmd := commands[benchmark.Command]
-			cmd.Count = cmd.Count + 1
-			cmd.TotalTime = cmd.TotalTime + benchmark.Duration
-			cmd.LastTime = benchmark.Duration
-			cmd.Average = time.Duration(cmd.TotalTime.Nanoseconds() / cmd.Count)
-			if benchmark.Duration > cmd.WorstTime {
-				cmd.WorstTime = benchmark.Duration
+
+			for _, step := range iteration.Steps {
+				cmd := commands[step.Command]
+				cmd.Count = cmd.Count + 1
+				cmd.TotalTime = cmd.TotalTime + step.Duration
+				cmd.LastTime = step.Duration
+				cmd.Average = time.Duration(cmd.TotalTime.Nanoseconds() / cmd.Count)
+				if step.Duration > cmd.WorstTime {
+					cmd.WorstTime = step.Duration
+				}
+
+				commands[step.Command] = cmd
 			}
 
-			commands[benchmark.Command] = cmd
-		case e := <-ex.errors:
-			lastError = e
-			totalErrors = totalErrors + 1
+			if iteration.Error != nil {
+				lastError = iteration.Error
+				totalErrors = totalErrors + 1
+			}
 		case w := <-ex.workers:
 			workers = workers + w
 		case seconds := <-ex.ticks:

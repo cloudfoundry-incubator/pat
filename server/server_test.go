@@ -8,9 +8,11 @@ import (
 	"net/http/httptest"
 	"strings"
 
+	"github.com/julz/pat/config"
 	. "github.com/julz/pat/experiment"
 	. "github.com/julz/pat/laboratory"
 	. "github.com/julz/pat/server"
+	"github.com/julz/pat/store"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -26,6 +28,21 @@ var _ = Describe("Server", func() {
 		lab.experiments = experiments
 		http.DefaultServeMux = http.NewServeMux()
 		ServeWithLab(lab)
+	})
+
+	It("Uses config to get CSV output directory", func() {
+		http.DefaultServeMux = http.NewServeMux()
+		c := config.NewConfig()
+		InitCommandLineFlags(c)
+		c.Parse([]string{"-csvDir", "/var/tmp/foo/bar/"})
+		csvs := store.NewCsvStore("/var/tmp/foo/bar/")
+		ch := make(chan *Sample)
+		go func() { ch <- &Sample{}; ch <- &Sample{}; close(ch) }()
+		csvs.Writer("1234")(ch)
+
+		Serve()
+		json := get("/experiments/1234")
+		Ω(json["Items"]).Should(HaveLen(2))
 	})
 
 	It("lists experiments", func() {
