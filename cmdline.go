@@ -70,7 +70,7 @@ func RunCommandLineWithLabAndWorker(lab Laboratory, worker benchmarker.Worker) (
 	worker.AddExperiment("rest:login", rest.Login)
 	worker.AddExperiment("rest:push", rest.Push)
 	worker.AddExperiment("rest:target", rest.Target)
-	worker.AddExperiment("gcf:Push", experiments.Push)
+	worker.AddExperiment("gcf:push", experiments.Push)
 	worker.AddExperiment("dummy", experiments.Dummy)
 	worker.AddExperiment("dummyWithErrors", experiments.DummyWithErrors)
 
