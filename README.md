@@ -69,7 +69,7 @@ Option 1
 
 4) execute the command line
 
-	go run pat/main.go
+	go run pat/main.go -workload gcf:push
 
 Option 2
 
@@ -97,11 +97,19 @@ Example calls:
 
 	pat -silent # if you don't want all the fancy output use the silent flag
  
-	pat -workload=push,push,... #list the gcf operations you want to run
+	pat -workload=gcf:push,gcf:push,... #list the gcf operations you want to run
 
 	pat -workload=dummy    # run the tool with dummy operations (not against a CF environment)
 
 	pat -config=config/template.yml # include a configuration template specifying any number of command line arguments. The template file provides a basic format.
+
+	## Using the REST api:
+
+	go run pat/main.go -rest:target http://api.xyz.abc.net \
+	  -rest:username=ibmtestuser1@us.ibm.com \
+	  -rest:password=PASSWORD \
+	  -workload rest:login,rest:push,rest:push,rest:push \
+	  -concurrency=10 -iterations=50
 
 
 Script Configure
