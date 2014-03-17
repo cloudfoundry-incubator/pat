@@ -1,4 +1,4 @@
-package experiments
+package workloads
 
 import (
 	"errors"

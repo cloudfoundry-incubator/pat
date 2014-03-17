@@ -8,9 +8,9 @@ import (
 	"github.com/julz/pat/benchmarker"
 	"github.com/julz/pat/config"
 	. "github.com/julz/pat/experiment"
-	"github.com/julz/pat/experiments"
 	. "github.com/julz/pat/laboratory"
 	"github.com/julz/pat/store"
+	"github.com/julz/pat/workloads"
 )
 
 type Response struct {
@@ -29,7 +29,7 @@ var params = struct {
 	csvDir      string
 }{}
 
-var restContext = experiments.NewContext()
+var restContext = workloads.NewRestWorkloadContext()
 
 func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
@@ -70,9 +70,9 @@ func RunCommandLineWithLabAndWorker(lab Laboratory, worker benchmarker.Worker) (
 	worker.AddExperiment("rest:login", rest.Login)
 	worker.AddExperiment("rest:push", rest.Push)
 	worker.AddExperiment("rest:target", rest.Target)
-	worker.AddExperiment("gcf:push", experiments.Push)
-	worker.AddExperiment("dummy", experiments.Dummy)
-	worker.AddExperiment("dummyWithErrors", experiments.DummyWithErrors)
+	worker.AddExperiment("gcf:push", workloads.Push)
+	worker.AddExperiment("dummy", workloads.Dummy)
+	worker.AddExperiment("dummyWithErrors", workloads.DummyWithErrors)
 
 	lab.RunWithHandlers(
 		NewRunnableExperiment(
