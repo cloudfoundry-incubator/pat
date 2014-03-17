@@ -29,7 +29,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 				executor = &DummyExecutor{iterationResults, workers, errors, executorFunc}
 				return executor
 			}
-			samplerFactory := func(iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
+			samplerFactory := func(maxIterations int, iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
 				sampler = &DummySampler{samples, iterationResults, workers, errors, sampleFunc}
 				return sampler
 			}
@@ -130,6 +130,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 	Describe("Sampling", func() {
 		var (
+			maxIterations int 
 			iteration chan IterationResult
 			workers   chan int
 			quit      chan bool
@@ -138,12 +139,13 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		)
 
 		BeforeEach(func() {
+			maxIterations = 3
 			iteration = make(chan IterationResult)
 			workers = make(chan int)
 			quit = make(chan bool)
 			samples = make(chan *Sample)
 			ticks = make(chan int)
-			go (&SamplableExperiment{iteration, workers, samples, ticks, quit}).Sample()
+			go (&SamplableExperiment{maxIterations, iteration, workers, samples, ticks, quit}).Sample()
 		})
 
 		It("Calculates the running average", func() {
@@ -200,6 +202,40 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 1))
 			<-samples // ResultSample
 			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 4.0/6.0))
+		})
+	})
+
+	Describe("Sampling Percentile", func() {
+		var (
+			maxIterations int 	
+			iteration chan IterationResult
+			workers   chan int
+			quit      chan bool
+			ticks     chan int
+			samples   chan *Sample
+		)
+
+		BeforeEach(func() {
+			maxIterations = 21
+			iteration = make(chan IterationResult)
+			workers = make(chan int)
+			quit = make(chan bool)
+			samples = make(chan *Sample)
+			ticks = make(chan int)
+			go (&SamplableExperiment{maxIterations, iteration, workers, samples, ticks, quit}).Sample()
+		})
+
+		It("Calculates the 95th percentile", func() {
+			for i := 1; i <= maxIterations; i++ {
+				currentIteration := i
+				go func() { iteration <- IterationResult{time.Duration(currentIteration) * time.Second, nil, nil} }()
+			}
+			for q := 1; q <= 20; q++ {
+				Ω((<-samples).NinetyfifthPercentile).Should(Equal(time.Duration(q) * time.Second))
+			}
+			for q := 21; q <= 21; q++ {
+				Ω((<-samples).NinetyfifthPercentile).Should(Equal(time.Duration(q-1) * time.Second))
+			}
 		})
 	})
 })
