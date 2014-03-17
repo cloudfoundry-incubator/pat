@@ -11,9 +11,9 @@ import (
 	"github.com/julz/pat/benchmarker"
 	"github.com/julz/pat/config"
 	. "github.com/julz/pat/experiment"
-	"github.com/julz/pat/experiments"
 	. "github.com/julz/pat/laboratory"
 	"github.com/julz/pat/store"
+	"github.com/julz/pat/workloads"
 )
 
 type Response struct {
@@ -109,10 +109,10 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 
 	//ToDo (simon): interval and stop is 0, repeating at interval is not yet exposed in Web UI
 	worker := benchmarker.NewWorker()
-	worker.AddExperiment("login", experiments.Dummy)
-	worker.AddExperiment("push", experiments.Push)
-	worker.AddExperiment("dummy", experiments.Dummy)
-	worker.AddExperiment("dummywitherrors", experiments.DummyWithErrors)
+	worker.AddExperiment("login", workloads.Dummy)
+	worker.AddExperiment("push", workloads.Push)
+	worker.AddExperiment("dummy", workloads.Dummy)
+	worker.AddExperiment("dummywitherrors", workloads.DummyWithErrors)
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
