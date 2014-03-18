@@ -135,12 +135,22 @@ Example calls:
 	  -workload rest:login,rest:push,rest:push,rest:push \
 	  -concurrency=10 -iterations=50
 
+## Workload options
+The following workloads are available:
+
+- `rest:login` - performs a login to the REST api
+- `rest:push` - pushes a simple Ruby application using the REST api
+- `rest:target` - queries the `/v2/info/` endpoint
+- `gcf:push` - pushes a simple Ruby application using the CF command-line
+- `dummy` - an empty workload that can be used when a CF environment is not available.
+- `dummyWithErrors` - an empty workload that generates errors. This can be used when a CF environment is not available.
+
 
 Script Configure
 =====================================
 PATs currently accepts the ability to configure any command line argument via a configuration script. There is an example script at the root of this projects
 directory called config-template.yml and it details the current operations. To run a custom yaml configuration file, provide the full path to the 
-configuration file. Also, if a user so wishes they can overwrite a seeting in the script by using the command line argument.
+configuration file. Also, if a user so wishes they can overwrite a setting in the script by using the command line argument.
 
 example:
 	
