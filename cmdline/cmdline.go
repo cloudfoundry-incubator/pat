@@ -62,10 +62,25 @@ func InitCommandLineFlags(config config.Config) {
 
 func RunCommandLine() error {
 	if params.listWorkloads {
-		for _,workload := range workloads {
-			fmt.Printf("\x1b[1m%s\x1b[0m\n\t%s\n",workload.name,workload.description);
-		}
+		listWorkloads()
 		return nil
+	}
+	
+	ws := strings.Split(params.workload, ",")
+		
+	for _,w := range ws {
+		valid := false
+		for _,workload := range workloads {
+			if workload.name == w {
+				valid = true
+			}
+		}
+		if !valid {
+			fmt.Printf("Unrecognised workload: '%s'\n\n",w)
+			fmt.Println("Available workloads:\n")
+			listWorkloads()
+			return nil;
+		}
 	}
 	
 	lab := NewLaboratory(store.NewCsvStore("output/csvs"))
@@ -158,4 +173,10 @@ func bar(n int64, total int64, size int) (bar string) {
 	}
 	progress := int64(size) / (total / n)
 	return "╞" + strings.Repeat("═", int(progress)) + strings.Repeat("┄", size-int(progress)) + "╡"
+}
+
+func listWorkloads() {
+	for _,workload := range workloads {
+		fmt.Printf("\x1b[1m%s\x1b[0m\n\t%s\n",workload.name,workload.description);
+	}
 }
