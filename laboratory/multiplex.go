@@ -1,4 +1,4 @@
-package store
+package laboratory
 
 import (
 	"github.com/julz/pat/experiment"

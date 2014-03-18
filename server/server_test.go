@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"os"
+	"strings"
 
 	"github.com/julz/pat/config"
 	. "github.com/julz/pat/experiment"
@@ -32,25 +32,25 @@ var _ = Describe("Server", func() {
 	})
 
 	AfterEach(func() {
- 		os.Clearenv()
- 	})
+		os.Clearenv()
+	})
 
- 	It("Checks if VCAP_APP_PORT exists and returns the port if true", func() {
- 		os.Setenv("VCAP_APP_PORT", "1234")
- 		port := GetPort()
- 		Ω(port).Should(Equal("1234"))
- 	})
- 
- 	It("Defaults to listening on port 8080 if the VCAP_APP_PORT environment variable is not set", func() {
- 		port := GetPort()
- 		Ω(port).Should(Equal("8080"))
- 	})
+	It("Checks if VCAP_APP_PORT exists and returns the port if true", func() {
+		os.Setenv("VCAP_APP_PORT", "1234")
+		port := GetPort()
+		Ω(port).Should(Equal("1234"))
+	})
+
+	It("Defaults to listening on port 8080 if the VCAP_APP_PORT environment variable is not set", func() {
+		port := GetPort()
+		Ω(port).Should(Equal("8080"))
+	})
 
 	It("Uses config to get CSV output directory", func() {
 		http.DefaultServeMux = http.NewServeMux()
 		c := config.NewConfig()
 		InitCommandLineFlags(c)
-		c.Parse([]string{"-csvDir", "/var/tmp/foo/bar/"})
+		c.Parse([]string{"-csv-dir", "/var/tmp/foo/bar/"})
 		csvs := store.NewCsvStore("/var/tmp/foo/bar/")
 		ch := make(chan *Sample)
 		go func() { ch <- &Sample{}; ch <- &Sample{}; close(ch) }()

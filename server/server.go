@@ -35,8 +35,8 @@ var params = struct {
 	csvDir string
 }{}
 
-func InitCommandLineFlags(flags config.Config) {
-	flags.StringVar(&params.csvDir, "csvDir", "output/csvs", "Directory to Store CSVs")
+func InitCommandLineFlags(config config.Config) {
+	store.DescribeParameters(config)
 }
 
 func Serve() {
@@ -44,7 +44,14 @@ func Serve() {
 }
 
 func ServeWithArgs(csvDir string) {
-	ServeWithLab(NewLaboratory(store.NewCsvStore(csvDir)))
+	err := store.WithStore(func(store Store) error {
+		ServeWithLab(NewLaboratory(store))
+		return nil
+	})
+
+	if err != nil {
+		panic(err)
+	}
 }
 
 func ServeWithLab(lab Laboratory) {
@@ -64,7 +71,7 @@ func redirectBase(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/ui", http.StatusFound)
 }
 
-func Bind() {	
+func Bind() {
 	port := GetPort()
 
 	fmt.Printf("Starting web ui on http://localhost:%s", port)
@@ -74,13 +81,13 @@ func Bind() {
 }
 
 func GetPort() string {
- 	port := os.Getenv(PortVar)
- 	if port == "" {
- 		port = "8080"
- 	}
- 
- 	return port
- }
+	port := os.Getenv(PortVar)
+	if port == "" {
+		port = "8080"
+	}
+
+	return port
+}
 
 type listResponse struct {
 	Items interface{}

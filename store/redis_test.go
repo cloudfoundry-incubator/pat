@@ -123,7 +123,3 @@ var _ = Describe("Redis Store", func() {
 		})
 	})
 })
-		AfterEach(func() {
-			exec.Command("redis-cli", "-p", "63798", "-a", "p4ssw0rd", "shutdown").Run()
-		})
-

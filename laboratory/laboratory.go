@@ -2,7 +2,6 @@ package laboratory
 
 import (
 	. "github.com/julz/pat/experiment"
-	"github.com/julz/pat/store"
 	"github.com/nu7hatch/gouuid"
 )
 
@@ -52,7 +51,7 @@ func (self *lab) RunWithHandlers(ex Runnable, additionalHandlers []func(<-chan *
 	for _, h := range additionalHandlers {
 		handlers = append(handlers, h)
 	}
-	go ex.Run(store.Multiplexer(handlers).Multiplex)
+	go ex.Run(Multiplexer(handlers).Multiplex)
 	return buffered, nil
 }
 

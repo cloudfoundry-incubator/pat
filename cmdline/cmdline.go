@@ -20,14 +20,13 @@ type Response struct {
 
 var params = struct {
 	iterations    int
+	listWorkloads bool
 	concurrency   int
 	silent        bool
 	output        string
 	workload      string
 	interval      int
 	stop          int
-	csvDir        string
-	listWorkloads bool
 }{}
 
 var workloadList = workloads.DefaultWorkloadList()
@@ -40,9 +39,9 @@ func InitCommandLineFlags(config config.Config) {
 	config.StringVar(&params.workload, "workload", "gcf:push", "a comma-separated list of operations a user should issue (use -list-workloads to see available workload options)")
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload at n second interval, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "stop a repeating interval after n second, to be used with -interval")
-	config.StringVar(&params.csvDir, "csvDir", "output/csvs", "Directory to Store CSVs")
 	config.BoolVar(&params.listWorkloads, "list-workloads", false, "Lists the available workloads")
 	workloadList.DescribeParameters(config)
+	store.DescribeParameters(config)
 }
 
 var BlockExit = func() {
@@ -55,8 +54,8 @@ var BlockExit = func() {
 	}
 }
 
-var LaboratoryFactory = func() (lab Laboratory) {
-	lab = NewLaboratory(store.NewCsvStore(params.csvDir))
+var LaboratoryFactory = func(store Store) (lab Laboratory) {
+	lab = NewLaboratory(store)
 	return
 }
 
@@ -67,40 +66,41 @@ var WorkerFactory = func() (worker benchmarker.Worker) {
 }
 
 func RunCommandLine() error {
+	store.WithStore(func(store Store) error {
+		worker := WorkerFactory()
 
-	worker := WorkerFactory()
+		if params.listWorkloads {
+			worker.Visit(PrintWorkload)
+			return nil
+		}
 
-	if params.listWorkloads {
-		worker.Visit(PrintWorkload)
+		var ok, err = worker.Validate(params.workload)
+
+		if !ok {
+			fmt.Printf("Invalid workload: '%s'\n\n", err)
+			fmt.Println("Available workloads:\n")
+			worker.Visit(PrintWorkload)
+			return err
+		}
+
+		lab := LaboratoryFactory(store)
+
+		handlers := make([]func(<-chan *Sample), 0)
+		if !params.silent {
+			handlers = append(handlers, func(s <-chan *Sample) {
+				display(params.concurrency, params.iterations, params.interval, params.stop, s)
+			})
+		}
+
+		lab.RunWithHandlers(
+			NewRunnableExperiment(
+				NewExperimentConfiguration(
+					params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
+
 		return nil
-	}
-
-	var ok, err = worker.Validate(params.workload)
-
-	if !ok {
-		fmt.Printf("Invalid workload: '%s'\n\n", err)
-		fmt.Println("Available workloads:\n")
-		worker.Visit(PrintWorkload)
-		return err
-	}
-
-	lab := LaboratoryFactory()
-
-	handlers := make([]func(<-chan *Sample), 0)
-
-	if !params.silent {
-		handlers = append(handlers, func(s <-chan *Sample) {
-			display(params.concurrency, params.iterations, params.interval, params.stop, s)
-		})
-	}
-
-	lab.RunWithHandlers(
-		NewRunnableExperiment(
-			NewExperimentConfiguration(
-				params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
+	})
 
 	BlockExit()
-
 	return nil
 }
 
