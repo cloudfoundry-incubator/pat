@@ -55,37 +55,36 @@ var BlockExit = func() {
 	}
 }
 
-var LaboratoryFactory = func()(lab Laboratory) {
-	lab = NewLaboratory(store.NewCsvStore("output/csvs"))
+var LaboratoryFactory = func() (lab Laboratory) {
+	lab = NewLaboratory(store.NewCsvStore(params.csvDir))
 	return
 }
 
-var WorkerFactory = func()(worker benchmarker.Worker) {
+var WorkerFactory = func() (worker benchmarker.Worker) {
 	worker = benchmarker.NewWorker()
 	workloadList.DescribeWorkloads(worker)
 	return
 }
-	
-	
+
 func RunCommandLine() error {
-	
+
 	worker := WorkerFactory()
-		
+
 	if params.listWorkloads {
 		worker.Visit(PrintWorkload)
 		return nil
 	}
 
-	var ok,err = worker.Validate(params.workload)
-	
+	var ok, err = worker.Validate(params.workload)
+
 	if !ok {
-		fmt.Printf("Invalid workload: '%s'\n\n",err)
+		fmt.Printf("Invalid workload: '%s'\n\n", err)
 		fmt.Println("Available workloads:\n")
 		worker.Visit(PrintWorkload)
-		return err;
+		return err
 	}
-	
-	lab := LaboratoryFactory();
+
+	lab := LaboratoryFactory()
 
 	handlers := make([]func(<-chan *Sample), 0)
 
@@ -101,10 +100,9 @@ func RunCommandLine() error {
 				params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
 
 	BlockExit()
-	
+
 	return nil
 }
-
 
 func display(concurrency int, iterations int, interval int, stop int, samples <-chan *Sample) {
 	for s := range samples {
@@ -165,5 +163,5 @@ func bar(n int64, total int64, size int) (bar string) {
 }
 
 var PrintWorkload = func(workload workloads.WorkloadStep) {
-	fmt.Printf("\x1b[1m%s\x1b[0m\n\t%s\n",workload.Name,workload.Description);
+	fmt.Printf("\x1b[1m%s\x1b[0m\n\t%s\n", workload.Name, workload.Description)
 }
