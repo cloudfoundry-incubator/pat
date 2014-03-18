@@ -19,31 +19,55 @@ type Response struct {
 }
 
 var params = struct {
-	iterations  int
-	concurrency int
-	silent      bool
-	output      string
-	workload    string
-	interval    int
-	stop        int
-	csvDir      string
+	iterations    int
+	concurrency   int
+	silent        bool
+	output        string
+	workload      string
+	interval      int
+	stop          int
+	csvDir        string
+	listWorkloads bool
 }{}
 
 var restContext = workloads.NewRestWorkloadContext()
+
+
+var workloads = []struct {
+	name       string
+	experiment  func() error
+	description       string
+} {
+	{"rest:target", restContext.Target,"Sets the CF target"},
+	{"rest:login", restContext.Login, "Performs a login to the REST api. This option requires rest:target to be included in the list of workloads"},
+	{"rest:push", restContext.Push, "Pushes a simple Ruby application using the REST api. This option requires both rest:target and rest:login to be included in the list of workloads"},
+	{"gcf:push", experiments.Push, "Pushes a simple Ruby application using the CF command-line"},
+	{"dummy", experiments.Dummy, "An empty workload that can be used when a CF environment is not available"},
+	{"dummyWithErrors", experiments.DummyWithErrors, "An empty workload that generates errors. This can be used when a CF environment is not available"},
+}
+
 
 func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
 	config.IntVar(&params.concurrency, "concurrency", 1, "max number of pushes to attempt in parallel")
 	config.BoolVar(&params.silent, "silent", false, "true to run the commands and print output the terminal")
 	config.StringVar(&params.output, "output", "", "if specified, writes benchmark results to a CSV file")
-	config.StringVar(&params.workload, "workload", "gcf:push", "The set of operations a user should issue (ex. login,push,push)")
+	config.StringVar(&params.workload, "workload", "gcf:push", "a comma-separated list of operations a user should issue (use -list-workloads to see available workload options)")
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload at n second interval, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "stop a repeating interval after n second, to be used with -interval")
 	config.StringVar(&params.csvDir, "csvDir", "output/csvs", "Directory to Store CSVs")
+	config.BoolVar(&params.listWorkloads, "list-workloads", false, "Lists the available workloads")
 	restContext.DescribeParameters(config)
 }
 
 func RunCommandLine() error {
+	if params.listWorkloads {
+		for _,workload := range workloads {
+			fmt.Printf("\x1b[1m%s\x1b[0m\n\t%s\n",workload.name,workload.description);
+		}
+		return nil
+	}
+	
 	lab := NewLaboratory(store.NewCsvStore("output/csvs"))
 	worker := benchmarker.NewWorker()
 	err := RunCommandLineWithLabAndWorker(lab, worker)
@@ -66,13 +90,9 @@ func RunCommandLineWithLabAndWorker(lab Laboratory, worker benchmarker.Worker) (
 		})
 	}
 
-	rest := restContext
-	worker.AddExperiment("rest:login", rest.Login)
-	worker.AddExperiment("rest:push", rest.Push)
-	worker.AddExperiment("rest:target", rest.Target)
-	worker.AddExperiment("gcf:push", workloads.Push)
-	worker.AddExperiment("dummy", workloads.Dummy)
-	worker.AddExperiment("dummyWithErrors", workloads.DummyWithErrors)
+	for _,workload := range workloads {
+		worker.AddExperiment(workload.name, workload.experiment)
+	}
 
 	lab.RunWithHandlers(
 		NewRunnableExperiment(
