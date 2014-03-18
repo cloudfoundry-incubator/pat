@@ -56,7 +56,7 @@ be maintained through the use of standard pull requests. When issuing a pull req
 testing through the ginkgo package (see below) to go along with any code changes. The tests should document 
 functionality and provide an example of how to use it.  
 
-1) Go through the "Setting up GO" section
+1) Go through the "Setting up PATs to run locally" section
 
 2) Install [ginkgo] (http://onsi.github.io/ginkgo/#getting_ginkgo)
 
@@ -75,7 +75,7 @@ If you wish to run PATs as a Cloud Foundry app, please refer to the section in t
 To run this project, you will first need to go the "Setting up PATs" section. Afterwards, you can
 change into the pat directory and run:
 
-1) Go through the "Setting up Go" section
+1) Go through the "Setting up PATs to run locally" section
 
 2) Make sure that you have targeted a cloud foundry environment from the gcf tool (# gcf login)
 
@@ -135,12 +135,23 @@ Example calls:
 	  -workload rest:login,rest:push,rest:push,rest:push \
 	  -concurrency=10 -iterations=50
 
+## Workload options
+The `workload` option specified a comma-separated list of workloads to be used in the test.
+The following options are available:
+
+- `rest:target` - sets the CF target
+- `rest:login` - performs a login to the REST api. This option requires `rest:target` to be included in the list of workloads.
+- `rest:push` - pushes a simple Ruby application using the REST api. This option requires both `rest:target` and `rest:login` to be included in the list of workloads.
+- `gcf:push` - pushes a simple Ruby application using the CF command-line
+- `dummy` - an empty workload that can be used when a CF environment is not available.
+- `dummyWithErrors` - an empty workload that generates errors. This can be used when a CF environment is not available.
+
 
 Script Configure
 =====================================
 PATs currently accepts the ability to configure any command line argument via a configuration script. There is an example script at the root of this projects
 directory called config-template.yml and it details the current operations. To run a custom yaml configuration file, provide the full path to the 
-configuration file. Also, if a user so wishes they can overwrite a seeting in the script by using the command line argument.
+configuration file. Also, if a user so wishes they can overwrite a setting in the script by using the command line argument.
 
 example:
 	
