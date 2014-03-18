@@ -32,36 +32,45 @@ var _ = Describe("Redis Store", func() {
 		time.Sleep(500 * time.Millisecond) // yuck(jz)
 	})
 
+	AfterEach(func() {
+		exec.Command("redis-cli", "-p", "63798", "-a", "p4ssw0rd", "shutdown").Run()
+	})
+
 	Describe("Connecting", func() {
 		Context("When the host is wrong", func() {
 			It("Returns an error", func() {
-				_, err := NewRedisStore("fishfinger", 63798)
+				_, err := NewRedisStore("fishfinger", 63798, "p4ssw0rd")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
 
 		Context("When the port is wrong", func() {
 			It("Returns an error", func() {
-				_, err := NewRedisStore("localhost", 63799)
+				_, err := NewRedisStore("localhost", 63799, "p4ssw0rd")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
 
 		Context("When the host and port are correct", func() {
-			It("works", func() {
-				_, err := NewRedisStore("localhost", 63798)
-				Ω(err).ShouldNot(HaveOccurred())
+			Context("But the password is wrong", func() {
+				It("Returns an error", func() {
+					_, err := NewRedisStore("localhost", 63799, "WRONG")
+					Ω(err).Should(HaveOccurred())
+				})
+			})
+
+			Context("And the password is correct", func() {
+				It("works", func() {
+					_, err := NewRedisStore("localhost", 63798, "p4ssw0rd")
+					Ω(err).ShouldNot(HaveOccurred())
+				})
 			})
 		})
 	})
 
 	Describe("Saving and Loading", func() {
-		AfterEach(func() {
-			exec.Command("redis-cli", "-p", "63798", "shutdown").Run()
-		})
-
 		BeforeEach(func() {
-			store, err = NewRedisStore("", 63798)
+			store, err = NewRedisStore("", 63798, "p4ssw0rd")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			writer := store.Writer("experiment-1")
@@ -114,3 +123,7 @@ var _ = Describe("Redis Store", func() {
 		})
 	})
 })
+		AfterEach(func() {
+			exec.Command("redis-cli", "-p", "63798", "-a", "p4ssw0rd", "shutdown").Run()
+		})
+

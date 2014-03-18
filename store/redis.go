@@ -19,9 +19,14 @@ type redisExperiment struct {
 	guid       string
 }
 
-func NewRedisStore(host string, port int) (*redisStore, error) {
+func NewRedisStore(host string, port int, password string) (*redisStore, error) {
 	r, err := redis.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
+		return nil, err
+	}
+
+	if _, err = r.Do("AUTH", password); err != nil {
+		r.Close()
 		return nil, err
 	}
 
