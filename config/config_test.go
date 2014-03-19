@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"io/ioutil"
+	"os"
 
 	. "github.com/julz/pat/config"
 	. "github.com/onsi/ginkgo"
@@ -137,6 +138,41 @@ var _ = Describe("ConfigAndFlags", func() {
 
 			It("Reads the version from the flag", func() {
 				Ω(value).Should(Equal(true))
+			})
+		})
+	})
+
+	Describe("Binding an environment variable", func() {
+		var (
+			value  string
+			config Config
+			flags  []string
+		)
+
+		BeforeEach(func() {
+			config = NewConfig()
+			flags = []string{}
+			config.EnvVar(&value, "NAME", "a default value", "an environment variable")
+			os.Clearenv()
+		})
+
+		JustBeforeEach(func() {
+			config.Parse(flags)
+		})
+
+		Context("When the env variable is not set", func() {
+			It("uses the default value", func() {
+				Ω(value).Should(Equal("a default value"))
+			})
+		})
+
+		Context("When the env variable is set", func() {
+			BeforeEach(func() {
+				os.Setenv("NAME", "the value")
+			})
+
+			It("uses the default value", func() {
+				Ω(value).Should(Equal("the value"))
 			})
 		})
 	})

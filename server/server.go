@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -32,18 +31,15 @@ type context struct {
 }
 
 var params = struct {
-	csvDir string
+	port string
 }{}
 
 func InitCommandLineFlags(config config.Config) {
+	config.EnvVar(&params.port, "VCAP_APP_PORT", "8080", "The port to bind to")
 	store.DescribeParameters(config)
 }
 
 func Serve() {
-	ServeWithArgs(params.csvDir)
-}
-
-func ServeWithArgs(csvDir string) {
 	err := store.WithStore(func(store Store) error {
 		ServeWithLab(NewLaboratory(store))
 		return nil
@@ -72,21 +68,12 @@ func redirectBase(w http.ResponseWriter, r *http.Request) {
 }
 
 func Bind() {
-	port := GetPort()
+	port := params.port
 
 	fmt.Printf("Starting web ui on http://localhost:%s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := ListenAndServe(":" + port); err != nil {
 		panic(err)
 	}
-}
-
-func GetPort() string {
-	port := os.Getenv(PortVar)
-	if port == "" {
-		port = "8080"
-	}
-
-	return port
 }
 
 type listResponse struct {
@@ -192,4 +179,8 @@ func handler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) h
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+var ListenAndServe = func(bind string) error {
+	return http.ListenAndServe(bind, nil)
 }

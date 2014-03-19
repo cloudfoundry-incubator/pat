@@ -28,22 +28,51 @@ var _ = Describe("Server", func() {
 		lab = &DummyLab{}
 		lab.experiments = experiments
 		http.DefaultServeMux = http.NewServeMux()
+	})
+
+	JustBeforeEach(func() {
 		ServeWithLab(lab)
 	})
 
-	AfterEach(func() {
-		os.Clearenv()
-	})
+	Describe("VCAP_APP_PORT", func() {
+		var (
+			listen string
+			flags  config.Config
+		)
 
-	It("Checks if VCAP_APP_PORT exists and returns the port if true", func() {
-		os.Setenv("VCAP_APP_PORT", "1234")
-		port := GetPort()
-		Ω(port).Should(Equal("1234"))
-	})
+		BeforeEach(func() {
+			flags = config.NewConfig()
+			os.Clearenv()
+			InitCommandLineFlags(flags)
+			ListenAndServe = func(bind string) error {
+				listen = bind
+				return nil
+			}
+		})
 
-	It("Defaults to listening on port 8080 if the VCAP_APP_PORT environment variable is not set", func() {
-		port := GetPort()
-		Ω(port).Should(Equal("8080"))
+		Context("When VCAP_APP_PORT does not exist", func() {
+			BeforeEach(func() {
+				os.Clearenv()
+				flags.Parse([]string{})
+			})
+
+			It("Defaults to 8080", func() {
+				Bind()
+				Ω(listen).Should(Equal(":8080"))
+			})
+		})
+
+		Context("When VCAP_APP_PORT exists", func() {
+			BeforeEach(func() {
+				os.Setenv("VCAP_APP_PORT", "1234")
+				flags.Parse([]string{})
+			})
+
+			It("Uses the env variable", func() {
+				Bind()
+				Ω(listen).Should(Equal(":1234"))
+			})
+		})
 	})
 
 	It("Uses config to get CSV output directory", func() {
