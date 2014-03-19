@@ -30,22 +30,7 @@ var params = struct {
 	listWorkloads bool
 }{}
 
-var restContext = workloads.NewRestWorkloadContext()
-
-
-var workloads = []struct {
-	name       string
-	experiment  func() error
-	description       string
-} {
-	{"rest:target", restContext.Target,"Sets the CF target"},
-	{"rest:login", restContext.Login, "Performs a login to the REST api. This option requires rest:target to be included in the list of workloads"},
-	{"rest:push", restContext.Push, "Pushes a simple Ruby application using the REST api. This option requires both rest:target and rest:login to be included in the list of workloads"},
-	{"gcf:push", experiments.Push, "Pushes a simple Ruby application using the CF command-line"},
-	{"dummy", experiments.Dummy, "An empty workload that can be used when a CF environment is not available"},
-	{"dummyWithErrors", experiments.DummyWithErrors, "An empty workload that generates errors. This can be used when a CF environment is not available"},
-}
-
+var workloadList = workloads.DefaultWorkloadList()
 
 func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
@@ -57,46 +42,51 @@ func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.stop, "stop", 0, "stop a repeating interval after n second, to be used with -interval")
 	config.StringVar(&params.csvDir, "csvDir", "output/csvs", "Directory to Store CSVs")
 	config.BoolVar(&params.listWorkloads, "list-workloads", false, "Lists the available workloads")
-	restContext.DescribeParameters(config)
+	workloadList.DescribeParameters(config)
 }
 
-func RunCommandLine() error {
-	if params.listWorkloads {
-		listWorkloads()
-		return nil
-	}
-	
-	ws := strings.Split(params.workload, ",")
-		
-	for _,w := range ws {
-		valid := false
-		for _,workload := range workloads {
-			if workload.name == w {
-				valid = true
-			}
-		}
-		if !valid {
-			fmt.Printf("Unrecognised workload: '%s'\n\n",w)
-			fmt.Println("Available workloads:\n")
-			listWorkloads()
-			return nil;
-		}
-	}
-	
-	lab := NewLaboratory(store.NewCsvStore("output/csvs"))
-	worker := benchmarker.NewWorker()
-	err := RunCommandLineWithLabAndWorker(lab, worker)
-
+var BlockExit = func() {
 	for {
 		in := make([]byte, 1)
 		os.Stdin.Read(in)
 		if string(in) == "q" {
-			return err
+			return
 		}
 	}
 }
 
-func RunCommandLineWithLabAndWorker(lab Laboratory, worker benchmarker.Worker) (err error) {
+var LaboratoryFactory = func()(lab Laboratory) {
+	lab = NewLaboratory(store.NewCsvStore("output/csvs"))
+	return
+}
+
+var WorkerFactory = func()(worker benchmarker.Worker) {
+	worker = benchmarker.NewWorker()
+	workloadList.DescribeWorkloads(worker)
+	return
+}
+	
+	
+func RunCommandLine() error {
+	
+	worker := WorkerFactory()
+		
+	if params.listWorkloads {
+		worker.Visit(PrintWorkload)
+		return nil
+	}
+
+	var ok,err = worker.Validate(params.workload)
+	
+	if !ok {
+		fmt.Printf("Invalid workload: '%s'\n\n",err)
+		fmt.Println("Available workloads:\n")
+		worker.Visit(PrintWorkload)
+		return err;
+	}
+	
+	lab := LaboratoryFactory();
+
 	handlers := make([]func(<-chan *Sample), 0)
 
 	if !params.silent {
@@ -105,17 +95,16 @@ func RunCommandLineWithLabAndWorker(lab Laboratory, worker benchmarker.Worker) (
 		})
 	}
 
-	for _,workload := range workloads {
-		worker.AddExperiment(workload.name, workload.experiment)
-	}
-
 	lab.RunWithHandlers(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
 				params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
 
+	BlockExit()
+	
 	return nil
 }
+
 
 func display(concurrency int, iterations int, interval int, stop int, samples <-chan *Sample) {
 	for s := range samples {
@@ -175,8 +164,6 @@ func bar(n int64, total int64, size int) (bar string) {
 	return "╞" + strings.Repeat("═", int(progress)) + strings.Repeat("┄", size-int(progress)) + "╡"
 }
 
-func listWorkloads() {
-	for _,workload := range workloads {
-		fmt.Printf("\x1b[1m%s\x1b[0m\n\t%s\n",workload.name,workload.description);
-	}
+var PrintWorkload = func(workload workloads.WorkloadStep) {
+	fmt.Printf("\x1b[1m%s\x1b[0m\n\t%s\n",workload.Name,workload.Description);
 }

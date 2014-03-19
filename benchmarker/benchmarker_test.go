@@ -5,6 +5,7 @@ import (
 	"time"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/julz/pat/workloads"
 )
 
 var _ = Describe("Benchmarker", func() {
@@ -34,37 +35,75 @@ var _ = Describe("Benchmarker", func() {
 	Describe("LocalWorker", func() {
 		It("Sets a function by name", func() {
 			worker := NewWorker()
-			worker.AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
+			worker.AddWorkloadStep(WorkloadStep{"foo", func() error { time.Sleep(1 * time.Second); return nil },""})
 			Ω(worker.Experiments["foo"]).ShouldNot(BeNil())
 		})
 
+		It("Visits all of the added experiements", func() {
+			worker := NewWorker()
+			experiements := []string {"foo","bar","barry"}
+			index := 0
+			
+			worker.AddWorkloadStep(WorkloadStep{"foo", func() error { return nil },""})
+			worker.AddWorkloadStep(WorkloadStep{"bar", func() error { return nil },""})
+			worker.AddWorkloadStep(WorkloadStep{"barry", func() error { return nil },""})
+			
+			worker.Visit(func(workload WorkloadStep) {
+				Ω(workload.Name).Should(Equal(experiements[index]))
+				index ++
+			});
+			
+			Ω(index).Should(BeNumerically("==", len(experiements)))
+		})
+
+		
 		Describe("When a single experiment is provided", func() {
 			It("Times a function by name", func() {
-				worker := NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
+				worker := NewWorker()
+				worker.AddWorkloadStep(WorkloadStep{"foo", func() error { time.Sleep(1 * time.Second); return nil },""})
 				result := worker.Time("foo")
 				Ω(result.Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 			})
 
 			It("Sets the function command name in the response struct", func() {
-				worker := NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
+				worker := NewWorker()
+				worker.AddWorkloadStep(WorkloadStep{"foo", func() error { time.Sleep(1 * time.Second); return nil },""})
 				result := worker.Time("foo")
 				Ω(result.Steps[0].Command).Should(Equal("foo"))
 			})
 
 			It("Returns any errors", func() {
-				worker := NewWorker().AddExperiment("foo", func() error { return errors.New("Foo") })
+				worker := NewWorker()
+				worker.AddWorkloadStep(WorkloadStep{"foo", func() error { return errors.New("Foo") },""})
 				result := worker.Time("foo")
 				Ω(result.Error).Should(HaveOccurred())
+			})
+			
+			It("Validates a workload name", func() {
+				worker := NewWorker()
+				worker.AddWorkloadStep(WorkloadStep{"foo", func() error { return nil },""})
+				ok,err := worker.Validate("foo")
+				Ω(err).Should(BeNil())
+				Ω(ok).Should(BeTrue())
+			})
+			It("Rejects an invalid workload name", func() {
+				worker := NewWorker()
+				worker.AddWorkloadStep(WorkloadStep{"foo", func() error { return nil },""})
+				ok,err := worker.Validate("bar")
+				Ω(err).ShouldNot(BeNil())
+				Ω(err.Error()).Should(ContainSubstring("bar"))
+				Ω(ok).Should(BeFalse())
 			})
 		})
 
 		Describe("When multiple steps are provided separated by commas", func() {
-			var worker Worker
 			var result IterationResult
+			var worker Worker
 
 			BeforeEach(func() {
-				worker = NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
-				worker.AddExperiment("bar", func() error { time.Sleep(1 * time.Second); return nil })
+				worker = NewWorker()
+				worker.AddWorkloadStep(WorkloadStep{"foo", func() error { time.Sleep(1 * time.Second); return nil },""})
+				worker.AddWorkloadStep(WorkloadStep{"bar", func() error { time.Sleep(1 * time.Second); return nil },""})
 				result = worker.Time("foo,bar")
 			})
 
@@ -83,6 +122,18 @@ var _ = Describe("Benchmarker", func() {
 				Ω(result.Steps[0].Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 				Ω(result.Steps[1].Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 			})
+			
+			It("Validates a workload list", func() {
+				ok,err := worker.Validate("foo,foo,foo")
+				Ω(err).Should(BeNil())
+				Ω(ok).Should(BeTrue())
+			})
+			It("Rejects an invalid workload list", func() {
+				ok,err := worker.Validate("foo,fake,foo")
+				Ω(err).ShouldNot(BeNil())
+				Ω(err.Error()).Should(ContainSubstring("fake"))
+				Ω(ok).Should(BeFalse())
+			})
 		})
 
 		Describe("When a step returns an error", func() {
@@ -90,9 +141,10 @@ var _ = Describe("Benchmarker", func() {
 			var result IterationResult
 
 			BeforeEach(func() {
-				worker = NewWorker().AddExperiment("foo", func() error { time.Sleep(1 * time.Second); return nil })
-				worker.AddExperiment("bar", func() error { time.Sleep(1 * time.Second); return nil })
-				worker.AddExperiment("errors", func() error { return errors.New("fishfinger system overflow") })
+				worker = NewWorker()
+				worker.AddWorkloadStep(WorkloadStep{"foo", func() error { time.Sleep(1 * time.Second); return nil },""})
+				worker.AddWorkloadStep(WorkloadStep{"bar", func() error { time.Sleep(1 * time.Second); return nil },""})
+				worker.AddWorkloadStep(WorkloadStep{"errors", func() error { return errors.New("fishfinger system overflow") },""})
 				result = worker.Time("foo,errors,bar")
 			})
 
@@ -217,6 +269,13 @@ func (*DummyWorker) Time(experiment string) IterationResult {
 	return result
 }
 
-func (d *DummyWorker) AddExperiment(name string, fn func() error) Worker {
-	return nil
+func (d *DummyWorker) AddWorkloadStep(workload WorkloadStep) {
+	return
 }
+func (d *DummyWorker) Visit(fn func(WorkloadStep)) {
+}
+func (d *DummyWorker) Validate(name string) (result bool, err error){
+	return
+}
+
+
