@@ -25,15 +25,11 @@ var _ = Describe("Redis Store", func() {
 	)
 
 	BeforeEach(func() {
-		_, filename, _, _ := runtime.Caller(0)
-		dir, _ := filepath.Abs(filepath.Dir(filename))
-		exec.Command("redis-cli", "-p", "63798", "shutdown").Run()
-		exec.Command("redis-server", dir+"/redis.conf").Run()
-		time.Sleep(500 * time.Millisecond) // yuck(jz)
+		StartRedis("redis.conf")
 	})
 
 	AfterEach(func() {
-		exec.Command("redis-cli", "-p", "63798", "-a", "p4ssw0rd", "shutdown").Run()
+		StopRedis()
 	})
 
 	Describe("Connecting", func() {
@@ -62,6 +58,15 @@ var _ = Describe("Redis Store", func() {
 			Context("And the password is correct", func() {
 				It("works", func() {
 					_, err := NewRedisStore("localhost", 63798, "p4ssw0rd")
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+			})
+
+			Context("When the server has no password", func() {
+				It("works", func() {
+					StopRedis()
+					StartRedis("redis.nopass.conf")
+					_, err := NewRedisStore("localhost", 63798, "")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 			})
@@ -123,3 +128,16 @@ var _ = Describe("Redis Store", func() {
 		})
 	})
 })
+
+func StartRedis(config string) {
+	_, filename, _, _ := runtime.Caller(0)
+	dir, _ := filepath.Abs(filepath.Dir(filename))
+	exec.Command("redis-cli", "-p", "63798", "shutdown").Run()
+	exec.Command("redis-server", dir+"/"+config).Run()
+	time.Sleep(500 * time.Millisecond) // yuck(jz)
+}
+
+func StopRedis() {
+	exec.Command("redis-cli", "-p", "63798", "shutdown").Run()
+	exec.Command("redis-cli", "-p", "63798", "-a", "p4ssw0rd", "shutdown").Run()
+}

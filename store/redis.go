@@ -25,9 +25,8 @@ func NewRedisStore(host string, port int, password string) (*redisStore, error) 
 		return nil, err
 	}
 
-	if _, err = r.Do("AUTH", password); err != nil {
-		r.Close()
-		return nil, err
+	if password != "" {
+		auth(r, password)
 	}
 
 	return &redisStore{r}, nil
@@ -60,6 +59,15 @@ func (r *redisStore) Writer(guid string) func(samples <-chan *experiment.Sample)
 func push(c redis.Conn, guid string, sample *experiment.Sample) {
 	json, _ := json.Marshal(sample)
 	c.Do("RPUSH", "experiment."+guid, json)
+}
+
+func auth(c redis.Conn, password string) error {
+	if _, err := c.Do("AUTH", password); err != nil {
+		c.Close()
+		return err
+	}
+
+	return nil
 }
 
 func (r redisExperiment) GetData() ([]*experiment.Sample, error) {
