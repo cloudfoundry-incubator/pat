@@ -70,23 +70,3 @@ func (self *lab) GetData(name string) ([]*Sample, error) {
 
 	return nil, nil
 }
-
-type buffered struct {
-	name    string
-	samples []*Sample
-}
-
-func (self *lab) buffer(buffered *buffered, samples <-chan *Sample) {
-	self.running = append(self.running, buffered)
-	for s := range samples {
-		buffered.samples = append(buffered.samples, s)
-	}
-}
-
-func (b *buffered) GetGuid() string {
-	return b.name
-}
-
-func (b *buffered) GetData() ([]*Sample, error) {
-	return b.samples, nil
-}
