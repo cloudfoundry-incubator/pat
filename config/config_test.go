@@ -25,8 +25,9 @@ var _ = Describe("ConfigAndFlags", func() {
 
 	Describe("Adding a String flag", func() {
 		var (
-			value string
-			flags []string
+			value  string
+			value2 string
+			flags  []string
 		)
 
 		BeforeEach(func() {
@@ -44,6 +45,16 @@ var _ = Describe("ConfigAndFlags", func() {
 
 			It("Reads the version from the flag", func() {
 				Ω(value).Should(Equal("beans"))
+			})
+
+			Describe("When it's bound twice", func() {
+				It("does not allow double-binding unless the target is the same", func() {
+					Ω(func() { config.StringVar(&value2, "name", "", "description") }).Should(Panic())
+				})
+
+				It("allows double-binding if the target is the same", func() {
+					Ω(func() { config.StringVar(&value, "name", "", "description") }).ShouldNot(Panic())
+				})
 			})
 		})
 
@@ -72,8 +83,9 @@ var _ = Describe("ConfigAndFlags", func() {
 
 	Describe("Adding an Integer flag", func() {
 		var (
-			value int
-			flags []string
+			value  int
+			value2 int
+			flags  []string
 		)
 
 		BeforeEach(func() {
@@ -92,6 +104,16 @@ var _ = Describe("ConfigAndFlags", func() {
 			It("Reads the version from the flag", func() {
 				Ω(value).Should(Equal(7))
 			})
+
+			Describe("When it's bound twice", func() {
+				It("does not allow double-binding unless the target is the same", func() {
+					Ω(func() { config.IntVar(&value2, "name", 1, "description") }).Should(Panic())
+				})
+
+				It("allows double-binding if the target is the same", func() {
+					Ω(func() { config.IntVar(&value, "name", 1, "description") }).ShouldNot(Panic())
+				})
+			})
 		})
 
 		Describe("When the parameter is provided in a config file", func() {
@@ -108,8 +130,9 @@ var _ = Describe("ConfigAndFlags", func() {
 
 	Describe("Adding a Bool flag", func() {
 		var (
-			value bool
-			flags []string
+			value  bool
+			value2 bool
+			flags  []string
 		)
 
 		BeforeEach(func() {
@@ -127,6 +150,16 @@ var _ = Describe("ConfigAndFlags", func() {
 
 			It("Reads the version from the flag", func() {
 				Ω(value).Should(Equal(true))
+			})
+
+			Describe("When it's bound twice", func() {
+				It("does not allow double-binding unless the target is the same", func() {
+					Ω(func() { config.BoolVar(&value2, "name", false, "description") }).Should(Panic())
+				})
+
+				It("allows double-binding if the target is the same", func() {
+					Ω(func() { config.BoolVar(&value, "name", false, "description") }).ShouldNot(Panic())
+				})
 			})
 		})
 
