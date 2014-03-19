@@ -1,6 +1,8 @@
 package store_test
 
 import (
+	"os"
+
 	"github.com/julz/pat/config"
 	"github.com/julz/pat/laboratory"
 	. "github.com/julz/pat/store"
@@ -75,6 +77,62 @@ var _ = Describe("Config", func() {
 			Ω(redisHost).Should(Equal("rhost"))
 			Ω(redisPort).Should(Equal(12344))
 			Ω(redisPassword).Should(Equal("p444w"))
+		})
+
+		Context("But when VCAP_SERVICES is specified", func() {
+			Context("And contains a service called 'redis'", func() {
+				BeforeEach(func() {
+					os.Setenv("VCAP_SERVICES", `{"redis-2.2":[
+					{
+						"name": "redis",
+						"credentials":{
+							"hostname":"the-vcap-redis-host",
+							"port":5004,
+							"password":"vcap-redis-pass"
+						}
+					}]}
+				`)
+				})
+
+				It("Creates a store using the credentials in VCAP_SERVICES", func() {
+					var s laboratory.Store = nil
+					WithStore(func(store laboratory.Store) error {
+						s = store
+						return nil
+					})
+
+					Ω(s).Should(Equal(redisStore))
+					Ω(redisHost).Should(Equal("the-vcap-redis-host"))
+					Ω(redisPort).Should(Equal(5004))
+					Ω(redisPassword).Should(Equal("vcap-redis-pass"))
+				})
+			})
+
+			Context("And it doesn't contain a service called 'redis'", func() {
+				BeforeEach(func() {
+					os.Setenv("VCAP_SERVICES", `{"redis-2.2":[
+					{
+						"name": "NOT REDIS",
+						"credentials":{
+							"hostname":"the-vcap-redis-host",
+							"port":5004,
+							"password":"vcap-redis-pass"
+						}
+					}]}
+				`)
+				})
+
+				It("Uses the command line values", func() {
+					var s laboratory.Store = nil
+					WithStore(func(store laboratory.Store) error {
+						s = store
+						return nil
+					})
+
+					Ω(s).Should(Equal(redisStore))
+					Ω(redisHost).Should(Equal("rhost"))
+				})
+			})
 		})
 	})
 })
