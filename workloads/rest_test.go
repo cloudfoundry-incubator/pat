@@ -13,30 +13,32 @@ import (
 )
 
 type workloads interface {
-	Target() error
-	Login() error
-	Push() error
+	Target(ctx map[string]interface{}) error
+	Login(ctx map[string]interface{}) error
+	Push(ctx map[string]interface{}) error
 	DescribeParameters(config.Config)
 }
 
 var _ = Describe("Rest Workloads", func() {
 	var (
 		client            *dummyClient
-		ctx               workloads
+		rest              workloads
 		args              []string
 		replies           map[string]interface{}
 		replyWithLocation map[string]string
+		context           map[string]interface{}
 	)
 
 	BeforeEach(func() {
 		replies = make(map[string]interface{})
 		replyWithLocation = make(map[string]string)
 		client = &dummyClient{replies, replyWithLocation, make(map[call]interface{})}
-		ctx = NewContext(client)
+		rest = NewRestWorkloadWithClient(client)
 		config := config.NewConfig()
-		ctx.DescribeParameters(config)
+		rest.DescribeParameters(config)
 		config.Parse(args)
 		args = []string{"-rest:target", "APISERVER"}
+		context = make(map[string]interface{})
 
 		replies["APISERVER/v2/info"] = TargetResponse{"THELOGINSERVER/PATH"}
 	})
@@ -44,7 +46,7 @@ var _ = Describe("Rest Workloads", func() {
 	Describe("Pushing an app", func() {
 		Context("When the user has not logged in", func() {
 			It("Returns an error", func() {
-				err := ctx.Push()
+				err := rest.Push(context)
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -60,19 +62,19 @@ var _ = Describe("Rest Workloads", func() {
 				replies["APISERVER/THE-APP-URI"] = ""
 				replies["APISERVER/THE-APP-URI/bits"] = ""
 
-				err := ctx.Target()
+				err := rest.Target(context)
 				Ω(err).ShouldNot(HaveOccurred())
-				err = ctx.Login()
+				err = rest.Login(context)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("Doesn't return an error", func() {
-				err := ctx.Push()
+				err := rest.Push(context)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("POSTs a (random) name and the chosen space's guid", func() {
-				ctx.Push()
+				rest.Push(context)
 				data := client.ShouldHaveBeenCalledWith("POST", "APISERVER/v2/apps")
 				m := mapOf(data)
 				Ω(m).Should(HaveKey("name"))
@@ -81,13 +83,13 @@ var _ = Describe("Rest Workloads", func() {
 			})
 
 			It("Uploads app bits", func() {
-				ctx.Push()
+				rest.Push(context)
 				data := client.ShouldHaveBeenCalledWith("PUT(multipart)", "APISERVER/THE-APP-URI/bits")
 				Ω(data).ShouldNot(BeNil())
 			})
 
 			It("Starts the app", func() {
-				ctx.Push()
+				rest.Push(context)
 				data := mapOf(client.ShouldHaveBeenCalledWith("PUT", "APISERVER/THE-APP-URI"))
 				Ω(data["state"]).Should(Equal("STARTED"))
 			})
@@ -95,7 +97,7 @@ var _ = Describe("Rest Workloads", func() {
 			Context("When the app starts immediately", func() {
 				It("Doesn't return any error", func() {
 					replies["APISERVER/THE-APP-URI/instances"] = "foo" // return a 200
-					err := ctx.Push()
+					err := rest.Push(context)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 			})
@@ -111,11 +113,11 @@ var _ = Describe("Rest Workloads", func() {
 
 		Context("When the API has been targetted", func() {
 			JustBeforeEach(func() {
-				ctx.Target()
+				rest.Target(context)
 			})
 
 			It("Can log in to the authorization endpoint", func() {
-				ctx.Login()
+				rest.Login(context)
 				client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 			})
 
@@ -125,7 +127,7 @@ var _ = Describe("Rest Workloads", func() {
 				})
 
 				JustBeforeEach(func() {
-					ctx.Login()
+					rest.Login(context)
 				})
 
 				It("sets grant_type password", func() {
@@ -155,7 +157,7 @@ var _ = Describe("Rest Workloads", func() {
 					})
 
 					It("Does not return an error", func() {
-						err := ctx.Login()
+						err := rest.Login(context)
 						Ω(err).ShouldNot(HaveOccurred())
 					})
 
@@ -165,7 +167,7 @@ var _ = Describe("Rest Workloads", func() {
 						})
 
 						It("Returns an error", func() {
-							err := ctx.Login()
+							err := rest.Login(context)
 							Ω(err).Should(HaveOccurred())
 						})
 					})
@@ -177,7 +179,7 @@ var _ = Describe("Rest Workloads", func() {
 					})
 
 					It("Does not return an error", func() {
-						err := ctx.Login()
+						err := rest.Login(context)
 						Ω(err).Should(HaveOccurred())
 					})
 				})
@@ -186,7 +188,7 @@ var _ = Describe("Rest Workloads", func() {
 
 		Describe("When the API hasn't been targetted yet", func() {
 			It("Will return an error", func() {
-				err := ctx.Login()
+				err := rest.Login(context)
 				Ω(err).To(HaveOccured())
 			})
 		})
@@ -222,19 +224,19 @@ func (d *dummyClient) Req(method string, host string, data interface{}, s interf
 	return Reply{200, "Success", ""}
 }
 
-func (d *dummyClient) Get(host string, data interface{}, s interface{}) (reply Reply) {
+func (d *dummyClient) Get(token string, host string, data interface{}, s interface{}) (reply Reply) {
 	return d.Req("GET", host, data, s)
 }
 
-func (d *dummyClient) MultipartPut(m *multipart.Writer, host string, data *bytes.Buffer, s interface{}) (reply Reply) {
+func (d *dummyClient) MultipartPut(token string, m *multipart.Writer, host string, data *bytes.Buffer, s interface{}) (reply Reply) {
 	return d.Req("PUT(multipart)", host, data, s)
 }
 
-func (d *dummyClient) Put(host string, data interface{}, s interface{}) (reply Reply) {
+func (d *dummyClient) Put(token string, host string, data interface{}, s interface{}) (reply Reply) {
 	return d.Req("PUT", host, data, s)
 }
 
-func (d *dummyClient) Post(host string, data interface{}, s interface{}) (reply Reply) {
+func (d *dummyClient) Post(token string, host string, data interface{}, s interface{}) (reply Reply) {
 	return d.Req("POST", host, data, s)
 }
 
