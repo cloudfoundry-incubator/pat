@@ -132,9 +132,9 @@ var _ = Describe("Redis Store", func() {
 func StartRedis(config string) {
 	_, filename, _, _ := runtime.Caller(0)
 	dir, _ := filepath.Abs(filepath.Dir(filename))
-	exec.Command("redis-cli", "-p", "63798", "shutdown").Run()
+	StopRedis()
 	exec.Command("redis-server", dir+"/"+config).Run()
-	time.Sleep(500 * time.Millisecond) // yuck(jz)
+	time.Sleep(450 * time.Millisecond) // yuck(jz)
 }
 
 func StopRedis() {
