@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/julz/pat/experiment"
-	. "github.com/julz/pat/store"
+	"github.com/cloudfoundry-community/pat/experiment"
+	. "github.com/cloudfoundry-community/pat/store"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/julz/pat/config"
+	"github.com/cloudfoundry-community/pat/config"
 	"github.com/nu7hatch/gouuid"
 )
 

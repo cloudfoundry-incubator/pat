@@ -1,7 +1,7 @@
 package laboratory
 
 import (
-	"github.com/julz/pat/experiment"
+	"github.com/cloudfoundry-community/pat/experiment"
 )
 
 type Multiplexer []func(<-chan *experiment.Sample)

@@ -3,8 +3,8 @@ package store
 import (
 	"encoding/json"
 
-	"github.com/julz/pat/config"
-	"github.com/julz/pat/laboratory"
+	"github.com/cloudfoundry-community/pat/config"
+	"github.com/cloudfoundry-community/pat/laboratory"
 )
 
 var params = struct {

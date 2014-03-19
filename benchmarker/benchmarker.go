@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/julz/pat/workloads"
+	. "github.com/cloudfoundry-community/pat/workloads"
 )
 
 type StepResult struct {

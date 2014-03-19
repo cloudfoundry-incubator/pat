@@ -6,8 +6,8 @@ import (
 	"mime/multipart"
 	"net/url"
 
-	"github.com/julz/pat/config"
-	. "github.com/julz/pat/workloads"
+	"github.com/cloudfoundry-community/pat/config"
+	. "github.com/cloudfoundry-community/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
