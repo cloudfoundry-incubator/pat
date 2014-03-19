@@ -36,7 +36,7 @@ func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.concurrency, "concurrency", 1, "max number of pushes to attempt in parallel")
 	config.BoolVar(&params.silent, "silent", false, "true to run the commands and print output the terminal")
 	config.StringVar(&params.output, "output", "", "if specified, writes benchmark results to a CSV file")
-	config.StringVar(&params.workload, "workload", "", "The set of operations a user should issue (ex. login,push,push)")
+	config.StringVar(&params.workload, "workload", "gcf:push", "The set of operations a user should issue (ex. login,push,push)")
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload at n second interval, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "stop a repeating interval after n second, to be used with -interval")
 	config.StringVar(&params.csvDir, "csvDir", "output/csvs", "Directory to Store CSVs")
