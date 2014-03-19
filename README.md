@@ -3,7 +3,23 @@ PATs (Performance Acceptance Tests)
 The goal of this project is to create a super-simple load generation testing framework for quickly and easily running load against Cloud Foundry.
 
 
-Setting up PATs
+Running PATs as a Cloud Foundry App
+==================================
+Ensure your Cloud Foundry version is current and running
+
+1) Clone the project
+
+        git clone https://github.com/julz/pat
+
+2) Push the project to Cloud Foundry with the 'go' buildpack
+
+        cf push -b https://github.com/jberkhahn/cloudfoundry-buildpack-go pat
+
+3) Open the browser and go to the provided URL
+
+
+
+Setting up PATs to run locally
 ==================================
 To setup this project, a number of requires need to be met for GO.
 
@@ -40,7 +56,7 @@ be maintained through the use of standard pull requests. When issuing a pull req
 testing through the ginkgo package (see below) to go along with any code changes. The tests should document 
 functionality and provide an example of how to use it.  
 
-1) Go through the "Setting up GO" section
+1) Go through the "Setting up PATs to run locally" section
 
 2) Install [ginkgo] (http://onsi.github.io/ginkgo/#getting_ginkgo)
 
@@ -54,38 +70,46 @@ functionality and provide an example of how to use it.
 
 Run
 ==================================
+If you wish to run PATs as a Cloud Foundry app, please refer to the section in the beginning of this guide.
+
 To run this project, you will first need to go the "Setting up PATs" section. Afterwards, you can
 change into the pat directory and run:
 
-1) Go through the "Setting up Go" section
+1) Go through the "Setting up PATs to run locally" section
 
 2) Make sure that you have targeted a cloud foundry environment from the gcf tool (# gcf login)
 
-Option 1
+There are 3 options to run PATs locally:
+1) Run the source code directly. 2) Compile and run an executable. 3) Run PATs with a web user interface.
 
-3) change into the top level of this project
+- Option 1
 
-	cd $GOPATH/src/github.com/julz/pat
+change into the top level of this project
 
-4) execute the command line
+        cd $GOPATH/src/github.com/julz/pat
 
-	go run pat/main.go -workload gcf:push
+execute the command line
 
-Option 2
+        go run main.go -workload gcf:push
 
-3) Change into the main directory
+- Option 2
 
-	cd $GOPATH/src/github.com/julz/pat/pat
+Change into the main directory
 
-	go install
+        cd $GOPATH/src/github.com/julz/pat/
 
-4) Run PATs from the command line
+        go install
 
-	pat
+Run PATs executable from the command line
 
-5) Run PATs as an HTTP server (work in progress)
+        pat
 
-	go run pat/main.go -server # must be called in this fashion due to static file location
+- Option 3
+
+Run PATs as an HTTP server with web user interface
+
+        go run main.go -server
+        (open browser and goto http://localhost:8080)
 
 Example calls:
 
@@ -105,18 +129,29 @@ Example calls:
 
 	## Using the REST api:
 
-	go run pat/main.go -rest:target http://api.xyz.abc.net \
+	go run main.go -rest:target http://api.xyz.abc.net \
 	  -rest:username=ibmtestuser1@us.ibm.com \
 	  -rest:password=PASSWORD \
 	  -workload rest:login,rest:push,rest:push,rest:push \
 	  -concurrency=10 -iterations=50
+
+## Workload options
+The `workload` option specified a comma-separated list of workloads to be used in the test.
+The following options are available:
+
+- `rest:target` - sets the CF target
+- `rest:login` - performs a login to the REST api. This option requires `rest:target` to be included in the list of workloads.
+- `rest:push` - pushes a simple Ruby application using the REST api. This option requires both `rest:target` and `rest:login` to be included in the list of workloads.
+- `gcf:push` - pushes a simple Ruby application using the CF command-line
+- `dummy` - an empty workload that can be used when a CF environment is not available.
+- `dummyWithErrors` - an empty workload that generates errors. This can be used when a CF environment is not available.
 
 
 Script Configure
 =====================================
 PATs currently accepts the ability to configure any command line argument via a configuration script. There is an example script at the root of this projects
 directory called config-template.yml and it details the current operations. To run a custom yaml configuration file, provide the full path to the 
-configuration file. Also, if a user so wishes they can overwrite a seeting in the script by using the command line argument.
+configuration file. Also, if a user so wishes they can overwrite a setting in the script by using the command line argument.
 
 example:
 	

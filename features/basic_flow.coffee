@@ -1,6 +1,6 @@
 casper.test.begin 'Basic Flow', 5, (test) ->
   casper.options.waitTimeout = 60 * 1000
-  casper.start "http://localhost:8080/ui/", ->
+  casper.start "http://localhost:8080/", ->
     @test.assertHttpStatus 200, 'UI is responding'
 
   casper.then ->
@@ -16,7 +16,7 @@ casper.test.begin 'Basic Flow', 5, (test) ->
 
   casper.then ->
     @test.assertUrlMatch ///
-      /ui/\#/experiments/.*
+      /\#/experiments/.*
     ///
 
     @waitFor ->

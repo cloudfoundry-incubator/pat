@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -14,6 +15,10 @@ import (
 	. "github.com/julz/pat/laboratory"
 	"github.com/julz/pat/store"
 	"github.com/julz/pat/workloads"
+)
+
+const (
+	PortVar = "VCAP_APP_PORT"
 )
 
 type Response struct {
@@ -50,17 +55,32 @@ func ServeWithLab(lab Laboratory) {
 	r.Methods("GET").Path("/experiments/{name}.csv").HandlerFunc(csvHandler(ctx.handleGetExperiment)).Name("csv")
 	r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx.handleGetExperiment)).Name("experiment")
 	r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx.handlePush))
-
+	r.Methods("GET").Path("/").HandlerFunc(redirectBase)
 	http.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui"))))
 	http.Handle("/", r)
 }
 
-func Bind() {
-	fmt.Println("Starting web ui on http://localhost:8080/ui/")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		fmt.Printf("ListenAndServe: %s\n", err)
+func redirectBase(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/ui", http.StatusFound)
+}
+
+func Bind() {	
+	port := GetPort()
+
+	fmt.Printf("Starting web ui on http://localhost:%s", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		panic(err)
 	}
 }
+
+func GetPort() string {
+ 	port := os.Getenv(PortVar)
+ 	if port == "" {
+ 		port = "8080"
+ 	}
+ 
+ 	return port
+ }
 
 type listResponse struct {
 	Items interface{}
