@@ -19,7 +19,7 @@ var _ = Describe("Cmdline", func() {
 	)
 	var workerFactory = func() (worker benchmarker.Worker) {
 		worker = benchmarker.NewWorker()
-		worker.AddWorkloadStep(workloads.WorkloadStep{"gcf:push", func() error { return nil }, "a"})
+		worker.AddWorkloadStep(workloads.Step("gcf:push", func() error { return nil }, "a"))
 		return
 	}
 	JustBeforeEach(func() {
@@ -64,8 +64,8 @@ var _ = Describe("Cmdline", func() {
 			args = []string{"-workload", "login,push"}
 			WorkerFactory = func() (worker benchmarker.Worker) {
 				worker = benchmarker.NewWorker()
-				worker.AddWorkloadStep(workloads.WorkloadStep{"login", func() error { return nil }, "a"})
-				worker.AddWorkloadStep(workloads.WorkloadStep{"push", func() error { return nil }, "a"})
+				worker.AddWorkloadStep(workloads.Step("login", func() error { return nil }, "a"))
+				worker.AddWorkloadStep(workloads.Step("push", func() error { return nil }, "a"))
 				return
 			}
 		})
@@ -86,9 +86,9 @@ var _ = Describe("Cmdline", func() {
 			printCalledCount = 0
 			WorkerFactory = func() (worker benchmarker.Worker) {
 				worker = benchmarker.NewWorker()
-				worker.AddWorkloadStep(workloads.WorkloadStep{"a", func() error { return nil }, "aa"})
-				worker.AddWorkloadStep(workloads.WorkloadStep{"b", func() error { return nil }, "bb"})
-				worker.AddWorkloadStep(workloads.WorkloadStep{"c", func() error { return nil }, "cc"})
+				worker.AddWorkloadStep(workloads.Step("a", func() error { return nil }, "aa"))
+				worker.AddWorkloadStep(workloads.Step("b", func() error { return nil }, "bb"))
+				worker.AddWorkloadStep(workloads.Step("c", func() error { return nil }, "cc"))
 				return
 			}
 			PrintWorkload = func(workload workloads.WorkloadStep) {
