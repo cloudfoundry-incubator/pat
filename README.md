@@ -128,16 +128,17 @@ Example calls (using option 2 to illustrate):
     pat -config=config/template.yml  # Include a configuration template specifying any number of command line arguments. (See "Using a Configuration file" section below).
 
     pat -rest:target http://api.xyz.abc.net \
-    -rest:username=testuser1@us.ibm.com \
-    -rest:password=PASSWORD \
-    -workload=rest:login,rest:push,rest:push,rest:push \
-    -concurrency=10 -iterations=50' # Use the REST API to make operation requests instead of gcf 
+        -rest:username=testuser1@xyz.com \
+        -rest:password=PASSWORD \
+        -rest:space=xyz_space  \
+        -workload=rest:target,rest:login,rest:push,rest:push \
+        -concurrency=5 -iterations=20 -interval=10 # Use the REST API to make operation requests instead of gcf 
 
 ## Workload options
 The `workload` option specified a comma-separated list of workloads to be used in the test.
 The following options are available:
 
-- `rest:target` - sets the CF target
+- `rest:target` - sets the CF target. Mandatory to include before any other rest operations are listed.
 - `rest:login` - performs a login to the REST api. This option requires `rest:target` to be included in the list of workloads.
 - `rest:push` - pushes a simple Ruby application using the REST api. This option requires both `rest:target` and `rest:login` to be included in the list of workloads.
 - `gcf:push` - pushes a simple Ruby application using the CF command-line
@@ -153,7 +154,7 @@ configuration file. Any setting specified as a command line argument overrides t
 
 Example:
   
-          pat -config=config-template.yml -iterations=2 //set iterations to 2 even if the script has something else.
+      pat -config=config-template.yml -iterations=2 # set iterations to 2 overriding whatever the config file says
 
 
 Known Limitations / TODOs etc.
