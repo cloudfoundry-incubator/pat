@@ -2,7 +2,6 @@ package laboratory
 
 import (
 	. "github.com/julz/pat/experiment"
-	"github.com/julz/pat/store"
 	"github.com/nu7hatch/gouuid"
 )
 
@@ -52,7 +51,7 @@ func (self *lab) RunWithHandlers(ex Runnable, additionalHandlers []func(<-chan *
 	for _, h := range additionalHandlers {
 		handlers = append(handlers, h)
 	}
-	go ex.Run(store.Multiplexer(handlers).Multiplex)
+	go ex.Run(Multiplexer(handlers).Multiplex)
 	return buffered, nil
 }
 
@@ -70,24 +69,4 @@ func (self *lab) GetData(name string) ([]*Sample, error) {
 	}
 
 	return nil, nil
-}
-
-type buffered struct {
-	name    string
-	samples []*Sample
-}
-
-func (self *lab) buffer(buffered *buffered, samples <-chan *Sample) {
-	self.running = append(self.running, buffered)
-	for s := range samples {
-		buffered.samples = append(buffered.samples, s)
-	}
-}
-
-func (b *buffered) GetGuid() string {
-	return b.name
-}
-
-func (b *buffered) GetData() ([]*Sample, error) {
-	return b.samples, nil
 }

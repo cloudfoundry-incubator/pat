@@ -1,11 +1,11 @@
 package benchmarker
 
 import (
+	"errors"
 	"strings"
 	"sync"
 	"time"
-	"errors"
-	
+
 	. "github.com/julz/pat/workloads"
 )
 
@@ -42,8 +42,9 @@ func (self *LocalWorker) AddWorkloadStep(workload WorkloadStep) {
 func (self *LocalWorker) Time(experiment string) (result IterationResult) {
 	experiments := strings.Split(experiment, ",")
 	var start = time.Now()
+	context := make(map[string]interface{})
 	for _, e := range experiments {
-		stepTime, err := Time(self.Experiments[e].Fn)
+		stepTime, err := Time(func() error { return self.Experiments[e].Fn(context) })
 		result.Steps = append(result.Steps, StepResult{e, stepTime})
 		if err != nil {
 			result.Error = err
@@ -54,9 +55,8 @@ func (self *LocalWorker) Time(experiment string) (result IterationResult) {
 	return
 }
 
-
 func (self *LocalWorker) Visit(fn func(WorkloadStep)) {
-	for _,e := range self.Experiments {
+	for _, e := range self.Experiments {
 		fn(e)
 	}
 }
@@ -64,7 +64,7 @@ func (self *LocalWorker) Visit(fn func(WorkloadStep)) {
 func (self *LocalWorker) Validate(name string) (ok bool, err error) {
 	ok = true
 	ws := strings.Split(name, ",")
-	for _,w := range ws {
+	for _, w := range ws {
 		var valid = false
 		self.Visit(func(workload WorkloadStep) {
 			if workload.Name == w {

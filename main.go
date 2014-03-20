@@ -15,6 +15,7 @@ func main() {
 	flags.BoolVar(&useServer, "server", false, "true to run the HTTP server interface")
 
 	cmdline.InitCommandLineFlags(flags)
+	server.InitCommandLineFlags(flags)
 	flags.Parse(os.Args[1:])
 
 	if useServer == true {

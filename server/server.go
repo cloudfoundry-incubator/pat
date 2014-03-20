@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -32,19 +31,23 @@ type context struct {
 }
 
 var params = struct {
-	csvDir string
+	port string
 }{}
 
-func InitCommandLineFlags(flags config.Config) {
-	flags.StringVar(&params.csvDir, "csvDir", "output/csvs", "Directory to Store CSVs")
+func InitCommandLineFlags(config config.Config) {
+	config.EnvVar(&params.port, "VCAP_APP_PORT", "8080", "The port to bind to")
+	store.DescribeParameters(config)
 }
 
 func Serve() {
-	ServeWithArgs(params.csvDir)
-}
+	err := store.WithStore(func(store Store) error {
+		ServeWithLab(NewLaboratory(store))
+		return nil
+	})
 
-func ServeWithArgs(csvDir string) {
-	ServeWithLab(NewLaboratory(store.NewCsvStore(csvDir)))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func ServeWithLab(lab Laboratory) {
@@ -64,23 +67,14 @@ func redirectBase(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/ui", http.StatusFound)
 }
 
-func Bind() {	
-	port := GetPort()
+func Bind() {
+	port := params.port
 
 	fmt.Printf("Starting web ui on http://localhost:%s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := ListenAndServe(":" + port); err != nil {
 		panic(err)
 	}
 }
-
-func GetPort() string {
- 	port := os.Getenv(PortVar)
- 	if port == "" {
- 		port = "8080"
- 	}
- 
- 	return port
- }
 
 type listResponse struct {
 	Items interface{}
@@ -185,4 +179,8 @@ func handler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) h
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+var ListenAndServe = func(bind string) error {
+	return http.ListenAndServe(bind, nil)
 }
