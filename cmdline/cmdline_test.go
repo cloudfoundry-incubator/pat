@@ -6,6 +6,7 @@ import (
 	"github.com/julz/pat/config"
 	"github.com/julz/pat/experiment"
 	"github.com/julz/pat/laboratory"
+	"github.com/julz/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -15,20 +16,30 @@ var _ = Describe("Cmdline", func() {
 		flags  config.Config
 		args   []string
 		lab    *dummyLab
-		worker benchmarker.Worker
 	)
-
+	var workerFactory = func()(worker benchmarker.Worker) {
+		worker = benchmarker.NewWorker()
+		worker.AddWorkloadStep(workloads.WorkloadStep{"gcf:push", func() error { return nil },"a"})
+		return;
+	}
 	JustBeforeEach(func() {
 		flags = config.NewConfig()
 		InitCommandLineFlags(flags)
 		flags.Parse(args)
-		lab = &dummyLab{}
-		worker = benchmarker.NewWorker()
-		RunCommandLineWithLabAndWorker(lab, worker)
+		LaboratoryFactory = func()(newLab laboratory.Laboratory) {
+			lab = &dummyLab{}
+			newLab = lab
+			return
+		}
+
+		BlockExit = func() {}
+		
+		RunCommandLine()
 	})
 
 	Describe("When -iterations is supplied", func() {
 		BeforeEach(func() {
+			WorkerFactory = workerFactory
 			args = []string{"-iterations", "3"}
 		})
 
@@ -39,6 +50,7 @@ var _ = Describe("Cmdline", func() {
 
 	Describe("When -concurrency is supplied", func() {
 		BeforeEach(func() {
+			WorkerFactory = workerFactory
 			args = []string{"-concurrency", "3"}
 		})
 
@@ -50,15 +62,49 @@ var _ = Describe("Cmdline", func() {
 	Describe("When -workload is supplied", func() {
 		BeforeEach(func() {
 			args = []string{"-workload", "login,push"}
+			WorkerFactory = func()(worker benchmarker.Worker) {
+				worker = benchmarker.NewWorker()
+				worker.AddWorkloadStep(workloads.WorkloadStep{"login", func() error { return nil },"a"})
+				worker.AddWorkloadStep(workloads.WorkloadStep{"push", func() error { return nil },"a"})
+				return;
+			}		
 		})
 
 		It("configures the experiment with the parameter", func() {
 			Ω(lab).Should(HaveBeenRunWith("workload", "login,push"))
 		})
 	})
+	
+	Describe("When -list-workloads is supplied", func() {
+		var (
+			printCalledCount int
+		)
+		
+		BeforeEach(func() {
+			lab = nil
+			args = []string{"-list-workloads"}
+			printCalledCount = 0
+			WorkerFactory = func()(worker benchmarker.Worker) {
+				worker = benchmarker.NewWorker()
+				worker.AddWorkloadStep(workloads.WorkloadStep{"a", func() error { return nil },"aa"})
+				worker.AddWorkloadStep(workloads.WorkloadStep{"b", func() error { return nil },"bb"})
+				worker.AddWorkloadStep(workloads.WorkloadStep{"c", func() error { return nil },"cc"})
+				return;
+			}
+			PrintWorkload = func(workload workloads.WorkloadStep) {
+				printCalledCount++
+			}
+		})
+
+		It("prints the list of available workloads and exits", func() {
+			Ω(printCalledCount).Should(BeNumerically("==",3))
+			Ω(lab).Should(BeNil())
+		})
+	})
 
 	Describe("When -interval is supplied", func() {
 		BeforeEach(func() {
+			WorkerFactory = workerFactory
 			args = []string{"-interval", "10"}
 		})
 
@@ -69,6 +115,7 @@ var _ = Describe("Cmdline", func() {
 
 	Describe("When -stop is supplied", func() {
 		BeforeEach(func() {
+			WorkerFactory = workerFactory
 			args = []string{"-stop", "11"}
 		})
 

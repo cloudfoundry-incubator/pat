@@ -4,6 +4,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"errors"
+	
+	. "github.com/julz/pat/workloads"
 )
 
 type StepResult struct {
@@ -19,27 +22,28 @@ type IterationResult struct {
 
 type Worker interface {
 	Time(experiment string) IterationResult
-	AddExperiment(name string, fn func() error) Worker
+	AddWorkloadStep(workload WorkloadStep)
+	Visit(fn func(WorkloadStep))
+	Validate(name string) (result bool, err error)
 }
 
 type LocalWorker struct {
-	Experiments map[string]func() error
+	Experiments map[string]WorkloadStep
 }
 
 func NewWorker() *LocalWorker {
-	return &LocalWorker{make(map[string]func() error)}
+	return &LocalWorker{make(map[string]WorkloadStep)}
 }
 
-func (self *LocalWorker) AddExperiment(name string, fn func() error) Worker {
-	self.Experiments[name] = fn
-	return self
+func (self *LocalWorker) AddWorkloadStep(workload WorkloadStep) {
+	self.Experiments[workload.Name] = workload
 }
 
 func (self *LocalWorker) Time(experiment string) (result IterationResult) {
 	experiments := strings.Split(experiment, ",")
 	var start = time.Now()
 	for _, e := range experiments {
-		stepTime, err := Time(self.Experiments[e])
+		stepTime, err := Time(self.Experiments[e].Fn)
 		result.Steps = append(result.Steps, StepResult{e, stepTime})
 		if err != nil {
 			result.Error = err
@@ -47,6 +51,32 @@ func (self *LocalWorker) Time(experiment string) (result IterationResult) {
 		}
 	}
 	result.Duration = time.Now().Sub(start)
+	return
+}
+
+
+func (self *LocalWorker) Visit(fn func(WorkloadStep)) {
+	for _,e := range self.Experiments {
+		fn(e)
+	}
+}
+
+func (self *LocalWorker) Validate(name string) (ok bool, err error) {
+	ok = true
+	ws := strings.Split(name, ",")
+	for _,w := range ws {
+		var valid = false
+		self.Visit(func(workload WorkloadStep) {
+			if workload.Name == w {
+				valid = true
+			}
+		})
+		if !valid {
+			ok = false
+			err = errors.New(w)
+			break
+		}
+	}
 	return
 }
 

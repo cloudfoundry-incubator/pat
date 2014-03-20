@@ -19,45 +19,74 @@ type Response struct {
 }
 
 var params = struct {
-	iterations  int
-	concurrency int
-	silent      bool
-	output      string
-	workload    string
-	interval    int
-	stop        int
-	csvDir      string
+	iterations    int
+	concurrency   int
+	silent        bool
+	output        string
+	workload      string
+	interval      int
+	stop          int
+	csvDir        string
+	listWorkloads bool
 }{}
 
-var restContext = workloads.NewRestWorkloadContext()
+var workloadList = workloads.DefaultWorkloadList()
 
 func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
 	config.IntVar(&params.concurrency, "concurrency", 1, "max number of pushes to attempt in parallel")
 	config.BoolVar(&params.silent, "silent", false, "true to run the commands and print output the terminal")
 	config.StringVar(&params.output, "output", "", "if specified, writes benchmark results to a CSV file")
-	config.StringVar(&params.workload, "workload", "gcf:push", "The set of operations a user should issue (ex. login,push,push)")
+	config.StringVar(&params.workload, "workload", "gcf:push", "a comma-separated list of operations a user should issue (use -list-workloads to see available workload options)")
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload at n second interval, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "stop a repeating interval after n second, to be used with -interval")
 	config.StringVar(&params.csvDir, "csvDir", "output/csvs", "Directory to Store CSVs")
-	restContext.DescribeParameters(config)
+	config.BoolVar(&params.listWorkloads, "list-workloads", false, "Lists the available workloads")
+	workloadList.DescribeParameters(config)
 }
 
-func RunCommandLine() error {
-	lab := NewLaboratory(store.NewCsvStore("output/csvs"))
-	worker := benchmarker.NewWorker()
-	err := RunCommandLineWithLabAndWorker(lab, worker)
-
+var BlockExit = func() {
 	for {
 		in := make([]byte, 1)
 		os.Stdin.Read(in)
 		if string(in) == "q" {
-			return err
+			return
 		}
 	}
 }
 
-func RunCommandLineWithLabAndWorker(lab Laboratory, worker benchmarker.Worker) (err error) {
+var LaboratoryFactory = func()(lab Laboratory) {
+	lab = NewLaboratory(store.NewCsvStore("output/csvs"))
+	return
+}
+
+var WorkerFactory = func()(worker benchmarker.Worker) {
+	worker = benchmarker.NewWorker()
+	workloadList.DescribeWorkloads(worker)
+	return
+}
+	
+	
+func RunCommandLine() error {
+	
+	worker := WorkerFactory()
+		
+	if params.listWorkloads {
+		worker.Visit(PrintWorkload)
+		return nil
+	}
+
+	var ok,err = worker.Validate(params.workload)
+	
+	if !ok {
+		fmt.Printf("Invalid workload: '%s'\n\n",err)
+		fmt.Println("Available workloads:\n")
+		worker.Visit(PrintWorkload)
+		return err;
+	}
+	
+	lab := LaboratoryFactory();
+
 	handlers := make([]func(<-chan *Sample), 0)
 
 	if !params.silent {
@@ -66,21 +95,16 @@ func RunCommandLineWithLabAndWorker(lab Laboratory, worker benchmarker.Worker) (
 		})
 	}
 
-	rest := restContext
-	worker.AddExperiment("rest:login", rest.Login)
-	worker.AddExperiment("rest:push", rest.Push)
-	worker.AddExperiment("rest:target", rest.Target)
-	worker.AddExperiment("gcf:push", workloads.Push)
-	worker.AddExperiment("dummy", workloads.Dummy)
-	worker.AddExperiment("dummyWithErrors", workloads.DummyWithErrors)
-
 	lab.RunWithHandlers(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
 				params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
 
+	BlockExit()
+	
 	return nil
 }
+
 
 func display(concurrency int, iterations int, interval int, stop int, samples <-chan *Sample) {
 	for s := range samples {
@@ -138,4 +162,8 @@ func bar(n int64, total int64, size int) (bar string) {
 	}
 	progress := int64(size) / (total / n)
 	return "╞" + strings.Repeat("═", int(progress)) + strings.Repeat("┄", size-int(progress)) + "╡"
+}
+
+var PrintWorkload = func(workload workloads.WorkloadStep) {
+	fmt.Printf("\x1b[1m%s\x1b[0m\n\t%s\n",workload.Name,workload.Description);
 }
