@@ -1,9 +1,9 @@
-PATs (Performance Acceptance Tests)
+PAT (Performance Acceptance Tests)
 ==================================
 The goal of this project is to create a super-simple load generation/performance testing framework for quickly and easily running load against Cloud Foundry. The tool has both a command line UI, for running quickly during a build and a web UI for tracking longer-running tests.
 
 
-Running PATs as a Cloud Foundry App
+Running PAT as a Cloud Foundry App
 ==================================
 Ensure your Cloud Foundry version is current and running
 
@@ -11,7 +11,7 @@ Ensure your Cloud Foundry version is current and running
 
         git clone https://github.com/cloudfoundry-community/pat
 
-2) Push the project to Cloud Foundry with the 'go' buildpack
+2) Push the project to Cloud Foundry with our 'go' buildpack that adds gocart support.
 
         cf push -b https://github.com/jberkhahn/cloudfoundry-buildpack-go pat
 
@@ -19,7 +19,7 @@ Ensure your Cloud Foundry version is current and running
 
 
 
-Setting up PATs to run locally
+Setting up PAT to run locally
 ==================================
 To setup this project, a number of requires need to be met for GO.
 
@@ -51,12 +51,12 @@ To setup this project, a number of requires need to be met for GO.
 
 Develop
 ===================================
-To develop for this project, you will first need to go through the "Setting up PATs" section. This project will
+To develop for this project, you will first need to go through the "Setting up PAT" section. This project will
 be maintained through the use of standard pull requests. When issuing a pull request, make sure to include sufficient
 testing through the ginkgo package (see below) to go along with any code changes. The tests should document 
 functionality and provide an example of how to use it.  
 
-1) Go through the "Setting up PATs to run locally" section
+1) Go through the "Setting up PAT to run locally" section
 
 2) Install [ginkgo] (http://onsi.github.io/ginkgo/#getting_ginkgo)
 
@@ -66,74 +66,72 @@ functionality and provide an example of how to use it.
 
 4) Run all tests within the repository
 
-  ginkgo -r
+        ginkgo -r
 
 Run
 ==================================
-If you wish to run PATs as a Cloud Foundry app, please refer to the section in the beginning of this guide.
+If you wish to run PAT as a Cloud Foundry app, please refer to the section in the beginning of this guide.
 
-To run this project, you will first need to go the "Setting up PATs" section. Afterwards, you can
-change into the pat directory and run:
+To run this project, you will first need to go the "Setting up PAT" section. Afterwards, you can
+change into the 'pat' directory and run:
 
-1) Go through the "Setting up PATs to run locally" section
+1) Go through the "Setting up PAT to run locally" section
 
 2) Make sure that you have targeted a cloud foundry environment from the gcf tool (# gcf login)
 
-There are 3 options to run PATs locally:
-1) Run the source code directly. 2) Compile and run an executable. 3) Run PATs with a web user interface.
+There are 3 options to run PAT locally:
 
-- Option 1
+1) Run the source code directly
 
-change into the top level of this project
+- Change into the top level of this project
 
         cd $GOPATH/src/github.com/cloudfoundry-community/pat
 
-execute the command line
+- Execute the command line
 
-        go run main.go -workload gcf:push
+        go run main.go -workload=gcf:push
 
-- Option 2
+2) Compile and run an executable
 
-Change into the main directory
+- Change into the main directory
 
         cd $GOPATH/src/github.com/cloudfoundry-community/pat/
 
         go install
 
-Run PATs executable from the command line
+- Run the PAT executable from the command line
 
         pat
 
-- Option 3
+3) Run PAT with a web user interface
 
-Run PATs as an HTTP server with web user interface
+- Run PAT selecting the HTTP server option
 
         go run main.go -server
-        (open browser and goto http://localhost:8080)
 
-Example calls:
+- Open a browser and go to http://localhost:8080/ui
 
-  pat -h  # will output all of the command line options if installed the recommended way
+Example calls (using option 2 to illustrate):
 
-  pat -concurrency=5 -iterations=5 # This will start 5 concurrent threads all pushing 1 application
+    pat -h   # will output all of the command line options if installed the recommended way
 
-  pat -concurrency=5 -iterations=1 # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
+    pat -concurrency=5 -iterations=5  # This will start 5 concurrent threads all pushing 1 application
 
-  pat -silent # if you don't want all the fancy output use the silent flag
- 
-  pat -workload=gcf:push,gcf:push,... #list the gcf operations you want to run
+    pat -concurrency=5 -iterations=1  # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
 
-  pat -workload=dummy    # run the tool with dummy operations (not against a CF environment)
+    pat -silent  # If you don't want all the fancy output to be shown (results can be found in a CSV)
 
-  pat -config=config/template.yml # include a configuration template specifying any number of command line arguments. The template file provides a basic format.
+    pat -workload=gcf:push,gcf:push,..  # Select the workload operations you want to run (See "Workload options" below)
 
-  ## Using the REST api:
+    pat -workload=dummy  # Run the tool with a dummy operation (not against a CF environment)
 
-  go run main.go -rest:target http://api.xyz.abc.net \
-    -rest:username=ibmtestuser1@us.ibm.com \
+    pat -config=config/template.yml  # Include a configuration template specifying any number of command line arguments. (See "Using a Configuration file" section below).
+
+    pat -rest:target http://api.xyz.abc.net \
+    -rest:username=testuser1@us.ibm.com \
     -rest:password=PASSWORD \
-    -workload rest:login,rest:push,rest:push,rest:push \
-    -concurrency=10 -iterations=50
+    -workload=rest:login,rest:push,rest:push,rest:push \
+    -concurrency=10 -iterations=50' # Use the REST API to make operation requests instead of gcf 
 
 ## Workload options
 The `workload` option specified a comma-separated list of workloads to be used in the test.
@@ -147,23 +145,21 @@ The following options are available:
 - `dummyWithErrors` - an empty workload that generates errors. This can be used when a CF environment is not available.
 
 
-Script Configure
+Using a Configuration file
 =====================================
-PATs currently accepts the ability to configure any command line argument via a configuration script. There is an example script at the root of this projects
-directory called config-template.yml and it details the current operations. To run a custom yaml configuration file, provide the full path to the 
-configuration file. Also, if a user so wishes they can overwrite a setting in the script by using the command line argument.
+PAT offers the ability to configure your command line arguments using a configuration file. There is an example in the root of the project
+directory called config-template.yml. To use your own custom yaml configuration file, provide the full path to the 
+configuration file. Any setting specified as a command line argument overrides the equivalent setting contained in the config file.
 
-example:
+Example:
   
-  # pat -config=config-template.yml
-  
-  # pat -config=config-template.yml -iterations=2 //set iterations to 2 even if the script has something else.
+          pat -config=config-template.yml -iterations=2 //set iterations to 2 even if the script has something else.
 
 
 Known Limitations / TODOs etc.
 =====================================
  - Numerous :)
- - Unlikely to support windows/Internet Explorer (certainly hasn't been tested on them)
+ - Unlikely to support Windows/Internet Explorer (certainly hasn't been tested on them)
  - Current feature set is a first-pass to get to something useful, contributions very welcome
  - Lots of stuff kept in memory and not flushed out
  - Creates lots of apps, does not delete them. We normally make sure we're targetted at a 'pats' space and just cf delete-space the space after to get rid of everything.
