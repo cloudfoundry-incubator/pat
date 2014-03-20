@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/julz/pat/experiment"
+	"github.com/cloudfoundry-community/pat/experiment"
 )
 
 type CsvStore struct {

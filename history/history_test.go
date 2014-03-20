@@ -2,7 +2,7 @@ package history_test
 
 import (
 	"encoding/json"
-	"github.com/julz/pat/history"
+	"github.com/cloudfoundry-community/pat/history"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"io/ioutil"

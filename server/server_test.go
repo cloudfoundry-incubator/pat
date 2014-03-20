@@ -9,11 +9,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/julz/pat/config"
-	. "github.com/julz/pat/experiment"
-	. "github.com/julz/pat/laboratory"
-	. "github.com/julz/pat/server"
-	"github.com/julz/pat/store"
+	"github.com/cloudfoundry-community/pat/config"
+	. "github.com/cloudfoundry-community/pat/experiment"
+	. "github.com/cloudfoundry-community/pat/laboratory"
+	. "github.com/cloudfoundry-community/pat/server"
+	"github.com/cloudfoundry-community/pat/store"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

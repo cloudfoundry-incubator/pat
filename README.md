@@ -1,6 +1,6 @@
 PATs (Performance Acceptance Tests)
 ==================================
-The goal of this project is to create a super-simple load generation testing framework for quickly and easily running load against Cloud Foundry.
+The goal of this project is to create a super-simple load generation/performance testing framework for quickly and easily running load against Cloud Foundry. The tool has both a command line UI, for running quickly during a build and a web UI for tracking longer-running tests.
 
 
 Running PATs as a Cloud Foundry App
@@ -9,7 +9,7 @@ Ensure your Cloud Foundry version is current and running
 
 1) Clone the project
 
-        git clone https://github.com/julz/pat
+        git clone https://github.com/cloudfoundry-community/pat
 
 2) Push the project to Cloud Foundry with the 'go' buildpack
 
@@ -37,11 +37,11 @@ To setup this project, a number of requires need to be met for GO.
 
 4) Clone the project to the correct location
 
-        mkdir -p $GOPATH/src/github.com/julz
+        mkdir -p $GOPATH/src/github.com/cloudfoundry-community
 
-        cd $GOPATH/src/github.com/julz
+        cd $GOPATH/src/github.com/cloudfoundry-community
 
-        git clone https://github.com/julz/pat
+        git clone https://github.com/cloudfoundry-community/pat
 
         cd pat
 
@@ -66,7 +66,7 @@ functionality and provide an example of how to use it.
 
 4) Run all tests within the repository
 
-	# not sure how to do this yet but we should
+  ginkgo -r
 
 Run
 ==================================
@@ -86,7 +86,7 @@ There are 3 options to run PATs locally:
 
 change into the top level of this project
 
-        cd $GOPATH/src/github.com/julz/pat
+        cd $GOPATH/src/github.com/cloudfoundry-community/pat
 
 execute the command line
 
@@ -96,7 +96,7 @@ execute the command line
 
 Change into the main directory
 
-        cd $GOPATH/src/github.com/julz/pat/
+        cd $GOPATH/src/github.com/cloudfoundry-community/pat/
 
         go install
 
@@ -113,27 +113,27 @@ Run PATs as an HTTP server with web user interface
 
 Example calls:
 
-	pat -h  # will output all of the command line options if installed the recommended way
+  pat -h  # will output all of the command line options if installed the recommended way
 
-	pat -concurrency=5 -iterations=5 # This will start 5 concurrent threads all pushing 1 application
+  pat -concurrency=5 -iterations=5 # This will start 5 concurrent threads all pushing 1 application
 
-	pat -concurrency=5 -iterations=1 # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
+  pat -concurrency=5 -iterations=1 # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
 
-	pat -silent # if you don't want all the fancy output use the silent flag
+  pat -silent # if you don't want all the fancy output use the silent flag
  
-	pat -workload=gcf:push,gcf:push,... #list the gcf operations you want to run
+  pat -workload=gcf:push,gcf:push,... #list the gcf operations you want to run
 
-	pat -workload=dummy    # run the tool with dummy operations (not against a CF environment)
+  pat -workload=dummy    # run the tool with dummy operations (not against a CF environment)
 
-	pat -config=config/template.yml # include a configuration template specifying any number of command line arguments. The template file provides a basic format.
+  pat -config=config/template.yml # include a configuration template specifying any number of command line arguments. The template file provides a basic format.
 
-	## Using the REST api:
+  ## Using the REST api:
 
-	go run main.go -rest:target http://api.xyz.abc.net \
-	  -rest:username=ibmtestuser1@us.ibm.com \
-	  -rest:password=PASSWORD \
-	  -workload rest:login,rest:push,rest:push,rest:push \
-	  -concurrency=10 -iterations=50
+  go run main.go -rest:target http://api.xyz.abc.net \
+    -rest:username=ibmtestuser1@us.ibm.com \
+    -rest:password=PASSWORD \
+    -workload rest:login,rest:push,rest:push,rest:push \
+    -concurrency=10 -iterations=50
 
 ## Workload options
 The `workload` option specified a comma-separated list of workloads to be used in the test.
@@ -154,7 +154,20 @@ directory called config-template.yml and it details the current operations. To r
 configuration file. Also, if a user so wishes they can overwrite a setting in the script by using the command line argument.
 
 example:
-	
-	# pat -config=config-template.yml
-	
-	# pat -config=config-template.yml -iterations=2 //set iterations to 2 even if the script has something else.
+  
+  # pat -config=config-template.yml
+  
+  # pat -config=config-template.yml -iterations=2 //set iterations to 2 even if the script has something else.
+
+
+Known Limitations / TODOs etc.
+=====================================
+ - Numerous :)
+ - Unlikely to support windows/Internet Explorer (certainly hasn't been tested on them)
+ - Current feature set is a first-pass to get to something useful, contributions very welcome
+ - Lots of stuff kept in memory and not flushed out
+ - Creates lots of apps, does not delete them. We normally make sure we're targetted at a 'pats' space and just cf delete-space the space after to get rid of everything.
+ - Only supports basic operations so far (push via gcf, target + login + push via rest api)
+ - GCF workloads assume single already-logged-in-and-targetted user
+
+

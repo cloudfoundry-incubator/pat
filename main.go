@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/julz/pat/cmdline"
-	"github.com/julz/pat/config"
-	"github.com/julz/pat/server"
+	"github.com/cloudfoundry-community/pat/cmdline"
+	"github.com/cloudfoundry-community/pat/config"
+	"github.com/cloudfoundry-community/pat/server"
 )
 
 func main() {

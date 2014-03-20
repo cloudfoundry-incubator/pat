@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/julz/pat/experiment"
+	"github.com/cloudfoundry-community/pat/experiment"
 )
 
 const MAX_RESULTS = 10000

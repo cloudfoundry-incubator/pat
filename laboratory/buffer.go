@@ -1,6 +1,6 @@
 package laboratory
 
-import "github.com/julz/pat/experiment"
+import "github.com/cloudfoundry-community/pat/experiment"
 
 // An in-memory buffer so that the currently running experiment
 // can be served in-memory rather than round-tripping to the data
