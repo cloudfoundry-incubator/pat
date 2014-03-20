@@ -4,8 +4,6 @@ go:
 
 before_install:
   - git submodule update --init --recursive
-  - mkdir -p $HOME/gopath/src/github.com/cloudfoundry-community
-  - cp -r $HOME/gopath/src/github.com/julz/pat $HOME/gopath/src/github.com/cloudfoundry-community/pat # make travis work with forked repos with different names
 
 install:
   - npm install -g grunt-cli
