@@ -72,46 +72,47 @@ Run
 ==================================
 If you wish to run PAT as a Cloud Foundry app, please refer to the section in the beginning of this guide.
 
-To run this project, you will first need to go the "Setting up PAT" section. Afterwards, you can
-change into the 'pat' directory and run:
+There are three ways to run PAT locally. For all three ways, you must first:
 
 1) Go through the "Setting up PAT to run locally" section
 
-2) Make sure that you have targeted a cloud foundry environment from the gcf tool (# gcf login)
+2) Make sure that you have targeted a Cloud Foundry environment using the gcf tool (# gcf login)
 
-There are 3 options to run PAT locally:
+### Option 1. Run the source code directly
 
-1) Run the source code directly
-
-- Change into the top level of this project
+1) Change into the top level of this project
 
         cd $GOPATH/src/github.com/cloudfoundry-community/pat
 
-- Execute the command line
+2) Execute the command line
 
         go run main.go -workload=gcf:push
 
-2) Compile and run an executable
+### Option 2. Compile and run an executable
 
-- Change into the main directory
+1) Change into the top level of this project
 
-        cd $GOPATH/src/github.com/cloudfoundry-community/pat/
-
+        cd $GOPATH/src/github.com/cloudfoundry-community/pat
         go install
 
-- Run the PAT executable from the command line
+2) Run the PAT executable from the command line
 
-        pat
+        pat -workload=gcf:push
 
-3) Run PAT with a web user interface
+### Option 3. Run PAT with a web user interface
 
-- Run PAT selecting the HTTP server option
+1) Change into the top level of this project
+
+        cd $GOPATH/src/github.com/cloudfoundry-community/pat
+
+2) Run PAT selecting the HTTP server option
 
         go run main.go -server
 
-- Open a browser and go to http://localhost:8080/ui
+3) Open a browser and go to <http://localhost:8080/ui>
 
-Example calls (using option 2 to illustrate):
+
+### Example command-line usage (using option 2 to illustrate):
 
     pat -h   # will output all of the command line options if installed the recommended way
 
@@ -134,7 +135,7 @@ Example calls (using option 2 to illustrate):
         -workload=rest:target,rest:login,rest:push,rest:push \
         -concurrency=5 -iterations=20 -interval=10 # Use the REST API to make operation requests instead of gcf 
 
-## Workload options
+### Workload options
 The `workload` option specified a comma-separated list of workloads to be used in the test.
 The following options are available:
 
