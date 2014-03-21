@@ -122,6 +122,8 @@ There are three ways to run PAT locally. For all three ways, you must first:
 
     pat -silent  # If you don't want all the fancy output to be shown (results can be found in a CSV)
 
+    pat -list-workloads  # Lists the available workloads
+
     pat -workload=gcf:push,gcf:push,..  # Select the workload operations you want to run (See "Workload options" below)
 
     pat -workload=dummy  # Run the tool with a dummy operation (not against a CF environment)
