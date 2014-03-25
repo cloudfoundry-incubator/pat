@@ -13,21 +13,24 @@ import (
 
 var _ = Describe("Cmdline", func() {
 	var (
-		flags        config.Config
-		args         []string
-		lab          *dummyLab
-		workloadList *workloadListWithThreeWorkloads
+		flags config.Config
+		args  []string
+		lab   *dummyLab
 	)
 
 	BeforeEach(func() {
-		WorkerFactory = func() (worker benchmarker.Worker) {
-			worker = benchmarker.NewWorker()
-			return
+		WithConfiguredWorkerAndSlaves = func(fn func(Worker benchmarker.Worker) error) error {
+			worker := benchmarker.NewLocalWorker()
+			worker.AddWorkloadStep(workloads.Step("login", nil, "description"))
+			worker.AddWorkloadStep(workloads.Step("push", nil, "description"))
+			worker.AddWorkloadStep(workloads.Step("gcf:push", nil, "description"))
+			return fn(worker)
 		}
 
-		workloadList = &workloadListWithThreeWorkloads{}
-		WorkloadListFactory = func() WorkloadList {
-			return workloadList
+		LaboratoryFactory = func(store laboratory.Store) (newLab laboratory.Laboratory) {
+			lab = &dummyLab{}
+			newLab = lab
+			return
 		}
 	})
 
@@ -35,19 +38,9 @@ var _ = Describe("Cmdline", func() {
 		flags = config.NewConfig()
 		InitCommandLineFlags(flags)
 		flags.Parse(args)
-		LaboratoryFactory = func(store laboratory.Store) (newLab laboratory.Laboratory) {
-			lab = &dummyLab{}
-			newLab = lab
-			return
-		}
 
 		BlockExit = func() {}
-
 		RunCommandLine()
-	})
-
-	It("Asks workload list to describe its parameters", func() {
-		Ω(workloadList.describeParamsWasCalled).Should(BeTrue())
 	})
 
 	Describe("When -iterations is supplied", func() {
@@ -88,11 +81,6 @@ var _ = Describe("Cmdline", func() {
 		BeforeEach(func() {
 			lab = nil
 			args = []string{"-list-workloads"}
-
-			worker := benchmarker.NewWorker()
-			WorkerFactory = func() benchmarker.Worker {
-				return worker
-			}
 
 			printCalledCount = 0
 			PrintWorkload = func(workload workloads.WorkloadStep) {
@@ -172,18 +160,4 @@ func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func
 }
 
 func (d *dummyLab) Visit(func(experiment.Experiment)) {
-}
-
-type workloadListWithThreeWorkloads struct {
-	describeParamsWasCalled bool
-}
-
-func (w *workloadListWithThreeWorkloads) DescribeParameters(config config.Config) {
-	w.describeParamsWasCalled = true
-}
-
-func (w *workloadListWithThreeWorkloads) DescribeWorkloads(adder workloads.WorkloadAdder) {
-	adder.AddWorkloadStep(workloads.Step("gcf:push", func() error { return nil }, "a"))
-	adder.AddWorkloadStep(workloads.Step("login", func() error { return nil }, "a"))
-	adder.AddWorkloadStep(workloads.Step("push", func() error { return nil }, "a"))
 }

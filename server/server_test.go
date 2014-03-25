@@ -57,7 +57,6 @@ var _ = Describe("Server", func() {
 			})
 
 			It("Defaults to 8080", func() {
-				Bind()
 				Ω(listen).Should(Equal(":8080"))
 			})
 		})
@@ -69,7 +68,6 @@ var _ = Describe("Server", func() {
 			})
 
 			It("Uses the env variable", func() {
-				Bind()
 				Ω(listen).Should(Equal(":1234"))
 			})
 		})

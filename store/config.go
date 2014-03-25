@@ -19,7 +19,7 @@ func DescribeParameters(config config.Config) {
 
 func WithStore(fn func(store laboratory.Store) error) error {
 	if params.useRedis {
-		return WithRedis(func(conn redis.Conn) error {
+		return WithRedisConnection(func(conn redis.Conn) error {
 			store, err := RedisStoreFactory(conn)
 			if err != nil {
 				return err
@@ -32,8 +32,8 @@ func WithStore(fn func(store laboratory.Store) error) error {
 	}
 }
 
-var WithRedis = func(fn func(conn redis.Conn) error) error {
-	return redis.WithRedis(fn)
+var WithRedisConnection = func(fn func(conn redis.Conn) error) error {
+	return redis.WithRedisConnection(fn)
 }
 
 var RedisStoreFactory = func(conn redis.Conn) (laboratory.Store, error) {

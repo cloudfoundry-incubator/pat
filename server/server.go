@@ -7,13 +7,12 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/gorilla/mux"
 	"github.com/cloudfoundry-community/pat/benchmarker"
 	"github.com/cloudfoundry-community/pat/config"
 	. "github.com/cloudfoundry-community/pat/experiment"
 	. "github.com/cloudfoundry-community/pat/laboratory"
 	"github.com/cloudfoundry-community/pat/store"
-	"github.com/cloudfoundry-community/pat/workloads"
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -28,6 +27,7 @@ type Response struct {
 type context struct {
 	router *mux.Router
 	lab    Laboratory
+	worker benchmarker.Worker
 }
 
 var params = struct {
@@ -37,6 +37,7 @@ var params = struct {
 func InitCommandLineFlags(config config.Config) {
 	config.EnvVar(&params.port, "VCAP_APP_PORT", "8080", "The port to bind to")
 	store.DescribeParameters(config)
+	benchmarker.DescribeParameters(config)
 }
 
 func Serve() {
@@ -51,23 +52,29 @@ func Serve() {
 }
 
 func ServeWithLab(lab Laboratory) {
-	r := mux.NewRouter()
-	ctx := &context{r, lab}
+	benchmarker.WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
+		r := mux.NewRouter()
+		ctx := &context{r, lab, worker}
 
-	r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx.handleListExperiments))
-	r.Methods("GET").Path("/experiments/{name}.csv").HandlerFunc(csvHandler(ctx.handleGetExperiment)).Name("csv")
-	r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx.handleGetExperiment)).Name("experiment")
-	r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx.handlePush))
-	r.Methods("GET").Path("/").HandlerFunc(redirectBase)
-	http.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui"))))
-	http.Handle("/", r)
+		r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx.handleListExperiments))
+		r.Methods("GET").Path("/experiments/{name}.csv").HandlerFunc(csvHandler(ctx.handleGetExperiment)).Name("csv")
+		r.Methods("GET").Path("/experiments/{name}").HandlerFunc(handler(ctx.handleGetExperiment)).Name("experiment")
+		r.Methods("POST").Path("/experiments/").HandlerFunc(handler(ctx.handlePush))
+		r.Methods("GET").Path("/").HandlerFunc(redirectBase)
+
+		http.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui"))))
+		http.Handle("/", r)
+		bind()
+
+		return nil
+	})
 }
 
 func redirectBase(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/ui", http.StatusFound)
 }
 
-func Bind() {
+func bind() {
 	port := params.port
 
 	fmt.Printf("Starting web ui on http://localhost:%s", port)
@@ -122,14 +129,10 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 	}
 
 	//ToDo (simon): interval and stop is 0, repeating at interval is not yet exposed in Web UI
-	workloadList := workloads.DefaultWorkloadList()
-	worker := benchmarker.NewWorker()
-	workloadList.DescribeWorkloads(worker)
-
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
-				pushes, concurrency, interval, stop, worker, workload)))
+				pushes, concurrency, interval, stop, ctx.worker, workload)))
 
 	return ctx.router.Get("experiment").URL("name", experiment.GetGuid())
 }

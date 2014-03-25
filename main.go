@@ -21,7 +21,6 @@ func main() {
 	if useServer == true {
 		fmt.Println("Starting in server mode")
 		server.Serve()
-		server.Bind()
 	} else {
 		err := cmdline.RunCommandLine()
 		if err != nil {

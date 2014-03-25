@@ -28,11 +28,7 @@ type WorkloadList interface {
 	DescribeWorkloads(worker workloads.WorkloadAdder)
 }
 
-var workloadList WorkloadList
-
 func InitCommandLineFlags(config config.Config) {
-	workloadList = WorkloadListFactory()
-
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
 	config.IntVar(&params.concurrency, "concurrency", 1, "max number of pushes to attempt in parallel")
 	config.BoolVar(&params.silent, "silent", false, "true to run the commands and print output the terminal")
@@ -41,33 +37,32 @@ func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload at n second interval, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "stop a repeating interval after n second, to be used with -interval")
 	config.BoolVar(&params.listWorkloads, "list-workloads", false, "Lists the available workloads")
-	workloadList.DescribeParameters(config)
+	benchmarker.DescribeParameters(config)
 	store.DescribeParameters(config)
 }
 
 func RunCommandLine() error {
-	worker := WorkerFactory()
-	workloadList.DescribeWorkloads(worker)
+	return WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
+		return validateParameters(worker, func() error {
+			return store.WithStore(func(store Store) error {
 
-	return validateParameters(worker, func() error {
-		return store.WithStore(func(store Store) error {
+				lab := LaboratoryFactory(store)
 
-			lab := LaboratoryFactory(store)
+				handlers := make([]func(<-chan *Sample), 0)
+				if !params.silent {
+					handlers = append(handlers, func(s <-chan *Sample) {
+						display(params.concurrency, params.iterations, params.interval, params.stop, s)
+					})
+				}
 
-			handlers := make([]func(<-chan *Sample), 0)
-			if !params.silent {
-				handlers = append(handlers, func(s <-chan *Sample) {
-					display(params.concurrency, params.iterations, params.interval, params.stop, s)
-				})
-			}
+				lab.RunWithHandlers(
+					NewRunnableExperiment(
+						NewExperimentConfiguration(
+							params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
 
-			lab.RunWithHandlers(
-				NewRunnableExperiment(
-					NewExperimentConfiguration(
-						params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
-
-			BlockExit()
-			return nil
+				BlockExit()
+				return nil
+			})
 		})
 	})
 }
@@ -90,19 +85,13 @@ func validateParameters(worker benchmarker.Worker, then func() error) error {
 	return then()
 }
 
+var WithConfiguredWorkerAndSlaves = func(fn func(worker benchmarker.Worker) error) error {
+	return benchmarker.WithConfiguredWorkerAndSlaves(fn)
+}
+
 var LaboratoryFactory = func(store Store) (lab Laboratory) {
 	lab = NewLaboratory(store)
 	return
-}
-
-var WorkerFactory = func() (worker benchmarker.Worker) {
-	worker = benchmarker.NewWorker()
-	workloadList.DescribeWorkloads(worker)
-	return
-}
-
-var WorkloadListFactory = func() (list WorkloadList) {
-	return workloads.DefaultWorkloadList()
 }
 
 var BlockExit = func() {

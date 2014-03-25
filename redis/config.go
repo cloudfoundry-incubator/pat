@@ -20,7 +20,7 @@ func DescribeParameters(config config.Config) {
 	config.EnvVar(&params.vcapServices, "VCAP_SERVICES", "", "The VCAP_SERVICES environment variable")
 }
 
-func WithRedis(fn func(conn Conn) error) error {
+func WithRedisConnection(fn func(conn Conn) error) error {
 	parseVcapServices()
 	store, err := ConnFactory(params.redisHost, params.redisPort, params.redisPassword)
 	if err == nil {

@@ -45,7 +45,7 @@ var _ = Describe("Config", func() {
 
 	It("Creates a redis connection with the host, port and password", func() {
 		var c Conn
-		WithRedis(func(conn Conn) error {
+		WithRedisConnection(func(conn Conn) error {
 			c = conn
 			return nil
 		})
@@ -65,7 +65,7 @@ var _ = Describe("Config", func() {
 
 		It("Returns an error and does not run the passed function", func() {
 			var wasRun = false
-			err := WithRedis(func(conn Conn) error {
+			err := WithRedisConnection(func(conn Conn) error {
 				wasRun = true
 				return nil
 			})
@@ -77,7 +77,7 @@ var _ = Describe("Config", func() {
 
 	Context("And the passed function doesn't return an error", func() {
 		It("returns nil", func() {
-			err := WithRedis(func(conn Conn) error {
+			err := WithRedisConnection(func(conn Conn) error {
 				return nil
 			})
 
@@ -87,7 +87,7 @@ var _ = Describe("Config", func() {
 
 	Context("And the passed function returns an error", func() {
 		It("returns an error also", func() {
-			err := WithRedis(func(conn Conn) error {
+			err := WithRedisConnection(func(conn Conn) error {
 				return errors.New("an error")
 			})
 
@@ -112,7 +112,7 @@ var _ = Describe("Config", func() {
 
 			It("Creates a store using the credentials in VCAP_SERVICES", func() {
 				var c Conn
-				WithRedis(func(conn Conn) error {
+				WithRedisConnection(func(conn Conn) error {
 					c = conn
 					return nil
 				})
@@ -140,7 +140,7 @@ var _ = Describe("Config", func() {
 
 			It("Uses the command line values", func() {
 				var c Conn
-				WithRedis(func(conn Conn) error {
+				WithRedisConnection(func(conn Conn) error {
 					c = conn
 					return nil
 				})

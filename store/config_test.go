@@ -33,7 +33,7 @@ var _ = Describe("Config.WithStore", func() {
 		}
 
 		connFromFactory = &dummyConn{}
-		WithRedis = func(fn func(conn redis.Conn) error) error {
+		WithRedisConnection = func(fn func(conn redis.Conn) error) error {
 			return fn(connFromFactory)
 		}
 
@@ -69,7 +69,7 @@ var _ = Describe("Config.WithStore", func() {
 			args = []string{"-use-redis"}
 		})
 
-		It("Creates a Redis store using the connection from redis.WithRedis", func() {
+		It("Creates a Redis store using the connection from redis.WithRedisConnection(", func() {
 			var s laboratory.Store = nil
 			WithStore(func(store laboratory.Store) error {
 				s = store
