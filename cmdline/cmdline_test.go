@@ -13,15 +13,24 @@ import (
 
 var _ = Describe("Cmdline", func() {
 	var (
-		flags config.Config
-		args  []string
-		lab   *dummyLab
+		flags        config.Config
+		args         []string
+		lab          *dummyLab
+		workloadList *workloadListWithThreeWorkloads
 	)
-	var workerFactory = func() (worker benchmarker.Worker) {
-		worker = benchmarker.NewWorker()
-		worker.AddWorkloadStep(workloads.Step("gcf:push", func() error { return nil }, "a"))
-		return
-	}
+
+	BeforeEach(func() {
+		WorkerFactory = func() (worker benchmarker.Worker) {
+			worker = benchmarker.NewWorker()
+			return
+		}
+
+		workloadList = &workloadListWithThreeWorkloads{}
+		WorkloadListFactory = func() WorkloadList {
+			return workloadList
+		}
+	})
+
 	JustBeforeEach(func() {
 		flags = config.NewConfig()
 		InitCommandLineFlags(flags)
@@ -37,9 +46,12 @@ var _ = Describe("Cmdline", func() {
 		RunCommandLine()
 	})
 
+	It("Asks workload list to describe its parameters", func() {
+		Ω(workloadList.describeParamsWasCalled).Should(BeTrue())
+	})
+
 	Describe("When -iterations is supplied", func() {
 		BeforeEach(func() {
-			WorkerFactory = workerFactory
 			args = []string{"-iterations", "3"}
 		})
 
@@ -50,7 +62,6 @@ var _ = Describe("Cmdline", func() {
 
 	Describe("When -concurrency is supplied", func() {
 		BeforeEach(func() {
-			WorkerFactory = workerFactory
 			args = []string{"-concurrency", "3"}
 		})
 
@@ -62,12 +73,6 @@ var _ = Describe("Cmdline", func() {
 	Describe("When -workload is supplied", func() {
 		BeforeEach(func() {
 			args = []string{"-workload", "login,push"}
-			WorkerFactory = func() (worker benchmarker.Worker) {
-				worker = benchmarker.NewWorker()
-				worker.AddWorkloadStep(workloads.Step("login", func() error { return nil }, "a"))
-				worker.AddWorkloadStep(workloads.Step("push", func() error { return nil }, "a"))
-				return
-			}
 		})
 
 		It("configures the experiment with the parameter", func() {
@@ -83,14 +88,13 @@ var _ = Describe("Cmdline", func() {
 		BeforeEach(func() {
 			lab = nil
 			args = []string{"-list-workloads"}
-			printCalledCount = 0
-			WorkerFactory = func() (worker benchmarker.Worker) {
-				worker = benchmarker.NewWorker()
-				worker.AddWorkloadStep(workloads.Step("a", func() error { return nil }, "aa"))
-				worker.AddWorkloadStep(workloads.Step("b", func() error { return nil }, "bb"))
-				worker.AddWorkloadStep(workloads.Step("c", func() error { return nil }, "cc"))
-				return
+
+			worker := benchmarker.NewWorker()
+			WorkerFactory = func() benchmarker.Worker {
+				return worker
 			}
+
+			printCalledCount = 0
 			PrintWorkload = func(workload workloads.WorkloadStep) {
 				printCalledCount++
 			}
@@ -104,7 +108,6 @@ var _ = Describe("Cmdline", func() {
 
 	Describe("When -interval is supplied", func() {
 		BeforeEach(func() {
-			WorkerFactory = workerFactory
 			args = []string{"-interval", "10"}
 		})
 
@@ -115,7 +118,6 @@ var _ = Describe("Cmdline", func() {
 
 	Describe("When -stop is supplied", func() {
 		BeforeEach(func() {
-			WorkerFactory = workerFactory
 			args = []string{"-stop", "11"}
 		})
 
@@ -170,4 +172,18 @@ func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func
 }
 
 func (d *dummyLab) Visit(func(experiment.Experiment)) {
+}
+
+type workloadListWithThreeWorkloads struct {
+	describeParamsWasCalled bool
+}
+
+func (w *workloadListWithThreeWorkloads) DescribeParameters(config config.Config) {
+	w.describeParamsWasCalled = true
+}
+
+func (w *workloadListWithThreeWorkloads) DescribeWorkloads(adder workloads.WorkloadAdder) {
+	adder.AddWorkloadStep(workloads.Step("gcf:push", func() error { return nil }, "a"))
+	adder.AddWorkloadStep(workloads.Step("login", func() error { return nil }, "a"))
+	adder.AddWorkloadStep(workloads.Step("push", func() error { return nil }, "a"))
 }
