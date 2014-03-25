@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-community/pat/experiment"
+	"github.com/cloudfoundry-community/pat/redis"
 	. "github.com/cloudfoundry-community/pat/store"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,7 +22,6 @@ type store interface {
 var _ = Describe("Redis Store", func() {
 	var (
 		store store
-		err   error
 	)
 
 	BeforeEach(func() {
@@ -32,50 +32,11 @@ var _ = Describe("Redis Store", func() {
 		StopRedis()
 	})
 
-	Describe("Connecting", func() {
-		Context("When the host is wrong", func() {
-			It("Returns an error", func() {
-				_, err := NewRedisStore("fishfinger", 63798, "p4ssw0rd")
-				Ω(err).Should(HaveOccurred())
-			})
-		})
-
-		Context("When the port is wrong", func() {
-			It("Returns an error", func() {
-				_, err := NewRedisStore("localhost", 63799, "p4ssw0rd")
-				Ω(err).Should(HaveOccurred())
-			})
-		})
-
-		Context("When the host and port are correct", func() {
-			Context("But the password is wrong", func() {
-				It("Returns an error", func() {
-					_, err := NewRedisStore("localhost", 63799, "WRONG")
-					Ω(err).Should(HaveOccurred())
-				})
-			})
-
-			Context("And the password is correct", func() {
-				It("works", func() {
-					_, err := NewRedisStore("localhost", 63798, "p4ssw0rd")
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-			})
-
-			Context("When the server has no password", func() {
-				It("works", func() {
-					StopRedis()
-					StartRedis("redis.nopass.conf")
-					_, err := NewRedisStore("localhost", 63798, "")
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-			})
-		})
-	})
-
 	Describe("Saving and Loading", func() {
 		BeforeEach(func() {
-			store, err = NewRedisStore("", 63798, "p4ssw0rd")
+			conn, err := redis.Connect("", 63798, "p4ssw0rd")
+			Ω(err).ShouldNot(HaveOccurred())
+			store, err = NewRedisStore(conn)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			writer := store.Writer("experiment-1")
