@@ -12,11 +12,6 @@ import (
 	"github.com/cloudfoundry-community/pat/workloads"
 )
 
-type Response struct {
-	TotalTime int64
-	Timestamp int64
-}
-
 var params = struct {
 	iterations    int
 	listWorkloads bool
