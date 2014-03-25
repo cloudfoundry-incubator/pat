@@ -184,11 +184,11 @@ func (ex *SamplableExperiment) Sample() {
 			}
 		case w := <-ex.workers:
 			workers = workers + w
-		case seconds := <-ex.ticks:
+		case _ = <-ex.ticks:
 			sampleType = ThroughputSample
 			for key, _ := range commands {
-				cmd := commands[key]
-				cmd.Throughput = float64(cmd.Count) / float64(seconds)
+				cmd := commands[key]								
+				cmd.Throughput = float64(cmd.Count) / cmd.TotalTime.Seconds()
 				commands[key] = cmd
 			}
 		}

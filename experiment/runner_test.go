@@ -184,12 +184,12 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 		It("Calculates the throughput for a command every tick", func() {
 			go func() {
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push"}}, nil}
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push"}}, nil}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
 				ticks <- 2
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push"}}, nil}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
 				ticks <- 3
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push"}}, nil}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 3 * time.Second}}, nil}
 				ticks <- 6
 			}()
 
