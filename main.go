@@ -23,6 +23,9 @@ func main() {
 		server.Serve()
 		server.Bind()
 	} else {
-		cmdline.RunCommandLine()
+		err := cmdline.RunCommandLine()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
