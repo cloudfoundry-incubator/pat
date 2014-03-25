@@ -10,8 +10,7 @@ type SampleType int
 
 const (
 	ResultSample SampleType = iota
-	WorkerSample
-	ThroughputSample
+	WorkerSample	
 	ErrorSample
 	OtherSample
 )
@@ -72,7 +71,6 @@ type SamplableExperiment struct {
 	iteration chan IterationResult
 	workers   chan int
 	samples   chan *Sample
-	ticks     <-chan int
 	quit      chan bool
 }
 
@@ -97,19 +95,7 @@ func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan I
 }
 
 func newRunningExperiment(iterations int, iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
-	return &SamplableExperiment{iterations, iterationResults, workers, samples, newTicker(), quit}
-}
-
-func newTicker() <-chan int {
-	t := make(chan int)
-	go func() {
-		seconds := 0
-		for _ = range time.NewTicker(1 * time.Second).C {
-			seconds = seconds + 1
-			t <- seconds
-		}
-	}()
-	return t
+	return &SamplableExperiment{iterations, iterationResults, workers, samples, quit}
 }
 
 func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
@@ -153,7 +139,8 @@ func (ex *SamplableExperiment) Sample() {
 	var worstResult time.Duration
 	var ninetyfifthPercentile time.Duration
 	var percentileLength = int(math.Floor(float64(ex.maxIterations)*.05+0.95))
-	var percentile  = make([]time.Duration, percentileLength, percentileLength)	
+ 	var percentile  = make([]time.Duration, percentileLength, percentileLength)
+	var heartbeat = time.NewTicker(1 * time.Second)
 	startTime := time.Now()
 
 	for {
@@ -189,6 +176,7 @@ func (ex *SamplableExperiment) Sample() {
 				cmd.TotalTime = cmd.TotalTime + step.Duration
 				cmd.LastTime = step.Duration
 				cmd.Average = time.Duration(cmd.TotalTime.Nanoseconds() / cmd.Count)
+				cmd.Throughput = float64(cmd.Count) / cmd.TotalTime.Seconds()
 				if step.Duration > cmd.WorstTime {
 					cmd.WorstTime = step.Duration
 				}
@@ -202,13 +190,8 @@ func (ex *SamplableExperiment) Sample() {
 			}
 		case w := <-ex.workers:
 			workers = workers + w
-		case _ = <-ex.ticks:
-			sampleType = ThroughputSample
-			for key, _ := range commands {
-				cmd := commands[key]								
-				cmd.Throughput = float64(cmd.Count) / cmd.TotalTime.Seconds()
-				commands[key] = cmd
-			}
+		case _ = <-heartbeat.C:
+			//heatbeat for updating CLI Walltime every second	
 		}
 		ex.samples <- &Sample{commands, avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, ninetyfifthPercentile, time.Now().Sub(startTime), sampleType}
 	}

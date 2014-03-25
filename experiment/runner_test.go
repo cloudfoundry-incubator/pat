@@ -144,7 +144,6 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			iteration chan IterationResult
 			workers   chan int
 			quit      chan bool
-			ticks     chan int
 			samples   chan *Sample
 		)
 
@@ -154,8 +153,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			workers = make(chan int)
 			quit = make(chan bool)
 			samples = make(chan *Sample)
-			ticks = make(chan int)
-			go (&SamplableExperiment{maxIterations, iteration, workers, samples, ticks, quit}).Sample()
+			go (&SamplableExperiment{maxIterations, iteration, workers, samples, quit}).Sample()
 		})
 
 		It("Calculates the running average", func() {
@@ -179,11 +177,6 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			return
 		})
 
-		It("Updates throughput when the timer ticks", func() {
-			go func() { ticks <- 1 }()
-			Eventually((<-samples).Type).Should(Equal(ThroughputSample))
-		})
-
 		It("Counts errors", func() {
 			go func() {
 				iteration <- IterationResult{0, nil, errors.New("fishfingers burnt")}
@@ -194,24 +187,26 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			Ω((<-samples).TotalErrors).Should(Equal(2))
 		})
 
-		It("Calculates the throughput for a command every tick", func() {
-			go func() {
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
-				ticks <- 2
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
-				ticks <- 3
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 3 * time.Second}}, nil}
-				ticks <- 6
+		It("Calculates the throughput for a command", func() {
+			go func() {	
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil} 
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "list", Duration: 2 * time.Second}}, nil} 
 			}()
+				
+			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 1))
+			Ω((<-samples).Commands["list"].Throughput).Should(BeNumerically("==", 0.5))
 
-			<-samples // ResultSample
-			<-samples // ResultSample
-			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 1))
-			<-samples // ResultSample
-			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 1))
-			<-samples // ResultSample
-			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 4.0/6.0))
+			go func() {	
+				iteration <- IterationResult{0, []StepResult{
+					StepResult{Command: "push", Duration: 3 * time.Second},
+					StepResult{Command: "push", Duration: 2 * time.Second}},
+				 nil} 			
+			}()
+			
+			sample := <-samples				
+			Ω(sample.Commands["push"].Count).Should(Equal(int64(3)))
+			Ω(sample.Commands["push"].TotalTime).Should(Equal(6 * time.Second))
+			Ω(sample.Commands["push"].Throughput).Should(BeNumerically("==", 0.5))			
 		})
 	})
 
@@ -232,7 +227,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			quit = make(chan bool)
 			samples = make(chan *Sample)
 			ticks = make(chan int)
-			go (&SamplableExperiment{maxIterations, iteration, workers, samples, ticks, quit}).Sample()
+			go (&SamplableExperiment{maxIterations, iteration, workers, samples, quit}).Sample()
 		})
 
 		It("Calculates the 95th percentile", func() {	
