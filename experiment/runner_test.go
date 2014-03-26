@@ -29,11 +29,11 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 				executor = &DummyExecutor{iterationResults, workers, errors, executorFunc}
 				return executor
 			}
-			samplerFactory := func(iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
-				sampler = &DummySampler{samples, iterationResults, workers, errors, sampleFunc}
+			samplerFactory := func(maxIterations int, iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
+				sampler = &DummySampler{maxIterations, samples, iterationResults, workers, errors, sampleFunc}
 				return sampler
 			}
-			config = &RunnableExperiment{ExperimentConfiguration{5, 2, 1, 1, worker, "push"}, executorFactory, samplerFactory}
+			config = &RunnableExperiment{ExperimentConfiguration{5, 2, 1, 3, worker, "push"}, executorFactory, samplerFactory}
 		})
 
 		It("Sends Samples from Sampler to the passed tracker function", func() {
@@ -52,6 +52,15 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			})
 
 			Ω(got).Should(HaveLen(2))
+		})
+
+		It("Calculates the maximum iterations based on interval and stop", func() {
+			executorFunc = func(e *DummyExecutor) {}
+			sampleFunc = func(s *DummySampler) {}
+
+			config.Run(func(samples <-chan *Sample) {})
+
+			Ω(sampler.maxIterations).Should(Equal(15))
 		})
 
 		It("Sends IterationResults from Executor to Sampler", func() {
@@ -120,6 +129,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			Ω(got).Should(HaveLen(1))
 			Ω(got[0].Error()).Should(Equal("Foo"))
 		})
+
 	})
 
 	Describe("Executing", func() {
@@ -130,6 +140,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 	Describe("Sampling", func() {
 		var (
+			maxIterations int 
 			iteration chan IterationResult
 			workers   chan int
 			quit      chan bool
@@ -138,12 +149,13 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		)
 
 		BeforeEach(func() {
+			maxIterations = 3
 			iteration = make(chan IterationResult)
 			workers = make(chan int)
 			quit = make(chan bool)
 			samples = make(chan *Sample)
 			ticks = make(chan int)
-			go (&SamplableExperiment{iteration, workers, samples, ticks, quit}).Sample()
+			go (&SamplableExperiment{maxIterations, iteration, workers, samples, ticks, quit}).Sample()
 		})
 
 		It("Calculates the running average", func() {
@@ -202,9 +214,41 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 4.0/6.0))
 		})
 	})
+
+	Describe("Sampling Percentile", func() {
+		var (
+			maxIterations int 	
+			iteration chan IterationResult
+			workers   chan int
+			quit      chan bool
+			ticks     chan int
+			samples   chan *Sample
+		)
+
+		BeforeEach(func() {
+			maxIterations = 21
+			iteration = make(chan IterationResult)
+			workers = make(chan int)
+			quit = make(chan bool)
+			samples = make(chan *Sample)
+			ticks = make(chan int)
+			go (&SamplableExperiment{maxIterations, iteration, workers, samples, ticks, quit}).Sample()
+		})
+
+		It("Calculates the 95th percentile", func() {	
+			samplesToSend := []int { 2, 5, 1, 9, 12, 8, 19, 57, 33, 44, 1, 12, 43, 99, 98, 19, 34, 19, 7, 55, 23}
+			expectedPercentiles := []int { 2, 5, 5, 9, 12, 12, 19, 57, 57, 57, 57, 57, 57, 99, 99, 99, 99, 99, 99, 99, 98}
+			
+			go func() { for i := 0; i < maxIterations; i++ { iteration <- IterationResult{time.Duration(samplesToSend[i]) * time.Second, nil, nil} } }()
+			for q := 0; q < maxIterations; q++ {
+				Ω((<-samples).NinetyfifthPercentile).Should(Equal(time.Duration(expectedPercentiles[q]) * time.Second))
+			}
+		})
+	})
 })
 
 type DummySampler struct {
+	maxIterations int
 	samples          chan *Sample
 	IterationResults chan IterationResult
 	Workers          chan int

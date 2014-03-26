@@ -1,6 +1,7 @@
 package experiment
 
 import (
+	"math"
 	"time"
 	. "github.com/cloudfoundry-community/pat/benchmarker"
 )
@@ -34,6 +35,7 @@ type Sample struct {
 	LastResult   time.Duration
 	LastError    error
 	WorstResult  time.Duration
+	NinetyfifthPercentile time.Duration
 	WallTime     time.Duration
 	Type         SampleType
 }
@@ -55,7 +57,7 @@ type ExperimentConfiguration struct {
 type RunnableExperiment struct {
 	ExperimentConfiguration
 	executerFactory func(iterationResults chan IterationResult, errors chan error, workers chan int, quit chan bool) Executable
-	samplerFactory  func(iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable
+	samplerFactory  func(iterations int, iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable
 }
 
 type ExecutableExperiment struct {
@@ -66,6 +68,7 @@ type ExecutableExperiment struct {
 }
 
 type SamplableExperiment struct {
+  maxIterations int
 	iteration chan IterationResult
 	workers   chan int
 	samples   chan *Sample
@@ -93,8 +96,8 @@ func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan I
 	return &ExecutableExperiment{c, iterationResults, workers, quit}
 }
 
-func newRunningExperiment(iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
-	return &SamplableExperiment{iterationResults, workers, samples, newTicker(), quit}
+func newRunningExperiment(iterations int, iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
+	return &SamplableExperiment{iterations, iterationResults, workers, samples, newTicker(), quit}
 }
 
 func newTicker() <-chan int {
@@ -116,7 +119,9 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
 	samples := make(chan *Sample)
 	quit := make(chan bool)
 	done := make(chan bool)
-	sampler := config.samplerFactory(iteration, errors, workers, samples, quit)
+	maxIterations := config.Iterations
+	if (config.Stop != 0 && config.Interval != 0 && config.Interval < config.Stop) {maxIterations *= config.Stop/config.Interval}
+	sampler := config.samplerFactory(maxIterations, iteration, errors, workers, samples, quit)
 	go sampler.Sample()
 	go func(d chan bool) {
 		tracker(samples)
@@ -146,6 +151,9 @@ func (ex *SamplableExperiment) Sample() {
 	var totalErrors int
 	var workers int
 	var worstResult time.Duration
+	var ninetyfifthPercentile time.Duration
+	var percentileLength = int(math.Floor(float64(ex.maxIterations)*.05+0.95))
+	var percentile  = make([]time.Duration, percentileLength, percentileLength)	
 	startTime := time.Now()
 
 	for {
@@ -159,12 +167,22 @@ func (ex *SamplableExperiment) Sample() {
 			sampleType = ResultSample
 			iterations = iterations + 1
 			totalTime = totalTime + iteration.Duration
-			avg = time.Duration(totalTime.Nanoseconds() / iterations)
-			lastResult = iteration.Duration
+			avg = time.Duration(totalTime.Nanoseconds() / iterations)	
+			lastResult = iteration.Duration	
 			if iteration.Duration > worstResult {
 				worstResult = iteration.Duration
 			}
 
+			if lastResult > percentile[0] {
+				percentile[0] = lastResult
+				for i := 0; i < percentileLength-1 && lastResult > percentile[i+1]; i++ {
+					percentile[i] = percentile[i+1]
+					percentile[i+1] = lastResult
+				}
+			}
+
+			ninetyfifthPercentile = percentile[percentileLength - int(math.Floor(float64(iterations)*.05+0.95))]
+			
 			for _, step := range iteration.Steps {
 				cmd := commands[step.Command]
 				cmd.Count = cmd.Count + 1
@@ -174,7 +192,7 @@ func (ex *SamplableExperiment) Sample() {
 				if step.Duration > cmd.WorstTime {
 					cmd.WorstTime = step.Duration
 				}
-
+			
 				commands[step.Command] = cmd
 			}
 
@@ -192,7 +210,6 @@ func (ex *SamplableExperiment) Sample() {
 				commands[key] = cmd
 			}
 		}
-
-		ex.samples <- &Sample{commands, avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, time.Now().Sub(startTime), sampleType}
+		ex.samples <- &Sample{commands, avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, ninetyfifthPercentile, time.Now().Sub(startTime), sampleType}
 	}
 }

@@ -55,7 +55,7 @@ func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 	}
 
 	w := csv.NewWriter(f)
-	w.Write([]string{"Average", "TotalTime", "Total", "TotalErrors", "TotalWorkers", "LastResult", "WorstResult", "WallTime", "Type"})
+	w.Write([]string{"Average", "TotalTime", "Total", "TotalErrors", "TotalWorkers", "LastResult", "WorstResult", "NinetyfifthPercentile", "WallTime", "Type"})
 
 	for s := range samples {
 		if s.Type == experiment.ResultSample {
@@ -66,6 +66,7 @@ func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 				strconv.Itoa(int(s.TotalWorkers)),
 				strconv.Itoa(int(s.LastResult.Nanoseconds())),
 				strconv.Itoa(int(s.WorstResult.Nanoseconds())),
+				strconv.Itoa(int(s.NinetyfifthPercentile.Nanoseconds())),
 				strconv.Itoa(int(s.WallTime)),
 				strconv.Itoa(int(s.Type))})
 			w.Flush()
@@ -96,7 +97,8 @@ func (self *csvFile) GetData() (samples []*experiment.Sample, err error) {
 			sample.TotalWorkers, err = strconv.Atoi(d[4])
 			sample.LastResult, err = duration(d[5])
 			sample.WorstResult, err = duration(d[6])
-			sample.WallTime, err = duration(d[7])
+			sample.NinetyfifthPercentile, err = duration(d[7])
+			sample.WallTime, err = duration(d[8])
 			sample.Type = experiment.ResultSample // this is the only type we currently persist
 
 			if err != nil {
