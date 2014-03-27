@@ -47,9 +47,9 @@ var _ = Describe("Config.WithStore", func() {
 		flags.Parse(args)
 	})
 
-	Context("When useRedis is false", func() {
+	Context("When use-redis-store is false", func() {
 		BeforeEach(func() {
-			args = []string{"-use-redis=false", "-csv-dir", "foo/bar/baz"}
+			args = []string{"-use-redis-store=false", "-csv-dir", "foo/bar/baz"}
 		})
 
 		It("Uses the csvDir paramter to configure a CSV store", func() {
@@ -66,7 +66,7 @@ var _ = Describe("Config.WithStore", func() {
 
 	Context("When useRedis is true", func() {
 		BeforeEach(func() {
-			args = []string{"-use-redis"}
+			args = []string{"-use-redis-store"}
 		})
 
 		It("Creates a Redis store using the connection from redis.WithRedisConnection(", func() {

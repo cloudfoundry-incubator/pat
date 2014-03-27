@@ -16,6 +16,7 @@ type rw struct {
 	timeoutInSeconds int
 }
 
+const INFINITE_TIMEOUT = 0
 const DEFAULT_TIMEOUT = 60 * 5
 
 func NewRedisWorker(conn redis.Conn) Worker {
@@ -63,7 +64,7 @@ func (slave slave) Close() error {
 func slaveLoop(conn redis.Conn, worker *LocalWorker, handle string) {
 	fmt.Println("Started slave")
 	for {
-		reply, err := redis.Strings(conn.Do("BLPOP", "stop-"+handle, "tasks", 0))
+		reply, err := redis.Strings(conn.Do("BLPOP", "stop-"+handle, "tasks", INFINITE_TIMEOUT))
 
 		if len(reply) == 0 {
 			panic("Empty task, usually means connection lost, shutting down")

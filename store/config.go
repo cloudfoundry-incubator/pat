@@ -13,7 +13,7 @@ var params = struct {
 
 func DescribeParameters(config config.Config) {
 	config.StringVar(&params.csvDir, "csv-dir", "output/csvs", "Directory to Store CSVs")
-	config.BoolVar(&params.useRedis, "use-redis", false, "True if redis should be used (requires the -redis-host, -redis-port and -redis-password arguments)")
+	config.BoolVar(&params.useRedis, "use-redis-store", false, "True if redis should be used (requires the -redis-host, -redis-port and -redis-password arguments)")
 	redis.DescribeParameters(config)
 }
 
