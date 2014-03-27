@@ -21,14 +21,14 @@ func WithConfiguredWorkerAndSlaves(fn func(worker Worker) error) error {
 		return WithRedisConnection(func(conn redis.Conn) error {
 			slave := SlaveFactory(conn, configure(LocalWorkerFactory()))
 			defer slave.Close()
-			return fn(RedisWorkerFactory(conn))
+			return fn(configure(RedisWorkerFactory(conn)))
 		})
 	}
 
 	return fn(configure(LocalWorkerFactory()))
 }
 
-func configure(worker *LocalWorker) *LocalWorker {
+func configure(worker Worker) Worker {
 	workloadList := WorkloadListFactory()
 	workloadList.DescribeWorkloads(worker)
 	return worker
@@ -50,8 +50,8 @@ var RedisWorkerFactory = func(conn redis.Conn) Worker {
 	return NewRedisWorker(conn)
 }
 
-var SlaveFactory = func(conn redis.Conn, worker *LocalWorker) io.Closer {
-	return StartSlave(conn, worker)
+var SlaveFactory = func(conn redis.Conn, delegate Worker) io.Closer {
+	return StartSlave(conn, delegate)
 }
 
 var WorkloadListFactory = func() WorkloadDescriber {

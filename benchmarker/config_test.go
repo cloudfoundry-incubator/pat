@@ -47,7 +47,7 @@ var _ = Describe("Config", func() {
 		}
 
 		slaveStarted = false
-		SlaveFactory = func(conn redis.Conn, worker *LocalWorker) io.Closer {
+		SlaveFactory = func(conn redis.Conn, worker Worker) io.Closer {
 			slaveFromFactory = &dummySlave{conn, worker, false}
 			slaveStarted = true
 			return slaveFromFactory
@@ -118,6 +118,16 @@ var _ = Describe("Config", func() {
 			Ω(redisWorkerConn).Should(Equal(connectionFromFactory))
 			Ω(worker).Should(Equal(redisWorker))
 			Ω(worker).ShouldNot(Equal(localWorker))
+		})
+
+		It("Configures the worker stub with default workloads, so that -list/-validate-workloads works properly", func() {
+			var worker Worker
+			WithConfiguredWorkerAndSlaves(func(w Worker) error {
+				worker = w
+				return nil
+			})
+
+			Ω(worker.(*LocalWorker).Experiments).Should(HaveLen(4))
 		})
 
 		Context("And if it returns an error", func() {

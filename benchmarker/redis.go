@@ -16,7 +16,6 @@ type rw struct {
 	timeoutInSeconds int
 }
 
-const INFINITE_TIMEOUT = 0
 const DEFAULT_TIMEOUT = 60 * 5
 
 func NewRedisWorker(conn redis.Conn) Worker {
@@ -45,9 +44,9 @@ type slave struct {
 	conn redis.Conn
 }
 
-func StartSlave(conn redis.Conn, worker *LocalWorker) slave {
+func StartSlave(conn redis.Conn, delegate Worker) slave {
 	guid, _ := uuid.NewV4()
-	go slaveLoop(conn, worker, guid.String())
+	go slaveLoop(conn, delegate, guid.String())
 	return slave{guid.String(), conn}
 }
 
@@ -61,10 +60,10 @@ func (slave slave) Close() error {
 	return err
 }
 
-func slaveLoop(conn redis.Conn, worker *LocalWorker, handle string) {
+func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 	fmt.Println("Started slave")
 	for {
-		reply, err := redis.Strings(conn.Do("BLPOP", "stop-"+handle, "tasks", INFINITE_TIMEOUT))
+		reply, err := redis.Strings(conn.Do("BLPOP", "stop-"+handle, "tasks", 0))
 
 		if len(reply) == 0 {
 			panic("Empty task, usually means connection lost, shutting down")
@@ -78,7 +77,7 @@ func slaveLoop(conn redis.Conn, worker *LocalWorker, handle string) {
 		if err == nil {
 			parts := strings.SplitN(reply[1], " ", 2)
 			go func(experiment string, replyTo string) {
-				result := worker.Time(experiment)
+				result := delegate.Time(experiment)
 				var encoded []byte
 				encoded, err = json.Marshal(result)
 				fmt.Println("Completed slave task, replying")
