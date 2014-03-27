@@ -6,13 +6,13 @@ import (
 )
 
 type lab struct {
-	store   Store
-	running []experiment.Experiment
+	store  Store
+	loaded []experiment.Experiment
 }
 
 type Laboratory interface {
-	Run(ex Runnable) (experiment.Experiment, error)
-	RunWithHandlers(ex Runnable, fns []func(samples <-chan *experiment.Sample)) (experiment.Experiment, error)
+	Run(ex Runnable) (string, error)
+	RunWithHandlers(ex Runnable, fns []func(samples <-chan *experiment.Sample)) (string, error)
 	Visit(fn func(ex experiment.Experiment))
 	GetData(name string) ([]*experiment.Sample, error)
 }
@@ -33,36 +33,34 @@ func NewLaboratory(history Store) Laboratory {
 }
 
 func (self *lab) reload() {
-	self.running, _ = self.store.LoadAll()
+	self.loaded, _ = self.store.LoadAll()
 }
 
-func (self *lab) Run(ex Runnable) (experiment.Experiment, error) {
+func (self *lab) Run(ex Runnable) (string, error) {
 	return self.RunWithHandlers(ex, make([]func(<-chan *experiment.Sample), 0))
 }
 
-func (self *lab) RunWithHandlers(ex Runnable, additionalHandlers []func(<-chan *experiment.Sample)) (experiment.Experiment, error) {
+func (self *lab) RunWithHandlers(ex Runnable, additionalHandlers []func(<-chan *experiment.Sample)) (string, error) {
 	guid, _ := uuid.NewV4()
-	buffered := &buffered{guid.String(), make([]*experiment.Sample, 0)}
-	handlers := make([]func(<-chan *experiment.Sample), 2)
+	handlers := make([]func(<-chan *experiment.Sample), 1)
 	handlers[0] = self.store.Writer(guid.String())
-	handlers[1] = func(samples <-chan *experiment.Sample) {
-		self.buffer(buffered, samples)
-	}
 	for _, h := range additionalHandlers {
 		handlers = append(handlers, h)
 	}
 	go ex.Run(Multiplexer(handlers).Multiplex)
-	return buffered, nil
+	return guid.String(), nil
 }
 
 func (self *lab) Visit(fn func(ex experiment.Experiment)) {
-	for _, e := range self.running {
+	self.reload()
+	for _, e := range self.loaded {
 		fn(e)
 	}
 }
 
 func (self *lab) GetData(name string) ([]*experiment.Sample, error) {
-	for _, e := range self.running {
+	self.reload()
+	for _, e := range self.loaded {
 		if e.GetGuid() == name {
 			return e.GetData()
 		}

@@ -150,13 +150,13 @@ func (d *dummyLab) GetData(guid string) ([]*experiment.Sample, error) {
 	return nil, nil
 }
 
-func (d *dummyLab) Run(runnable laboratory.Runnable) (experiment.Experiment, error) {
-	return nil, nil
+func (d *dummyLab) Run(runnable laboratory.Runnable) (string, error) {
+	return "", nil
 }
 
-func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample)) (experiment.Experiment, error) {
+func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample)) (string, error) {
 	d.lastRunWith = runnable.(*experiment.RunnableExperiment)
-	return nil, nil
+	return "", nil
 }
 
 func (d *dummyLab) Visit(func(experiment.Experiment)) {

@@ -134,13 +134,19 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 			NewExperimentConfiguration(
 				pushes, concurrency, interval, stop, ctx.worker, workload)))
 
-	return ctx.router.Get("experiment").URL("name", experiment.GetGuid())
+	return ctx.router.Get("experiment").URL("name", experiment)
 }
 
 func (ctx *context) handleGetExperiment(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	name := mux.Vars(r)["name"]
-	// TODO(jz) only send back since N
 	data, err := ctx.lab.GetData(name)
+
+	if len(data) == 0 {
+		// Ensure empty array is encoded as [] rather than null
+		/// see https://groups.google.com/forum/#!topic/golang-nuts/gOHbOk8DsFw
+		data = []*Sample{}
+	}
+
 	return &listResponse{data}, err
 }
 

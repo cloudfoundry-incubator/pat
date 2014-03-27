@@ -88,6 +88,11 @@ var _ = Describe("Server", func() {
 		Ω(json["Items"]).Should(HaveLen(2))
 	})
 
+	It("Returns empty experiments as [] not null", func() {
+		json := get("/experiments/empty")
+		Ω(json["Items"]).ShouldNot(BeNil())
+	})
+
 	It("lists experiments", func() {
 		json := get("/experiments/")
 		Ω(json["Items"]).Should(HaveLen(3))
@@ -162,14 +167,14 @@ type DummyExperiment struct {
 	guid string
 }
 
-func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample)) (Experiment, error) {
+func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample)) (string, error) {
 	Fail("called unexpected dummy function")
-	return nil, nil
+	return "", nil
 }
 
-func (l *DummyLab) Run(ex Runnable) (Experiment, error) {
+func (l *DummyLab) Run(ex Runnable) (string, error) {
 	l.config = ex.(*RunnableExperiment)
-	return &DummyExperiment{"some-guid"}, nil
+	return "some-guid", nil
 }
 
 func (l *DummyLab) Visit(fn func(ex Experiment)) {

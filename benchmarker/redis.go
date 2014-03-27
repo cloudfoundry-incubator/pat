@@ -16,7 +16,7 @@ type rw struct {
 	timeoutInSeconds int
 }
 
-const DEFAULT_TIMEOUT = 60
+const DEFAULT_TIMEOUT = 60 * 5
 
 func NewRedisWorker(conn redis.Conn) Worker {
 	return NewRedisWorkerWithTimeout(conn, DEFAULT_TIMEOUT)
