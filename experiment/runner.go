@@ -127,6 +127,14 @@ func (ex *ExecutableExperiment) Execute() {
 	close(ex.iteration)
 }
 
+func clone(src map[string]Command) map[string]Command {
+	var clone = make(map[string]Command)
+	for k, v := range src {
+    	clone[k] = v
+	}
+	return clone
+}
+
 func (ex *SamplableExperiment) Sample() {
 	commands := make(map[string]Command)
 	var iterations int64
@@ -192,7 +200,7 @@ func (ex *SamplableExperiment) Sample() {
 			workers = workers + w
 		case _ = <-heartbeat.C:
 			//heatbeat for updating CLI Walltime every second	
-		}
-		ex.samples <- &Sample{commands, avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, ninetyfifthPercentile, time.Now().Sub(startTime), sampleType}
+		}		
+		ex.samples <- &Sample{clone(commands), avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, ninetyfifthPercentile, time.Now().Sub(startTime), sampleType}
 	}
 }
