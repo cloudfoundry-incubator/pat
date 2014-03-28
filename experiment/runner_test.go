@@ -129,7 +129,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			})
 			Ω(got).Should(HaveLen(1))
 			Ω(got[0].Error()).Should(Equal("Foo"))
-		})
+		})		
 
 	})
 
@@ -137,6 +137,37 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		PIt("Closes the iterationResults channel when the executorFunc has finished", func() {})
 		PIt("Runs a given number of times", func() {})
 		PIt("Uses the passed worker", func() {})
+	})
+
+	Describe("SamplableExperiment.samples", func(){
+		var (
+			maxIterations int
+			iteration     chan IterationResult
+			workers       chan int
+			quit          chan bool
+			samples       chan *Sample
+		)
+
+		BeforeEach(func() {
+			maxIterations = 3
+			iteration = make(chan IterationResult)
+			workers = make(chan int)
+			quit = make(chan bool)
+			samples = make(chan *Sample)
+			go (&SamplableExperiment{maxIterations, iteration, workers, samples, quit}).Sample()
+		})
+
+		It("saves command in a immutable map", func(){			
+			go func() {
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
+			}()
+
+			Ω((<-samples).Commands["push"].Count).Should(Equal(int64(1)))
+			Ω((<-samples).Commands["push"].Count).Should(Equal(int64(2)))
+			Ω((<-samples).Commands["push"].Count).Should(Equal(int64(3)))
+		})
 	})
 
 	Describe("Sampling", func() {
