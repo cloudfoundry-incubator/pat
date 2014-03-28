@@ -64,7 +64,11 @@ functionality and provide an example of how to use it.
 
 3) Write and test your code following the ginkgo standards
 
-4) Run all tests within the repository
+4) Install Prerequisites:
+
+ - *Redis*: e.g. `brew install redis` (using [HomeBrew](https://github.com/Homebrew/homebrew) on OSX)
+
+5) Run all tests within the repository
 
         ginkgo -r
 

@@ -1,12 +1,8 @@
 package benchmarker
 
 import (
-	"errors"
-	"strings"
 	"sync"
 	"time"
-
-	. "github.com/cloudfoundry-community/pat/workloads"
 )
 
 type StepResult struct {
@@ -17,67 +13,7 @@ type StepResult struct {
 type IterationResult struct {
 	Duration time.Duration
 	Steps    []StepResult
-	Error    error
-}
-
-type Worker interface {
-	Time(experiment string) IterationResult
-	AddWorkloadStep(workload WorkloadStep)
-	Visit(fn func(WorkloadStep))
-	Validate(name string) (result bool, err error)
-}
-
-type LocalWorker struct {
-	Experiments map[string]WorkloadStep
-}
-
-func NewWorker() *LocalWorker {
-	return &LocalWorker{make(map[string]WorkloadStep)}
-}
-
-func (self *LocalWorker) AddWorkloadStep(workload WorkloadStep) {
-	self.Experiments[workload.Name] = workload
-}
-
-func (self *LocalWorker) Time(experiment string) (result IterationResult) {
-	experiments := strings.Split(experiment, ",")
-	var start = time.Now()
-	context := make(map[string]interface{})
-	for _, e := range experiments {
-		stepTime, err := Time(func() error { return self.Experiments[e].Fn(context) })
-		result.Steps = append(result.Steps, StepResult{e, stepTime})
-		if err != nil {
-			result.Error = err
-			break
-		}
-	}
-	result.Duration = time.Now().Sub(start)
-	return
-}
-
-func (self *LocalWorker) Visit(fn func(WorkloadStep)) {
-	for _, e := range self.Experiments {
-		fn(e)
-	}
-}
-
-func (self *LocalWorker) Validate(name string) (ok bool, err error) {
-	ok = true
-	ws := strings.Split(name, ",")
-	for _, w := range ws {
-		var valid = false
-		self.Visit(func(workload WorkloadStep) {
-			if workload.Name == w {
-				valid = true
-			}
-		})
-		if !valid {
-			ok = false
-			err = errors.New(w)
-			break
-		}
-	}
-	return
+	Error    *EncodableError
 }
 
 func Time(experiment func() error) (result time.Duration, err error) {

@@ -2,10 +2,9 @@ package store
 
 import (
 	"encoding/json"
-	"fmt"
 
-	"github.com/garyburd/redigo/redis"
 	"github.com/cloudfoundry-community/pat/experiment"
+	"github.com/cloudfoundry-community/pat/redis"
 )
 
 const MAX_RESULTS = 10000
@@ -19,17 +18,8 @@ type redisExperiment struct {
 	guid       string
 }
 
-func NewRedisStore(host string, port int, password string) (*redisStore, error) {
-	r, err := redis.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
-	if err != nil {
-		return nil, err
-	}
-
-	if password != "" {
-		auth(r, password)
-	}
-
-	return &redisStore{r}, nil
+func NewRedisStore(conn redis.Conn) (*redisStore, error) {
+	return &redisStore{conn}, nil
 }
 
 func (r *redisStore) LoadAll() ([]experiment.Experiment, error) {
@@ -59,15 +49,6 @@ func (r *redisStore) Writer(guid string) func(samples <-chan *experiment.Sample)
 func push(c redis.Conn, guid string, sample *experiment.Sample) {
 	json, _ := json.Marshal(sample)
 	c.Do("RPUSH", "experiment."+guid, json)
-}
-
-func auth(c redis.Conn, password string) error {
-	if _, err := c.Do("AUTH", password); err != nil {
-		c.Close()
-		return err
-	}
-
-	return nil
 }
 
 func (r redisExperiment) GetData() ([]*experiment.Sample, error) {

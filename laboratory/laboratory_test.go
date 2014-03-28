@@ -13,8 +13,8 @@ var _ = Describe("Laboratory", func() {
 			store           *dummyStore
 			experiment1     Runnable
 			experiment2     Runnable
-			run1            Experiment
-			run2            Experiment
+			run1            string
+			run2            string
 			handlerRecieved []*Sample
 		)
 
@@ -27,6 +27,7 @@ var _ = Describe("Laboratory", func() {
 			experiment1 = &dummyExperiment{"1", []*Sample{&Sample{}}}
 			experiment2 = &dummyExperiment{"2", []*Sample{&Sample{}, &Sample{}}}
 			run1, _ = lab.Run(experiment1)
+
 			handlerRecieved = nil
 			run2, _ = lab.RunWithHandlers(experiment2, []func(<-chan *Sample){func(samples <-chan *Sample) {
 				for s := range samples {
@@ -34,39 +35,20 @@ var _ = Describe("Laboratory", func() {
 				}
 			}})
 
+			// wait for experiments to run
 			Eventually(func() int {
-				got := make([]Experiment, 0)
-				lab.Visit(func(e Experiment) {
-					got = append(got, e)
-				})
-				return len(got)
+				return len(store.stored)
 			}).Should(Equal(2))
 		})
 
-		It("lists running experiments", func() {
-			got := make([]Experiment, 0)
-			lab.Visit(func(e Experiment) {
-				got = append(got, e)
-			})
-
-			Ω(got[0]).Should(Equal(run1))
-			Ω(got[1]).Should(Equal(run2))
-		})
-
 		It("gives experiments a GUID", func() {
-			Ω(run1.GetGuid()).ShouldNot(Equal("1"))
-			Ω(run1.GetGuid()).ShouldNot(Equal(run2.GetGuid()))
+			Ω(run1).ShouldNot(Equal("1"))
+			Ω(run1).ShouldNot(Equal(run2))
 		})
 
 		It("saves running experiments to the store", func() {
-			Ω(store.store).Should(HaveLen(2))
-			Ω(store.store[run1.GetGuid()]).Should(HaveLen(3))
-			Ω(store.store[run2.GetGuid()]).Should(HaveLen(3))
-		})
-
-		It("retrieves data from a running experiment (by buffering in memory)", func() {
-			Ω(data(lab.GetData(run1.GetGuid()))).Should(HaveLen(3))
-			Ω(data(lab.GetData(run2.GetGuid()))).Should(HaveLen(3))
+			Ω(store.stored[run1]).Should(HaveLen(3))
+			Ω(store.stored[run2]).Should(HaveLen(3))
 		})
 
 		It("sends data from a running experiment to a handler function", func() {
@@ -103,11 +85,41 @@ var _ = Describe("Laboratory", func() {
 						got = append(got, e)
 					})
 					return got
-				}).Should(HaveLen(4))
+				}).Should(HaveLen(2))
 				Ω(got[0]).Should(Equal(loadedExperiment1))
 				Ω(got[1]).Should(Equal(loadedExperiment2))
-				Ω(got[2].GetGuid()).Should(Equal(run1.GetGuid()))
-				Ω(got[3].GetGuid()).Should(Equal(run2.GetGuid()))
+			})
+
+			Describe("Reloading experiments", func() {
+				var (
+					laterExperiment Experiment
+					loadedData      []*Sample
+				)
+
+				JustBeforeEach(func() {
+					loadedData = []*Sample{&Sample{}, &Sample{}}
+					laterExperiment = &dummyExperiment{"later", loadedData}
+					store.previous = append(store.previous, laterExperiment)
+
+				})
+
+				It("Loads new experiments from the store dynamically", func() {
+					var got []Experiment
+					Eventually(func() []Experiment {
+						got = make([]Experiment, 0)
+						lab.Visit(func(e Experiment) {
+							got = append(got, e)
+						})
+						return got
+					}).Should(HaveLen(3))
+
+					Ω(got[2]).Should(Equal(laterExperiment))
+					Ω(got[2].GetGuid()).Should(Equal(laterExperiment.GetGuid()))
+				})
+
+				It("Retrieves data from a reloaded experiment", func() {
+					Ω(data(lab.GetData("later"))).Should(HaveLen(len(loadedData)))
+				})
 			})
 		})
 	})
@@ -119,7 +131,7 @@ func data(s []*Sample, e error) []*Sample {
 }
 
 type dummyStore struct {
-	store    map[string][]*Sample
+	stored   map[string][]*Sample
 	previous []Experiment
 }
 
@@ -130,8 +142,9 @@ type dummyExperiment struct {
 
 func (store *dummyStore) Writer(guid string) func(samples <-chan *Sample) {
 	return func(samples <-chan *Sample) {
+		store.stored[guid] = make([]*Sample, 0)
 		for s := range samples {
-			store.store[guid] = append(store.store[guid], s)
+			store.stored[guid] = append(store.stored[guid], s)
 		}
 	}
 }

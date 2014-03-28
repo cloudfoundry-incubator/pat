@@ -17,29 +17,34 @@ var _ = Describe("Cmdline", func() {
 		args  []string
 		lab   *dummyLab
 	)
-	var workerFactory = func() (worker benchmarker.Worker) {
-		worker = benchmarker.NewWorker()
-		worker.AddWorkloadStep(workloads.Step("gcf:push", func() error { return nil }, "a"))
-		return
-	}
-	JustBeforeEach(func() {
-		flags = config.NewConfig()
-		InitCommandLineFlags(flags)
-		flags.Parse(args)
+
+	BeforeEach(func() {
+		WithConfiguredWorkerAndSlaves = func(fn func(Worker benchmarker.Worker) error) error {
+			worker := benchmarker.NewLocalWorker()
+			worker.AddWorkloadStep(workloads.Step("login", nil, "description"))
+			worker.AddWorkloadStep(workloads.Step("push", nil, "description"))
+			worker.AddWorkloadStep(workloads.Step("gcf:push", nil, "description"))
+			return fn(worker)
+		}
+
 		LaboratoryFactory = func(store laboratory.Store) (newLab laboratory.Laboratory) {
 			lab = &dummyLab{}
 			newLab = lab
 			return
 		}
+	})
+
+	JustBeforeEach(func() {
+		flags = config.NewConfig()
+		InitCommandLineFlags(flags)
+		flags.Parse(args)
 
 		BlockExit = func() {}
-
 		RunCommandLine()
 	})
 
 	Describe("When -iterations is supplied", func() {
 		BeforeEach(func() {
-			WorkerFactory = workerFactory
 			args = []string{"-iterations", "3"}
 		})
 
@@ -50,7 +55,6 @@ var _ = Describe("Cmdline", func() {
 
 	Describe("When -concurrency is supplied", func() {
 		BeforeEach(func() {
-			WorkerFactory = workerFactory
 			args = []string{"-concurrency", "3"}
 		})
 
@@ -62,12 +66,6 @@ var _ = Describe("Cmdline", func() {
 	Describe("When -workload is supplied", func() {
 		BeforeEach(func() {
 			args = []string{"-workload", "login,push"}
-			WorkerFactory = func() (worker benchmarker.Worker) {
-				worker = benchmarker.NewWorker()
-				worker.AddWorkloadStep(workloads.Step("login", func() error { return nil }, "a"))
-				worker.AddWorkloadStep(workloads.Step("push", func() error { return nil }, "a"))
-				return
-			}
 		})
 
 		It("configures the experiment with the parameter", func() {
@@ -83,14 +81,8 @@ var _ = Describe("Cmdline", func() {
 		BeforeEach(func() {
 			lab = nil
 			args = []string{"-list-workloads"}
+
 			printCalledCount = 0
-			WorkerFactory = func() (worker benchmarker.Worker) {
-				worker = benchmarker.NewWorker()
-				worker.AddWorkloadStep(workloads.Step("a", func() error { return nil }, "aa"))
-				worker.AddWorkloadStep(workloads.Step("b", func() error { return nil }, "bb"))
-				worker.AddWorkloadStep(workloads.Step("c", func() error { return nil }, "cc"))
-				return
-			}
 			PrintWorkload = func(workload workloads.WorkloadStep) {
 				printCalledCount++
 			}
@@ -104,7 +96,6 @@ var _ = Describe("Cmdline", func() {
 
 	Describe("When -interval is supplied", func() {
 		BeforeEach(func() {
-			WorkerFactory = workerFactory
 			args = []string{"-interval", "10"}
 		})
 
@@ -115,7 +106,6 @@ var _ = Describe("Cmdline", func() {
 
 	Describe("When -stop is supplied", func() {
 		BeforeEach(func() {
-			WorkerFactory = workerFactory
 			args = []string{"-stop", "11"}
 		})
 
@@ -160,13 +150,13 @@ func (d *dummyLab) GetData(guid string) ([]*experiment.Sample, error) {
 	return nil, nil
 }
 
-func (d *dummyLab) Run(runnable laboratory.Runnable) (experiment.Experiment, error) {
-	return nil, nil
+func (d *dummyLab) Run(runnable laboratory.Runnable) (string, error) {
+	return "", nil
 }
 
-func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample)) (experiment.Experiment, error) {
+func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample)) (string, error) {
 	d.lastRunWith = runnable.(*experiment.RunnableExperiment)
-	return nil, nil
+	return "", nil
 }
 
 func (d *dummyLab) Visit(func(experiment.Experiment)) {

@@ -24,7 +24,8 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		BeforeEach(func() {
 			sample1 = &Sample{}
 			sample2 = &Sample{}
-			worker = NewWorker()
+			worker = NewLocalWorker()
+
 			executorFactory := func(iterationResults chan IterationResult, errors chan error, workers chan int, quit chan bool) Executable {
 				executor = &DummyExecutor{iterationResults, workers, errors, executorFunc}
 				return executor
@@ -140,11 +141,11 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 	Describe("Sampling", func() {
 		var (
-			maxIterations int 
-			iteration chan IterationResult
-			workers   chan int
-			quit      chan bool
-			samples   chan *Sample
+			maxIterations int
+			iteration     chan IterationResult
+			workers       chan int
+			quit          chan bool
+			samples       chan *Sample
 		)
 
 		BeforeEach(func() {
@@ -179,8 +180,8 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 		It("Counts errors", func() {
 			go func() {
-				iteration <- IterationResult{0, nil, errors.New("fishfingers burnt")}
-				iteration <- IterationResult{0, nil, errors.New("toast not buttered")}
+				iteration <- IterationResult{0, nil, &EncodableError{"fishfingers burnt"}}
+				iteration <- IterationResult{0, nil, &EncodableError{"toast not buttered"}}
 			}()
 
 			Ω((<-samples).TotalErrors).Should(Equal(1))
@@ -188,36 +189,36 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		})
 
 		It("Calculates the throughput for a command", func() {
-			go func() {	
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil} 
-				iteration <- IterationResult{0, []StepResult{StepResult{Command: "list", Duration: 2 * time.Second}}, nil} 
+			go func() {
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
+				iteration <- IterationResult{0, []StepResult{StepResult{Command: "list", Duration: 2 * time.Second}}, nil}
 			}()
-				
+
 			Ω((<-samples).Commands["push"].Throughput).Should(BeNumerically("==", 1))
 			Ω((<-samples).Commands["list"].Throughput).Should(BeNumerically("==", 0.5))
 
-			go func() {	
+			go func() {
 				iteration <- IterationResult{0, []StepResult{
 					StepResult{Command: "push", Duration: 3 * time.Second},
 					StepResult{Command: "push", Duration: 2 * time.Second}},
-				 nil} 			
+					nil}
 			}()
-			
-			sample := <-samples				
+
+			sample := <-samples
 			Ω(sample.Commands["push"].Count).Should(Equal(int64(3)))
 			Ω(sample.Commands["push"].TotalTime).Should(Equal(6 * time.Second))
-			Ω(sample.Commands["push"].Throughput).Should(BeNumerically("==", 0.5))			
+			Ω(sample.Commands["push"].Throughput).Should(BeNumerically("==", 0.5))
 		})
 	})
 
 	Describe("Sampling Percentile", func() {
 		var (
-			maxIterations int 	
-			iteration chan IterationResult
-			workers   chan int
-			quit      chan bool
-			ticks     chan int
-			samples   chan *Sample
+			maxIterations int
+			iteration     chan IterationResult
+			workers       chan int
+			quit          chan bool
+			ticks         chan int
+			samples       chan *Sample
 		)
 
 		BeforeEach(func() {
@@ -230,11 +231,15 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			go (&SamplableExperiment{maxIterations, iteration, workers, samples, quit}).Sample()
 		})
 
-		It("Calculates the 95th percentile", func() {	
-			samplesToSend := []int { 2, 5, 1, 9, 12, 8, 19, 57, 33, 44, 1, 12, 43, 99, 98, 19, 34, 19, 7, 55, 23}
-			expectedPercentiles := []int { 2, 5, 5, 9, 12, 12, 19, 57, 57, 57, 57, 57, 57, 99, 99, 99, 99, 99, 99, 99, 98}
-			
-			go func() { for i := 0; i < maxIterations; i++ { iteration <- IterationResult{time.Duration(samplesToSend[i]) * time.Second, nil, nil} } }()
+		It("Calculates the 95th percentile", func() {
+			samplesToSend := []int{2, 5, 1, 9, 12, 8, 19, 57, 33, 44, 1, 12, 43, 99, 98, 19, 34, 19, 7, 55, 23}
+			expectedPercentiles := []int{2, 5, 5, 9, 12, 12, 19, 57, 57, 57, 57, 57, 57, 99, 99, 99, 99, 99, 99, 99, 98}
+
+			go func() {
+				for i := 0; i < maxIterations; i++ {
+					iteration <- IterationResult{time.Duration(samplesToSend[i]) * time.Second, nil, nil}
+				}
+			}()
 			for q := 0; q < maxIterations; q++ {
 				Ω((<-samples).NinetyfifthPercentile).Should(Equal(time.Duration(expectedPercentiles[q]) * time.Second))
 			}
@@ -243,7 +248,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 })
 
 type DummySampler struct {
-	maxIterations int
+	maxIterations    int
 	samples          chan *Sample
 	IterationResults chan IterationResult
 	Workers          chan int
