@@ -41,7 +41,6 @@ func (store *CsvStore) newCsvFile(guid string) *csvFile {
 
 func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 	f, err := os.Create(self.outputPath)
-	defer f.Close()
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Println("Creating directory, ", filepath.Dir(self.outputPath))
@@ -53,6 +52,7 @@ func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 			fmt.Println("Can't write CSV: ", err)
 		}
 	}
+	defer f.Close()
 
 	w := csv.NewWriter(f)
 	w.Write([]string{"Average", "TotalTime", "Total", "TotalErrors", "TotalWorkers", "LastResult", "WorstResult", "NinetyfifthPercentile", "WallTime", "Type"})
