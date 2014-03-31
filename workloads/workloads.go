@@ -15,7 +15,7 @@ type WorkloadStep struct {
 }
 
 type WorkloadList struct {
-	workloads []WorkloadStep
+	Workloads []WorkloadStep
 }
 
 var restContext = NewRestWorkload()
@@ -40,7 +40,7 @@ func StepWithContext(name string, fn func(map[string]interface{}) error, descrip
 }
 
 func (self *WorkloadList) DescribeWorkloads(to WorkloadAdder) {
-	for _, workload := range self.workloads {
+	for _, workload := range self.Workloads {
 		to.AddWorkloadStep(workload)
 	}
 }

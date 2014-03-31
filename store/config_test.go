@@ -25,8 +25,8 @@ var _ = Describe("Config.WithStore", func() {
 		DescribeParameters(flags)
 		args = []string{}
 
-		csvStore = NewCsvStore("/tmp/fakecsvstore")
-		redisStore = NewCsvStore("/tmp/fakeredisstore")
+		csvStore = NewCsvStore("/tmp/fakecsvstore", nil)
+		redisStore = NewCsvStore("/tmp/fakeredisstore", nil)
 		CsvStoreFactory = func(dir string) laboratory.Store {
 			csvStoreDir = dir
 			return csvStore

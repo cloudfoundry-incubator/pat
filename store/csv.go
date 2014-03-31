@@ -12,19 +12,22 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-community/pat/experiment"
+	"github.com/cloudfoundry-community/pat/workloads"
 )
 
 type CsvStore struct {
-	dir string
+	dir          string
+	workloadList *workloads.WorkloadList
 }
 
 type csvFile struct {
 	outputPath string
 	guid       string
+	commands   []string
 }
 
-func NewCsvStore(dir string) *CsvStore {
-	return &CsvStore{dir}
+func NewCsvStore(dir string, list *workloads.WorkloadList) *CsvStore {
+	return &CsvStore{dir, list}
 }
 
 func (store *CsvStore) Writer(guid string) func(samples <-chan *experiment.Sample) {
@@ -32,11 +35,17 @@ func (store *CsvStore) Writer(guid string) func(samples <-chan *experiment.Sampl
 }
 
 func (store *CsvStore) load(filename string, guid string) (experiment.Experiment, error) {
-	return &csvFile{path.Join(store.dir, filename), guid}, nil
+	return &csvFile{path.Join(store.dir, filename), guid, nil}, nil
 }
 
 func (store *CsvStore) newCsvFile(guid string) *csvFile {
-	return &csvFile{path.Join(store.dir, strconv.Itoa(int(time.Now().UnixNano()))+"-"+guid+".csv"), guid}
+	file := &csvFile{path.Join(store.dir, strconv.Itoa(int(time.Now().UnixNano()))+"-"+guid+".csv"), guid, nil}
+	store.workloadList.DescribeWorkloads(file)
+	return file
+}
+
+func (file *csvFile) AddWorkloadStep(workload workloads.WorkloadStep) {
+	file.commands = append(file.commands, workload.Name)
 }
 
 func (self *csvFile) Write(samples <-chan *experiment.Sample) {
@@ -58,21 +67,19 @@ func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 	var body []string
 	w := csv.NewWriter(f)
 
+	header = []string{"Average", "TotalTime", "Total", "TotalErrors", "TotalWorkers", "LastResult", "WorstResult", "NinetyfifthPercentile", "WallTime", "Type"}
+	for _, k := range self.commands {
+		header = append(header, "Commands|"+k+"|Count",
+			"Commands|"+k+"|Throughput",
+			"Commands|"+k+"|Average",
+			"Commands|"+k+"|TotalTime",
+			"Commands|"+k+"|LastTime",
+			"Commands|"+k+"|WorstTime")
+	}
+	w.Write(header)
+
 	for s := range samples {
 		if s.Type == experiment.ResultSample {
-
-			if len(header) == 0 {
-				header = []string{"Average", "TotalTime", "Total", "TotalErrors", "TotalWorkers", "LastResult", "WorstResult", "NinetyfifthPercentile", "WallTime", "Type"}
-				for k, _ := range s.Commands {
-					header = append(header, "Commands:"+k+":Count",
-						"Commands:"+k+":Throughput",
-						"Commands:"+k+":Average",
-						"Commands:"+k+":TotalTime",
-						"Commands:"+k+":LastTime",
-						"Commands:"+k+":WorstTime")
-				}
-				w.Write(header)
-			}
 
 			body = []string{strconv.Itoa(int(s.Average.Nanoseconds())),
 				strconv.Itoa(int(s.TotalTime.Nanoseconds())),
@@ -85,13 +92,17 @@ func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 				strconv.Itoa(int(s.WallTime)),
 				strconv.Itoa(int(s.Type))}
 
-			for k, _ := range s.Commands {
-				body = append(body, strconv.Itoa(int(s.Commands[k].Count)),
-					strconv.FormatFloat(s.Commands[k].Throughput, 'f', 8, 64),
-					strconv.Itoa(int(s.Commands[k].Average.Nanoseconds())),
-					strconv.Itoa(int(s.Commands[k].TotalTime.Nanoseconds())),
-					strconv.Itoa(int(s.Commands[k].LastTime.Nanoseconds())),
-					strconv.Itoa(int(s.Commands[k].WorstTime.Nanoseconds())))
+			for _, k := range self.commands {
+				if s.Commands[k].Count == 0 {
+					body = append(body, "", "", "", "", "", "")
+				} else {
+					body = append(body, strconv.Itoa(int(s.Commands[k].Count)),
+						strconv.FormatFloat(s.Commands[k].Throughput, 'f', 8, 64),
+						strconv.Itoa(int(s.Commands[k].Average.Nanoseconds())),
+						strconv.Itoa(int(s.Commands[k].TotalTime.Nanoseconds())),
+						strconv.Itoa(int(s.Commands[k].LastTime.Nanoseconds())),
+						strconv.Itoa(int(s.Commands[k].WorstTime.Nanoseconds())))
+				}
 			}
 
 			w.Write(body)
@@ -113,12 +124,12 @@ func (self *csvFile) GetData() (samples []*experiment.Sample, err error) {
 	}
 
 	var cmd experiment.Command
-	var keys = make(map[string]bool)
+	var cmdColumns = make(map[string]int)
 	for i, d := range decoded {
 		if i == 0 {
-			for _, s := range d {
-				if strings.HasPrefix(s, "Commands:") {
-					keys[strings.Split(s, ":")[1]] = true
+			for n, s := range d {
+				if strings.HasPrefix(s, "Commands|") {
+					cmdColumns[s] = n
 				}
 			}
 		} else {
@@ -135,16 +146,23 @@ func (self *csvFile) GetData() (samples []*experiment.Sample, err error) {
 			sample.WallTime, err = duration(d[8])
 			sample.Type = experiment.ResultSample // this is the only type we currently persist
 
-			var i = 10
-			for k, _ := range keys {
-				cmd.Count, err = i64(d[i])
-				cmd.Throughput, err = strconv.ParseFloat(d[i+1], 64)
-				cmd.Average, err = duration(d[i+2])
-				cmd.TotalTime, err = duration(d[i+3])
-				cmd.LastTime, err = duration(d[i+4])
-				cmd.WorstTime, err = duration(d[i+5])
-				sample.Commands[k] = cmd
-				i += 6
+			var cmdName string
+			for k, _ := range cmdColumns {
+				if strings.Split(k, "|")[2] != "Count" {
+					continue
+				}
+				cmdName = strings.Split(k, "|")[1]
+				cmd.Count, err = i64(d[cmdColumns["Commands|"+cmdName+"|Count"]])
+				if cmd.Count > 0 {
+					cmd.Throughput, err = strconv.ParseFloat(d[cmdColumns["Commands|"+cmdName+"|Throughput"]], 64)
+					cmd.Average, err = duration(d[cmdColumns["Commands|"+cmdName+"|Average"]])
+					cmd.TotalTime, err = duration(d[cmdColumns["Commands|"+cmdName+"|TotalTime"]])
+					cmd.LastTime, err = duration(d[cmdColumns["Commands|"+cmdName+"|LastTime"]])
+					cmd.WorstTime, err = duration(d[cmdColumns["Commands|"+cmdName+"|WorstTime"]])
+					sample.Commands[cmdName] = cmd
+				} else {
+					err = nil //reset the expected error for empty fields
+				}
 			}
 
 			if err != nil {

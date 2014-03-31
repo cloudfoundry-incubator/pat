@@ -14,6 +14,7 @@ import (
 	. "github.com/cloudfoundry-community/pat/laboratory"
 	. "github.com/cloudfoundry-community/pat/server"
 	"github.com/cloudfoundry-community/pat/store"
+	"github.com/cloudfoundry-community/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -78,7 +79,7 @@ var _ = Describe("Server", func() {
 		c := config.NewConfig()
 		InitCommandLineFlags(c)
 		c.Parse([]string{"-csv-dir", "/var/tmp/foo/bar/"})
-		csvs := store.NewCsvStore("/var/tmp/foo/bar/")
+		csvs := store.NewCsvStore("/var/tmp/foo/bar/", workloads.DefaultWorkloadList())
 		ch := make(chan *Sample)
 		go func() { ch <- &Sample{}; ch <- &Sample{}; close(ch) }()
 		csvs.Writer("1234")(ch)
