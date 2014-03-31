@@ -10,3 +10,4 @@ app = lambda do |env|
 end
 
 run app
+#$RANDOM_TEXT

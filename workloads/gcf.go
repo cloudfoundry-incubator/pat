@@ -2,7 +2,13 @@ package workloads
 
 import (
 	"errors"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nu7hatch/gouuid"
@@ -32,5 +38,40 @@ func DummyWithErrors() error {
 func Push() error {
 	guid, _ := uuid.NewV4()
 	err := Cf("push", "pats-"+guid.String(), "patsapp", "-m", "64M", "-p", "assets/hello-world").ExpectOutput("App started")
+	return err
+}
+
+func CopyAndReplaceText(srcDir string, dstDir string, searchText string, replaceText string) error {
+	return filepath.Walk(srcDir,  func(file string, info os.FileInfo, err error) error { 
+		if err != nil { return err} 
+		pathTail := strings.SplitAfter(file, srcDir)[1]
+		if info.IsDir() {
+			err = os.Mkdir(path.Join(dstDir, pathTail), 0777)
+			if err != nil { return err }
+		} else if info.Mode().IsRegular() {
+			input, err := ioutil.ReadFile(file)
+			if err != nil { return err }
+			inputString := strings.Replace(string(input), searchText, replaceText, -1)
+			input = []byte(inputString)
+			output, err := os.Create(path.Join(dstDir, pathTail))
+			if err != nil { return err }
+			defer output.Close()
+			output.Write(input)
+		}
+		return err
+	})
+} 
+
+func GenerateAndPush() error {
+	guid, _ := uuid.NewV4()
+	srcDir := path.Join("assets", "hello-world")
+	rand.Seed(time.Now().UTC().UnixNano())
+	salt := strconv.FormatInt(rand.Int63(), 10)
+	dstDir := path.Join(os.TempDir(), salt)
+	defer os.RemoveAll(dstDir)
+	err := CopyAndReplaceText(srcDir, dstDir, "$RANDOM_TEXT", salt)
+	if err != nil { return err }
+
+	err = Cf("push", "pats-"+guid.String(), "patsapp", "-m", "64M", "-p", dstDir).ExpectOutput("App started")
 	return err
 }
