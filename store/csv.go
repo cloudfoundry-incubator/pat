@@ -112,10 +112,18 @@ func (self *csvFile) GetData() (samples []*experiment.Sample, err error) {
 		return nil, err
 	}
 
+	var cmd experiment.Command
+	var keys = make(map[string]bool)
 	for i, d := range decoded {
 		if i == 0 {
+			for _, s := range d {
+				if strings.HasPrefix(s, "Commands:") {
+					keys[strings.Split(s, ":")[1]] = true
+				}
+			}
 		} else {
 			sample := &experiment.Sample{}
+			sample.Commands = make(map[string]experiment.Command)
 			sample.Average, err = duration(d[0])
 			sample.TotalTime, err = duration(d[1])
 			sample.Total, err = i64(d[2])
@@ -126,6 +134,18 @@ func (self *csvFile) GetData() (samples []*experiment.Sample, err error) {
 			sample.NinetyfifthPercentile, err = duration(d[7])
 			sample.WallTime, err = duration(d[8])
 			sample.Type = experiment.ResultSample // this is the only type we currently persist
+
+			var i = 10
+			for k, _ := range keys {
+				cmd.Count, err = i64(d[i])
+				cmd.Throughput, err = strconv.ParseFloat(d[i+1], 64)
+				cmd.Average, err = duration(d[i+2])
+				cmd.TotalTime, err = duration(d[i+3])
+				cmd.LastTime, err = duration(d[i+4])
+				cmd.WorstTime, err = duration(d[i+5])
+				sample.Commands[k] = cmd
+				i += 6
+			}
 
 			if err != nil {
 				return nil, err

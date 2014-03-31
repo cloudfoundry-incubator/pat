@@ -72,7 +72,7 @@ var _ = Describe("Csv Store", func() {
 			samples, err := ex[0].GetData()
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(samples[0]).Should(Equal(&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample}))
+			Ω(samples[0]).Should(Equal(&experiment.Sample{commands, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample}))
 		})
 
 		It("Does not save error text, to avoid huge files", func() {
