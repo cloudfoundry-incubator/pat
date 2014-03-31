@@ -21,9 +21,9 @@ describe("The view", function() {
 
   describe("showThroughput()", function() {
     it("shows throughput graph and hides others when called", function() {
-      v.showThroughput()
-      expect( d3_throughput.display() ).toBe("block")
-      expect( d3_workload.display() ).toBe("none")
+      v.showThroughput()      
+      expect( $(d3_throughput.node).css('display') ).toBe("block")
+      expect( $(d3_workload.node).css('display') ).toBe("none")
     })
 
     it("sets throughputVisible to true", function() {
@@ -35,8 +35,8 @@ describe("The view", function() {
   describe("showWorkload()", function() {
     it("shows workload graph and hides others when called", function() {
       v.showWorkload()
-      expect( d3_throughput.display() ).toBe("none")
-      expect( d3_workload.display() ).toBe("block")
+      expect( $(d3_throughput.node).css('display') ).toBe("none")
+      expect( $(d3_workload.node).css('display') ).toBe("block")
     })
 
     it("sets workloadVisible to true", function() {
@@ -158,25 +158,59 @@ describe("DOM elements manipulation", function(){
 
   it("hides the graph node when hideContent() is used", function(){
     throughput.changeState(dom.showGraph)
-    expect( d3_throughput.display() ).toBe("block")
+    expect( $(d3_throughput.node).css('display') ).toBe("block")
     throughput.changeState(dom.hideContent)
-    expect( d3_throughput.display() ).toBe("none")
+    expect( $(d3_throughput.node).css('display') ).toBe("none")
   })
   
   it("hides current graph when a new graph is swapped into view", function(){
     workload.changeState(dom.showGraph)
-    expect( d3_workload.display() ).toBe("block")
+    expect( $(d3_workload.node).css('display') ).toBe("block")
     throughput.changeState(dom.contentIn)
-    expect( d3_throughput.display() ).toBe("block")
-    expect( d3_workload.display() ).toBe("none")
+    expect( $(d3_throughput.node).css('display') ).toBe("block")
+    expect( $(d3_workload.node).css('display') ).toBe("none")
   })
 
 })
 
 describe("Throughput chart", function() {  
+  const margin = {top: 50, right: 30, bottom: 30, left: 30};
   var chart = d3_throughput.init(document.getElementById("target"));
+  var svgWidth = $(document.getElementById("target")).width() - margin.left - margin.right
+  var svgHeight = $(document.getElementById("target")).height() - margin.top - margin.bottom
 
-  it("should draw a bar for each command in a workload", function() {
+  it("should draw a line to go through points based on the throughput", function() {
+    var workload = [{ Commands: { "login": {"Count": 1, "Throughput": 0.5}}}, 
+                    { Commands: { "login": {"Count": 2, "Throughput": 0.3}}},
+                    { Commands: { "login": {"Count": 3, "Throughput": 0.6}}}];
+
+    var scaleX = d3.scale.linear().domain([0, workload.length]).range([0, svgWidth]);
+    var scaleY = d3.scale.linear().domain([0.6, 0]).range([0, svgHeight]);
+
+    chart(workload);
+
+    var paths = $(d3_throughput.node).find("path.line")[0].getAttribute("d")
+    var point1 = scaleX(1) + "," + scaleY(0.5)
+    var point2 = scaleX(2) + "," + scaleY(0.3)
+    var point3 = scaleX(3) + "," + scaleY(0.6)
+    expect(paths).toContain(point1);
+    expect(paths).toContain(point2);
+    expect(paths).toContain(point3);
+  })
+
+  it("should draw a line for each command in a workload", function() {
+    var workload = [{ Commands: {
+        "login": {"Throughput": 0.5}, 
+        "push": {"Throughput": 0.1},
+        "list": {"Throughput": 0.3}
+      } }];
+
+    chart(workload);
+    
+    expect( $(d3_throughput.node).find("path.line").length ).toBe(3);
+  })
+
+  it("should draw with a different color for each command", function() {
     var workload = [{ Commands: {
         "login": {"Throughput": 0.5}, 
         "push": {"Throughput": 0.1},
@@ -185,18 +219,55 @@ describe("Throughput chart", function() {
 
     chart(workload);
 
-    expect( d3_throughput.totalBars() ).toBe(3);
+    var color1 = $(d3_throughput.node).find("path.line")[0].style.stroke
+    var color2 = $(d3_throughput.node).find("path.line")[1].style.stroke
+    var color3 = $(d3_throughput.node).find("path.line")[2].style.stroke
+    
+    expect (color1).not.toEqual(color2)
+    expect (color1).not.toEqual(color3)
+    expect (color2).not.toEqual(color3)
   })
 
-  it("should show the maximum command throughput in seconds in the x-axis", function() {
+  it("should show the maximum command throughput in seconds in the y-axis", function() {
     var workload = [{ Commands: {
         "login": {"Throughput": 0.5}, 
-        "push": {"Throughput": 0.1},
+        "push": {"Throughput": 0.3},
         "list": {"Throughput": 0.9}
       } }];
     chart(workload);
 
-    expect( d3_throughput.xAxisMax() ).toBe(0.9);
+    var tickSize = 0;
+    var tickMax = 0; 
+    var ticks = $(d3_throughput.node).find(".y.axis text");
+
+    for (var i =0; i < ticks.length; i++) {
+      if (parseFloat(ticks[i].innerHTML) > tickMax) {        
+        tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
+        tickMax = parseFloat(ticks[i].innerHTML);
+      } 
+    }
+
+    expect( tickMax ).toBeCloseTo(0.9, tickSize);
+  });  
+
+  it("should show the number of iteration in the x-axis", function() {
+    var workload = [{ Commands: {"login": {"Throughput": 0.5}} },
+                    { Commands: {"login": {"Throughput": 0.5}} },
+                    { Commands: {"login": {"Throughput": 0.5}} }];
+    chart(workload);
+
+    var tickSize = 0;
+    var tickMax = 0; 
+    var ticks = $(d3_throughput.node).find(".x.axis text");
+    
+    for (var i =0; i < ticks.length; i++) {
+      if (parseFloat(ticks[i].innerHTML) > tickMax) {        
+        tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
+        tickMax = parseFloat(ticks[i].innerHTML);
+      } 
+    }
+
+    expect( tickMax ).toBeCloseTo(3, tickSize);
   });    
 
 })
@@ -204,6 +275,7 @@ describe("Throughput chart", function() {
 describe("Bar chart", function() {
   const sec = 1000000000;
   const gap = 1;
+  const margin = {top: 50, right: 40, bottom: 30, left: 30};
 
   var barWidth = 30;
   var chart = d3_workload.init(document.getElementById("target"));
@@ -215,7 +287,8 @@ describe("Bar chart", function() {
     }
     chart(data);        
     
-    expect( d3_workload.totalBars() ).toBe(3);
+    var totalBars = $( d3_workload.node ).find("rect.bar").length;
+    expect( totalBars ).toBe(3);
   });
 
   it("should show the maximum LastResult in seconds in the y-axis", function() {
@@ -227,7 +300,18 @@ describe("Bar chart", function() {
     }    
     chart(data);
 
-    expect( d3_workload.yAxisMax() ).toBe(10);
+    var tickSize = 0;
+    var tickMax = 0; 
+    var ticks = $(d3_workload.node).find(".y.axis text");
+    
+    for (var i =0; i < ticks.length; i++) {
+      if (parseFloat(ticks[i].innerHTML) > tickMax) {        
+        tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
+        tickMax = parseFloat(ticks[i].innerHTML);
+      } 
+    }
+
+    expect( tickMax ).toBeCloseTo(10, tickSize);   
   });
 
   it("should show error by drawing the bar in the color brown with the CSS class 'error'", function() {
@@ -249,7 +333,7 @@ describe("Bar chart", function() {
     
   it("should auto-pan to the left when new data is drawn outside of the viewable area", function() {
     var data = [];
-    var viewableWidth = d3_workload.chartAreaWidth();
+    var viewableWidth = $(d3_workload.node).width() - margin.left - margin.right;
     
     var max_data = parseInt(viewableWidth / (barWidth + gap));    
     for (var i = 1; i <= max_data; i ++) {
@@ -259,7 +343,7 @@ describe("Bar chart", function() {
     
     waits(500);
     runs(function () {
-      expect(parseInt(getTranslateX(d3.select( d3_workload.chartArea() )))).toBe(0);         
+      expect(parseInt(getTranslateX(d3.select( d3_workload.chartArea() )))).toBe(0);               
     }, 500);
 
     var extra_data = 5;
@@ -279,7 +363,7 @@ describe("Bar chart", function() {
 
   it("should auto-pan back into view if the chart is panned out of the viewable area", function() {
     var data = [];    
-    var viewableWidth = d3_workload.chartAreaWidth();
+    var viewableWidth = $(d3_workload.node).width() - margin.left - margin.right;
 
     var interval = setInterval(function() {
       data.push( {"LastResult" : 5} );

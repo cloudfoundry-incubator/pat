@@ -1,8 +1,7 @@
 d3_throughput = function() {
-  const barWidth = 30;
   var margin = {top: 50, right: 30, bottom: 30, left: 30};  
   var svgWidth, svgHeight, jqObj, d3Obj, drawArea;
-  var x, y, xAxis, yAxis, svg, outerBody, graphBox;
+  var x, y, xAxis, yAxis, svg, graphBox;
 
   var d3Graph = document.createElement('div');
   d3Graph.width = "100%";
@@ -17,13 +16,18 @@ d3_throughput = function() {
     svgWidth = jqObj.width() - margin.left - margin.right;
     svgHeight = jqObj.height() - margin.top - margin.bottom;
     x = d3.scale.linear().range([0, svgWidth], 1);
-    y = d3.scale.linear().range([0, svgHeight], 1);
+    y = d3.scale.linear().domain([1,0]).range([0, svgHeight], 1);
     color = d3.scale.category10();
 
     xAxis = d3.svg.axis()
       .scale(x)
       .orient("bottom")
+      .tickFormat(d3.format("d"))
       .tickSize(-svgHeight);  
+    yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("left")      
+      .tickSize(-svgWidth);  
 
     el.appendChild(d3Graph);
 
@@ -35,39 +39,46 @@ d3_throughput = function() {
       .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    outerBody = svg.append("g");
-
     svg.append("defs").append("clipPath")
-      .attr("id", "throughputclip2132")
+      .attr("id", "throughputclip")
     .append("rect")
       .attr("x", 0)
-      .attr("y", 0)
-      .attr("width", svgWidth)
-      .attr("height", svgHeight);
+      .attr("y", -3)
+      .attr("width", svgWidth + 3)
+      .attr("height", svgHeight + 3);
+
+    svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + svgHeight + ")")
+      .call(xAxis);
+    svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)  
 
     var chartBody = svg.append("g")
-      .attr("clip-path", "url(#" + "throughputclip");    
+      .attr("clip-path", "url(#" + "throughputclip)");    
     chartBody.append("rect")
       .attr("width","100%")
       .attr("height","100%")
       .attr("style","fill:none;pointer-events: all;");
 
-    outerBody.append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + svgHeight + ")");
-
     graphBox = chartBody.append("g")
       .attr("transform", "translate(0,0)");  
     svg.append("text")
-      .attr("x", svgWidth - 60)
+      .attr("x", svgWidth - 15)
       .attr("y", svgHeight + 25)
-      .text("throughput / sec")
-      .attr("text-anchor","middle");
+      .text("Iterations")
+      .attr("text-anchor","end");
+    svg.append("text")
+      .attr("x", 50)
+      .attr("y", -svgWidth - 10)
+      .attr("transform", "rotate(90)")
+      .text("Command Throughput / sec")
     svg.append("text")
       .attr("x", svgWidth / 2)
-      .attr("y", -20)
-      .text("Commands Throughput / sec")
-      .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");   
+      .attr("y", -10)
+      .text("Command Throughput")
+      .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");        
 
     drawArea = graphBox.node();  
   } //end initDOM
@@ -76,58 +87,78 @@ d3_throughput = function() {
   var drawGraph = function(data) {
     if (!data[0]) return;
 
-    var cmds = flattenJSON(data);
-    color.domain(cmds.map(function (d) { return d.cmd; }));
+    var commands = flattenJSON(data); 
+    var lineChart = graphBox.selectAll("path.line").data(commands)
+    var legend = graphBox.selectAll("g.tplegend").data(commands)    
+    
+    color.domain(commands.map(function (d) { return d.cmd; }));
+    
+    y = y.domain( [findMaxThroughput(commands), 0] );
+    x = x.domain([0, commands[0].throughput.length -1]).range([0, svgWidth]);
+    svg.select(".x.axis").call(xAxis);
+    svg.select(".y.axis").call(yAxis);
 
-    var len = cmds.length;
-    y = y.domain( [1, len, 1] ).range([barWidth + 1, len * (barWidth + 1)]);
-    x = x.domain([0, d3.max(cmds, function(d) { return d.throughput } )]).range([0, svgWidth]);
-    var bars = graphBox.selectAll("rect.bar").data(cmds);
-    var labels = graphBox.selectAll("text").data(cmds);
+    var line = d3.svg.line()    
+      .interpolate("monotone")
+      .x(function(d, i) { return x(i) })
+      .y(function(d) { return y(d) })    
 
-    bars.transition()
-      .attr("x", x(0))
-      .attr("y", function(d, i) { return y(i) + 10 } )  
-      .attr("width", function(d) { return x(d.throughput) } );
+    lineChart.transition()
+      .attr("class", "line")
+      .attr("d", function(d) {return line(d.throughput); })
+      .style("stroke", function (d) { return color(d.cmd) })      
+      
+    lineChart.enter()
+      .append("path")
+        .attr("class", "line")
+        .attr("d", function(d, i) {return line(d.throughput); })
+        .style("stroke", function (d) { return color(d.cmd) })  
 
-    labels.transition()
-      .attr("x", function(d) { return x(d.throughput) - 20} )
-      .attr("y", function(d, i) { return y(i) + (barWidth / 2 ) + 4 } )
-      .text(function(d){ return (d.cmd + ": " + d.throughput.toFixed(3) + " / sec") });
-
-    bars.enter()
-      .append("rect")
-        .attr("x", x(0) )  
-        .attr("y", function(d, i) { return y(i) + 10 })        
-        .attr("width", function(d) { return x(d.throughput) } )
-        .attr("height", barWidth)
-        .attr("class", "bar")
-        .style("fill", function (d) { return color(d.cmd) })
-      .transition()        
-        .duration(1000)
-        .attr("y", function(d, i) { return y(i) + 10 })        
-        .attr("width", function(d) { return x(d.throughput) } )
-
-    bars.enter()
-      .append("text")
-        .attr("x", function(d) { return x(d.throughput) -20 })
-        .attr("y", function(d, i) { return y(i) + (barWidth / 2 ) + 4 } )
-        .attr("dy", ".7em")
-        .text(function(d){ return (d.cmd + ": " + d.throughput.toFixed(3) + " / sec") })
-        .attr("style", "text-anchor: end; font-size: 12pt; fill: #fff")       
-
-    outerBody.select(".x.axis").call(xAxis);   
-
-    bars.exit().remove();   
-    labels.exit().remove();     
+    var l = legend.enter()
+      .append("g")
+        .attr("class", "tplegend")
+    
+    l.append("rect")
+      .attr("x", 30)
+      .attr("y", function(d, i) { return i * 15 + 2} )
+      .attr("height", 10)
+      .attr("width", 55)
+      .attr("fill", function(d) { return color(d.cmd) })
+    l.append("text")
+      .attr("x", 90 )
+      .attr("y", function(d, i) { return i * 15 + 3 } )
+      .attr("dy", ".7em")
+      .attr("stroke", function(d) { return color(d.cmd) })
+      .attr("stroke-width", "1px")
+      .attr("style", "text-anchor: start;")
+      .text(function(d){ return d.cmd })
+      
+    lineChart.exit().remove();
+    legend.exit().remove();    
 
     function flattenJSON(data) {
-      var cmds = [];
-      for (var command in data[data.length - 1].Commands) {
-        cmds.push({"cmd": command, "throughput": data[data.length - 1].Commands[command].Throughput})
+      var list = [];
+      var throughput
+      for (var k in data[0].Commands) {
+        throughput = [0];
+        data.forEach(function(d){
+          throughput.push(d.Commands[k].Throughput)
+        })
+        list.push({"cmd": k, "throughput": throughput})
       }
-      return cmds;
+        
+      return list
     }  
+
+    function findMaxThroughput(data) {
+      var max = 0;
+      data.forEach(function(row){
+        row.throughput.forEach(function(d){
+          if (d > max) max = d
+        })
+      })
+      return max
+    }
 
   } //end drawGraph
 
@@ -142,9 +173,7 @@ d3_throughput = function() {
       return drawGraph;
     },
     changeState: changeState,
-    totalBars: function() { return $(d3Graph).find("rect.bar").length },
-    xAxisMax: function() { return xAxis.scale().domain()[1] },
-    display: function() { return $(d3Graph).css('display') },
+    node: d3Graph    
   } //end return
 
 }()

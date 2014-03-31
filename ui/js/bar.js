@@ -1,9 +1,9 @@
 d3_workload = function() {
   const barWidth = 30,
-        clipMarginRight = 40;
+        clipMarginRight = 0;
 
-  var margin = {top: 50, right: 30, bottom: 30, left: 30};
-  var svgWidth, svgHeight, jqObj, d3Obj, drawArea, drawBoxWidth;
+  var margin = {top: 50, right: 40, bottom: 30, left: 30};
+  var svgWidth, svgHeight, jqObj, d3Obj, drawArea;
   var x, y, xAxis, yAxis, svg, outerBody, barCon;
 
   var d3Graph = document.createElement('div');
@@ -26,8 +26,8 @@ d3_workload = function() {
       .ticks(0);
     yAxis = d3.svg.axis()
       .scale(y)
-      .orient("right")
-      .tickSize(-svgWidth + 30);
+      .orient("left")
+      .tickSize(svgWidth);
     zoom = d3.behavior.zoom()
       .x(x)
       .scaleExtent([1, 10])
@@ -46,14 +46,13 @@ d3_workload = function() {
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     outerBody = svg.append("g");
-
-    drawBoxWidth = parseInt(svgWidth - clipMarginRight);
+    
     svg.append("defs").append("clipPath")
-      .attr("id", "workloadclip6235")
+      .attr("id", "workloadclip")
     .append("rect")
       .attr("x", 0)
       .attr("y", 0)
-      .attr("width", drawBoxWidth)
+      .attr("width", svgWidth)
       .attr("height", svgHeight + 30);
 
     var chartBody = svg.append("g")
@@ -70,7 +69,7 @@ d3_workload = function() {
       .attr("transform", "translate(0," + svgHeight + ")");
     outerBody.append("g")
       .attr("class", "y axis")
-      .attr("transform", "translate(" + (svgWidth - 20) + ", 0)");
+      .attr("transform", "translate(" + (svgWidth - 0) + ", 0)");
 
     barCon = chartBody.append("g")    
       .attr("transform", "translate(0,0)");
@@ -123,9 +122,9 @@ d3_workload = function() {
         .attr("class", "bar")
         .attr("data-shift", function(){
             var bodyWidth = len * (barWidth + 1);
-            if (bodyWidth + getTranslateX(barCon) > drawBoxWidth) {
-              transformChart(barCon, drawBoxWidth - bodyWidth  - 25, 0);
-              zoom = adjustZoomX(zoom, drawBoxWidth - bodyWidth  - 25, bodyWidth);
+            if (bodyWidth + getTranslateX(barCon) > svgWidth) {
+              transformChart(barCon, svgWidth - bodyWidth  - 25, 0);
+              zoom = adjustZoomX(zoom, svgWidth - bodyWidth  - 25, bodyWidth);
             }
         })
       .transition()
@@ -158,11 +157,11 @@ d3_workload = function() {
     var barsPan = getTranslateX(barCon);
 
     if (bodyWidth + barsPan <= 0 && bodyWidth > 0) {
-      transformChart(barCon, ( 0 - bodyWidth) + drawBoxWidth / 3, 0);
-      zoom = adjustZoomX(zoom, ((0 - bodyWidth) + drawBoxWidth / 3), bodyWidth);
-    } else if (barsPan > drawBoxWidth) {
-      transformChart(barCon, drawBoxWidth - (drawBoxWidth / 3), 0);
-      zoom = adjustZoomX(zoom, drawBoxWidth - (drawBoxWidth / 3), bodyWidth);
+      transformChart(barCon, ( 0 - bodyWidth) + svgWidth / 3, 0);
+      zoom = adjustZoomX(zoom, ((0 - bodyWidth) + svgWidth / 3), bodyWidth);
+    } else if (barsPan > svgWidth) {
+      transformChart(barCon, svgWidth - (svgWidth / 3), 0);
+      zoom = adjustZoomX(zoom, svgWidth - (svgWidth / 3), bodyWidth);
     }
   }
 
@@ -217,12 +216,8 @@ d3_workload = function() {
       return drawGraph;
     },
     node: d3Graph,
-    changeState: changeState,
-    totalBars: function() { return $(d3Graph).find("rect.bar").length },
-    yAxisMax: function() { return yAxis.scale().domain()[0] },
-    chartAreaWidth: function() { return drawBoxWidth },
-    chartArea: function(){ return drawArea },
-    display: function() { return $(d3Graph).css('display') },
+    changeState: changeState,                
+    chartArea: function(){ return drawArea }    
   }
 
 }()
