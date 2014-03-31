@@ -127,9 +127,9 @@ func (self *csvFile) GetData() (samples []*experiment.Sample, err error) {
 	var cmdColumns = make(map[string]int)
 	for i, d := range decoded {
 		if i == 0 {
-			for n, s := range d {
+			for _, s := range d {
 				if strings.HasPrefix(s, "Commands|") {
-					cmdColumns[s] = n
+					keys[strings.Split(s, "|")[1]] = true
 				}
 			}
 		} else {
