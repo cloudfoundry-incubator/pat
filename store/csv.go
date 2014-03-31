@@ -54,12 +54,27 @@ func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 	}
 	defer f.Close()
 
+	var header []string
+	var body []string
 	w := csv.NewWriter(f)
-	w.Write([]string{"Average", "TotalTime", "Total", "TotalErrors", "TotalWorkers", "LastResult", "WorstResult", "NinetyfifthPercentile", "WallTime", "Type"})
 
 	for s := range samples {
 		if s.Type == experiment.ResultSample {
-			w.Write([]string{strconv.Itoa(int(s.Average.Nanoseconds())),
+
+			if len(header) == 0 {
+				header = []string{"Average", "TotalTime", "Total", "TotalErrors", "TotalWorkers", "LastResult", "WorstResult", "NinetyfifthPercentile", "WallTime", "Type"}
+				for k, _ := range s.Commands {
+					header = append(header, "Commands:"+k+":Count",
+						"Commands:"+k+":Throughput",
+						"Commands:"+k+":Average",
+						"Commands:"+k+":TotalTime",
+						"Commands:"+k+":LastTime",
+						"Commands:"+k+":WorstTime")
+				}
+				w.Write(header)
+			}
+
+			body = []string{strconv.Itoa(int(s.Average.Nanoseconds())),
 				strconv.Itoa(int(s.TotalTime.Nanoseconds())),
 				strconv.Itoa(int(s.Total)),
 				strconv.Itoa(int(s.TotalErrors)),
@@ -68,7 +83,18 @@ func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 				strconv.Itoa(int(s.WorstResult.Nanoseconds())),
 				strconv.Itoa(int(s.NinetyfifthPercentile.Nanoseconds())),
 				strconv.Itoa(int(s.WallTime)),
-				strconv.Itoa(int(s.Type))})
+				strconv.Itoa(int(s.Type))}
+
+			for k, _ := range s.Commands {
+				body = append(body, strconv.Itoa(int(s.Commands[k].Count)),
+					strconv.FormatFloat(s.Commands[k].Throughput, 'f', 8, 64),
+					strconv.Itoa(int(s.Commands[k].Average.Nanoseconds())),
+					strconv.Itoa(int(s.Commands[k].TotalTime.Nanoseconds())),
+					strconv.Itoa(int(s.Commands[k].LastTime.Nanoseconds())),
+					strconv.Itoa(int(s.Commands[k].WorstTime.Nanoseconds())))
+			}
+
+			w.Write(body)
 			w.Flush()
 		}
 	}
