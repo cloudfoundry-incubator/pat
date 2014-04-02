@@ -154,6 +154,18 @@ The following options are available:
 - `dummy` - an empty workload that can be used when a CF environment is not available.
 - `dummyWithErrors` - an empty workload that generates errors. This can be used when a CF environment is not available.
 
+Using Redis to create a cluster of PAT workers
+=====================================
+
+Pat supports shipping workload to multiple instances using redis. This simple example starts four pat instances on the local computer which all communicate to run a workload.
+
+    cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    redis-server redis/redis.conf # start up with in-memory only db config, good for testing, replace with a real config and change ports for real use
+    VCAP_APP_PORT=8080 go run main.go -use-redis-worker=true -server -redis-port=63798 -redis-host=127.0.0.1 -redis-password=p4ssw0rd -use-redis-store # instance 1
+    VCAP_APP_PORT=8081 go run main.go -use-redis-worker=true -server -redis-port=63798 -redis-host=127.0.0.1 -redis-password=p4ssw0rd -use-redis-store # instance 2
+    VCAP_APP_PORT=8082 go run main.go -use-redis-worker=true -server -redis-port=63798 -redis-host=127.0.0.1 -redis-password=p4ssw0rd -use-redis-store # instance 3
+    VCAP_APP_PORT=8083 go run main.go -use-redis-worker=true -server -redis-port=63798 -redis-host=127.0.0.1 -redis-password=p4ssw0rd -use-redis-store # instance 4
+
 
 Using a Configuration file
 =====================================
