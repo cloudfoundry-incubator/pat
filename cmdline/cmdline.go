@@ -23,11 +23,6 @@ var params = struct {
 	stop          int
 }{}
 
-type WorkloadList interface {
-	DescribeParameters(config config.Config)
-	DescribeWorkloads(worker workloads.WorkloadAdder)
-}
-
 func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
 	config.IntVar(&params.concurrency, "concurrency", 1, "max number of pushes to attempt in parallel")

@@ -21,6 +21,7 @@ var _ = Describe("Config", func() {
 		redisWorker           Worker
 		slaveFromFactory      *dummySlave
 		slaveStarted          bool
+		workloadList          *dummyDescriberWithThreeWorkloads
 	)
 
 	BeforeEach(func() {
@@ -53,13 +54,21 @@ var _ = Describe("Config", func() {
 			return slaveFromFactory
 		}
 
+		workloadList = &dummyDescriberWithThreeWorkloads{}
 		WorkloadListFactory = func() WorkloadDescriber {
-			return &dummyDescriberWithThreeWorkloads{}
+			return workloadList
 		}
 	})
 
 	JustBeforeEach(func() {
 		flags.Parse(args)
+	})
+
+	Describe("DescribeParameters", func() {
+		It("asks the workload list to describe parameters", func() {
+			DescribeParameters(flags)
+			Ω(workloadList.wasAskedToDescribeParameters).Should(Equal(flags))
+		})
 	})
 
 	Context("When -use-redis-worker is not set", func() {
@@ -173,10 +182,16 @@ func (d *dummySlave) Close() error {
 	return nil
 }
 
-type dummyDescriberWithThreeWorkloads struct{}
+type dummyDescriberWithThreeWorkloads struct {
+	wasAskedToDescribeParameters config.Config
+}
 
 func (dummyDescriberWithThreeWorkloads) DescribeWorkloads(worker workloads.WorkloadAdder) {
 	worker.AddWorkloadStep(workloads.Step("a", nil, "desc"))
 	worker.AddWorkloadStep(workloads.Step("b", nil, "desc"))
 	worker.AddWorkloadStep(workloads.Step("c", nil, "desc"))
+}
+
+func (d *dummyDescriberWithThreeWorkloads) DescribeParameters(config config.Config) {
+	d.wasAskedToDescribeParameters = config
 }
