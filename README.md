@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/cloudfoundry-community/pat.svg?branch=master)](https://travis-ci.org/cloudfoundry-community/pat)
+
 PAT (Performance Acceptance Tests)
 ==================================
 The goal of this project is to create a super-simple load generation/performance testing framework for quickly and easily running load against Cloud Foundry. The tool has both a command line UI, for running quickly during a build and a web UI for tracking longer-running tests.
