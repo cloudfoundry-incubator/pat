@@ -4,6 +4,7 @@ import (
 	"github.com/cloudfoundry-community/pat/config"
 	"github.com/cloudfoundry-community/pat/laboratory"
 	"github.com/cloudfoundry-community/pat/redis"
+	"github.com/cloudfoundry-community/pat/workloads"
 )
 
 var params = struct {
@@ -41,5 +42,5 @@ var RedisStoreFactory = func(conn redis.Conn) (laboratory.Store, error) {
 }
 
 var CsvStoreFactory = func(dir string) laboratory.Store {
-	return NewCsvStore(dir)
+	return NewCsvStore(dir, workloads.DefaultWorkloadList())
 }

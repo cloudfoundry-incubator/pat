@@ -10,6 +10,7 @@ import (
 
 	"github.com/cloudfoundry-community/pat/experiment"
 	. "github.com/cloudfoundry-community/pat/store"
+	"github.com/cloudfoundry-community/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -23,19 +24,26 @@ var _ = Describe("Csv Store", func() {
 
 	Describe("CsvFile", func() {
 		var (
-			dir    string
-			store  *CsvStore
-			output string
+			dir      string
+			store    *CsvStore
+			output   string
+			commands map[string]experiment.Command
 		)
 
 		JustBeforeEach(func() {
 			dir = "/var/tmp/test-output/csvstore"
 			os.RemoveAll(dir)
-			store = NewCsvStore(dir)
+			testList := []workloads.WorkloadStep{
+				workloads.Step("boo", func() error { return nil }, "a"),
+			}
+			store = NewCsvStore(dir, &workloads.WorkloadList{testList})
 			writer := store.Writer("foo")
+			commands = make(map[string]experiment.Command)
+			cmd := experiment.Command{1, 0.5, 2, 3, 4, 5}
+			commands["boo"] = cmd
 			write(writer, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 7, 2, experiment.ResultSample},
+				&experiment.Sample{commands, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
+				&experiment.Sample{commands, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 7, 2, experiment.ResultSample},
 			})
 			files, err := ioutil.ReadDir(dir)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -51,13 +59,9 @@ var _ = Describe("Csv Store", func() {
 			Ω(strings.Split(output, "\n")[2]).Should(ContainSubstring("9,8,7,6"))
 		})
 
-		It("Includes all fields, except LastError and Commands", func() {
+		It("Includes all fields, except LastError", func() {
 			meta := reflect.ValueOf(experiment.Sample{}).Type()
 			for i := 0; i < meta.NumField(); i++ {
-				if meta.Field(i).Name == "Commands" {
-					continue
-				}
-
 				if meta.Field(i).Name == "LastError" {
 					continue
 				}
@@ -72,7 +76,7 @@ var _ = Describe("Csv Store", func() {
 			samples, err := ex[0].GetData()
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(samples[0]).Should(Equal(&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample}))
+			Ω(samples[0]).Should(Equal(&experiment.Sample{commands, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample}))
 		})
 
 		It("Does not save error text, to avoid huge files", func() {
