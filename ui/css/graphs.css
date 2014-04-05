@@ -42,7 +42,7 @@
 #graph .throughput .line {
   fill: none;
   stroke: steelblue;
-  stroke-width: 2px;
+  stroke-width: 5px;
 }
 
 #graph .throughput .axis text {

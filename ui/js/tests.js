@@ -1,6 +1,8 @@
 describe("The view", function() {
   var experiment
   var experimentList
+  var workloadNode
+  var throughputNode
 
   beforeEach(function() {
     experiment = { run: function() {}, url: ko.observable(""), state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { iterations: ko.observable(1), concurrency: ko.observable(1), interval: ko.observable(0), stop: ko.observable(0) } }
@@ -11,6 +13,8 @@ describe("The view", function() {
     v = new pat.view(experimentList, experiment)
     spyOn(v, "redirectTo").andReturn()
     v.start()
+    workloadNode = $("div.workloadContainer").get(0)
+    throughputNode = $("div.throughputContainer").get(0)
   })
 
   describe("clicking start", function() {
@@ -22,8 +26,8 @@ describe("The view", function() {
   describe("showThroughput()", function() {
     it("shows throughput graph and hides others when called", function() {
       v.showThroughput()      
-      expect( $(d3_throughput.node).css('display') ).toBe("block")
-      expect( $(d3_workload.node).css('display') ).toBe("none")
+      expect( $(throughputNode).css('display') ).toBe("block")
+      expect( $(workloadNode).css('display') ).toBe("none")
     })
 
     it("sets throughputVisible to true", function() {
@@ -35,8 +39,8 @@ describe("The view", function() {
   describe("showWorkload()", function() {
     it("shows workload graph and hides others when called", function() {
       v.showWorkload()
-      expect( $(d3_throughput.node).css('display') ).toBe("none")
-      expect( $(d3_workload.node).css('display') ).toBe("block")
+      expect( $(throughputNode).css('display') ).toBe("none")
+      expect( $(workloadNode).css('display') ).toBe("block")
     })
 
     it("sets workloadVisible to true", function() {
@@ -149,35 +153,38 @@ describe("The view", function() {
 })
 
 describe("DOM elements manipulation", function(){  
+  $("div", "#target").empty();
   d3_workload.init(document.getElementById("target"));
   d3_throughput.init(document.getElementById("target"));
 
-  var workload = d3_workload;
-  var throughput = d3_throughput;
-  var dom = new DOM();    
+  var dom = new DOM();
+  var workloadNode = $("div.workloadContainer").get(0)
+  var throughputNode = $("div.throughputContainer").get(0)
 
   it("hides the graph node when hideContent() is used", function(){
-    throughput.changeState(dom.showGraph)
-    expect( $(d3_throughput.node).css('display') ).toBe("block")
-    throughput.changeState(dom.hideContent)
-    expect( $(d3_throughput.node).css('display') ).toBe("none")
+    d3_throughput.changeState(dom.showGraph)
+    expect( $(throughputNode).css('display') ).toBe("block")
+    d3_throughput.changeState(dom.hideContent)
+    expect( $(throughputNode).css('display') ).toBe("none")
   })
   
   it("hides current graph when a new graph is swapped into view", function(){
-    workload.changeState(dom.showGraph)
-    expect( $(d3_workload.node).css('display') ).toBe("block")
-    throughput.changeState(dom.contentIn)
-    expect( $(d3_throughput.node).css('display') ).toBe("block")
-    expect( $(d3_workload.node).css('display') ).toBe("none")
+    d3_workload.changeState(dom.showGraph)
+    expect( $(workloadNode).css('display') ).toBe("block")
+    d3_throughput.changeState(dom.contentIn)
+    expect( $(throughputNode).css('display') ).toBe("block")
+    expect( $(workloadNode).css('display') ).toBe("none")
   })
 
 })
 
 describe("Throughput chart", function() {  
   const margin = {top: 50, right: 30, bottom: 30, left: 30};
+  $("div.throughputContainer").empty();
   var chart = d3_throughput.init(document.getElementById("target"));
   var svgWidth = $(document.getElementById("target")).width() - margin.left - margin.right
   var svgHeight = $(document.getElementById("target")).height() - margin.top - margin.bottom
+  var node = $("div.throughputContainer").get(0)
 
   it("should draw a line to go through points based on the throughput", function() {
     var workload = [{ Commands: { "login": {"Count": 1, "Throughput": 0.5}}}, 
@@ -189,7 +196,7 @@ describe("Throughput chart", function() {
 
     chart(workload);
 
-    var paths = $(d3_throughput.node).find("path.line")[0].getAttribute("d")
+    var paths = $("svg.throughput").find("path.line")[0].getAttribute("d")
     var point1 = scaleX(1) + "," + scaleY(0.5)
     var point2 = scaleX(2) + "," + scaleY(0.3)
     var point3 = scaleX(3) + "," + scaleY(0.6)
@@ -201,13 +208,13 @@ describe("Throughput chart", function() {
   it("should draw a line for each command in a workload", function() {
     var workload = [{ Commands: {
         "login": {"Throughput": 0.5}, 
-        "push": {"Throughput": 0.1},
-        "list": {"Throughput": 0.3}
+        "push":  {"Throughput": 0.1},
+        "list":  {"Throughput": 0.3}
       } }];
 
     chart(workload);
-    
-    expect( $(d3_throughput.node).find("path.line").length ).toBe(3);
+        
+    expect( $(node).find("path.line").length ).toBe(3);
   })
 
   it("should draw with a different color for each command", function() {
@@ -219,13 +226,29 @@ describe("Throughput chart", function() {
 
     chart(workload);
 
-    var color1 = $(d3_throughput.node).find("path.line")[0].style.stroke
-    var color2 = $(d3_throughput.node).find("path.line")[1].style.stroke
-    var color3 = $(d3_throughput.node).find("path.line")[2].style.stroke
+    var color1 = $(node).find("path.line")[0].style.stroke
+    var color2 = $(node).find("path.line")[1].style.stroke
+    var color3 = $(node).find("path.line")[2].style.stroke
     
     expect (color1).not.toEqual(color2)
     expect (color1).not.toEqual(color3)
     expect (color2).not.toEqual(color3)
+  })
+
+  it("it should show tooltips of throughput values when mouse hover over a line", function() {
+    var workload = [{ Commands: { "login": {"Count": 1, "Throughput": 0.50}}}, 
+                    { Commands: { "login": {"Count": 2, "Throughput": 0.30}}},
+                    { Commands: { "login": {"Count": 3, "Throughput": 0.60}}}];
+
+    chart(workload);
+
+    expect( $(node).find("g.datalogin").length ).toEqual(0);    
+    d3.select(node).select("path.line").on("mouseover")({cmd:"login", throughput:[0.5, 0.3, 0.6]});
+    expect( $(node).find("g.datalogin").length ).toEqual(3);
+
+    expect( $(node).find("g.datalogin text")[0].innerHTML ).toEqual("0.50")
+    expect( $(node).find("g.datalogin text")[1].innerHTML ).toEqual("0.30")
+    expect( $(node).find("g.datalogin text")[2].innerHTML ).toEqual("0.60")
   })
 
   it("should show the maximum command throughput in seconds in the y-axis", function() {
@@ -238,7 +261,7 @@ describe("Throughput chart", function() {
 
     var tickSize = 0;
     var tickMax = 0; 
-    var ticks = $(d3_throughput.node).find(".y.axis text");
+    var ticks = $(node).find(".y.axis text");
 
     for (var i =0; i < ticks.length; i++) {
       if (parseFloat(ticks[i].innerHTML) > tickMax) {        
@@ -258,7 +281,7 @@ describe("Throughput chart", function() {
 
     var tickSize = 0;
     var tickMax = 0; 
-    var ticks = $(d3_throughput.node).find(".x.axis text");
+    var ticks = $(node).find(".x.axis text");
     
     for (var i =0; i < ticks.length; i++) {
       if (parseFloat(ticks[i].innerHTML) > tickMax) {        
@@ -278,7 +301,10 @@ describe("Bar chart", function() {
   const margin = {top: 50, right: 40, bottom: 30, left: 30};
 
   var barWidth = 30;
+  $("div.workloadContainer").empty();
   var chart = d3_workload.init(document.getElementById("target"));
+  var node = $("div.workloadContainer").get(0);
+  var chartArea = $('svg.workload > g > g:eq(1) > g ').get(0);
 
   it("should draw a bar for each element", function() {  
     var data = [];
@@ -287,7 +313,7 @@ describe("Bar chart", function() {
     }
     chart(data);        
     
-    var totalBars = $( d3_workload.node ).find("rect.bar").length;
+    var totalBars = $( node ).find("rect.bar").length;
     expect( totalBars ).toBe(3);
   });
 
@@ -302,7 +328,7 @@ describe("Bar chart", function() {
 
     var tickSize = 0;
     var tickMax = 0; 
-    var ticks = $(d3_workload.node).find(".y.axis text");
+    var ticks = $(node).find(".y.axis text");
     
     for (var i =0; i < ticks.length; i++) {
       if (parseFloat(ticks[i].innerHTML) > tickMax) {        
@@ -320,7 +346,7 @@ describe("Bar chart", function() {
                 {"LastResult" : 1 * sec, "TotalErrors": 1}];
     chart(data);
 
-    var bars = d3.select( d3_workload.node ).selectAll("rect.bar");
+    var bars = d3.select( node ).selectAll("rect.bar");
     
     bars.each(function(d,i) {      
       if (d.TotalErrors == 0) {
@@ -333,17 +359,17 @@ describe("Bar chart", function() {
     
   it("should auto-pan to the left when new data is drawn outside of the viewable area", function() {
     var data = [];
-    var viewableWidth = $(d3_workload.node).width() - margin.left - margin.right;
-    
+    var viewableWidth = $(node).width() - margin.left - margin.right;
     var max_data = parseInt(viewableWidth / (barWidth + gap));    
+
     for (var i = 1; i <= max_data; i ++) {
       data.push( {"LastResult" : 5} );
     }
     chart(data);
     
     waits(500);
-    runs(function () {
-      expect(parseInt(getTranslateX(d3.select( d3_workload.chartArea() )))).toBe(0);               
+    runs(function () {      
+      expect(parseInt(getTranslateX(d3.select( chartArea )))).toBe(0);               
     }, 500);
 
     var extra_data = 5;
@@ -357,13 +383,13 @@ describe("Bar chart", function() {
     
     waits(500);    
     runs(function() {
-      expect(parseInt(getTranslateX(d3.select( d3_workload.chartArea() )))).toBeLessThan(-1 * extra_data * (barWidth + gap));  
+      expect(parseInt(getTranslateX(d3.select( chartArea )))).toBeLessThan(-1 * extra_data * (barWidth + gap));  
     });
   });
 
   it("should auto-pan back into view if the chart is panned out of the viewable area", function() {
     var data = [];    
-    var viewableWidth = $(d3_workload.node).width() - margin.left - margin.right;
+    var viewableWidth = $(node).width() - margin.left - margin.right;
 
     var interval = setInterval(function() {
       data.push( {"LastResult" : 5} );
@@ -373,13 +399,13 @@ describe("Bar chart", function() {
   
     waits(500);
     runs(function(){
-      d3.select( d3_workload.chartArea() )
+      d3.select( chartArea )
         .attr("transform","translate(" + (viewableWidth * 2) + ", 0)");
     }, 500);
       
     waits(1000);
     runs(function () {
-      expect(parseInt(getTranslateX(d3.select( d3_workload.chartArea() )))).toBeLessThan( viewableWidth );         
+      expect(parseInt(getTranslateX(d3.select( chartArea )))).toBeLessThan( viewableWidth );         
       clearInterval(interval);
     }, 1000);
 

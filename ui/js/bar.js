@@ -7,6 +7,7 @@ d3_workload = function() {
   var x, y, xAxis, yAxis, svg, outerBody, barCon;
 
   var d3Graph = document.createElement('div');
+  d3Graph.className = "workloadContainer";  
   d3Graph.width = "100%";
   d3Graph.height = "100%";
 
@@ -215,9 +216,7 @@ d3_workload = function() {
       initDOM(el);
       return drawGraph;
     },
-    node: d3Graph,
-    changeState: changeState,                
-    chartArea: function(){ return drawArea }    
+    changeState: changeState
   }
 
 }()

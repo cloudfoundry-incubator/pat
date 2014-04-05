@@ -9,13 +9,13 @@ var DOM = function() {
 		el.style.position = "relative";		
 		el.parentNode.appendChild(node);
 		var e = node;
-		e.className = "slide_content contentIn";
+		$(e).removeClass("contentOut").addClass("slide_content contentIn");
 		d3Chart = node;
 
 		function contentOut() {				
 			var e = d3Chart;
 			e.style.position = "absolute";
-			e.className = "contentOut slide_content";
+			$(e).removeClass("contentIn").addClass("contentOut");
 			e.style.display = "none";
 		}
 	}

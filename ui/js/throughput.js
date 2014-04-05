@@ -4,12 +4,12 @@ d3_throughput = function() {
   var x, y, xAxis, yAxis, svg, graphBox;
 
   var d3Graph = document.createElement('div');
+  d3Graph.className = "throughputContainer";
   d3Graph.width = "100%";
   d3Graph.height = "100%";
 
   // size and draw svg elements onto DOM
   var initDOM = function(el) {
-
     var d3Obj = d3.select(el),
     jqObj = $(el);
 
@@ -89,8 +89,8 @@ d3_throughput = function() {
 
     var commands = flattenJSON(data); 
     var lineChart = graphBox.selectAll("path.line").data(commands)
-    var legend = graphBox.selectAll("g.tplegend").data(commands)    
-    
+    var legend = graphBox.selectAll("g.tplegend").data(commands)
+
     color.domain(commands.map(function (d) { return d.cmd; }));
     
     y = y.domain( [findMaxThroughput(commands), 0] );
@@ -113,6 +113,8 @@ d3_throughput = function() {
         .attr("class", "line")
         .attr("d", function(d, i) {return line(d.throughput); })
         .style("stroke", function (d) { return color(d.cmd) })  
+        .on("mouseover", function(d){ drawToolTip(d) })      
+        .on("mouseout", function(d) { svg.selectAll("g.data" + d.cmd).remove() })
 
     var l = legend.enter()
       .append("g")
@@ -162,6 +164,24 @@ d3_throughput = function() {
 
   } //end drawGraph
 
+  function drawToolTip(d) {
+    var tooptip = svg.selectAll("g.data" + d.cmd).data(d.throughput).enter()
+      .append("g")
+      .attr("class", "data" + d.cmd)
+    tooptip.append("circle")        
+        .style("fill", "#333")
+        .attr("class", d.cmd)
+        .attr("cx", function(d, i){ return x(i) })
+        .attr("cy", function(d){ return y(d) })
+        .attr("r", function(d, i) { return i?15:0 })
+    tooptip.append("text")
+        .attr("dx", function(d,i){ return x(i) })
+        .attr("dy", function(d){ return y(d)+4 })
+        .attr("stroke", "white")
+        .attr("stroke-width", "1px")
+        .text(function(d){ return parseFloat(d).toFixed(2) })
+  }
+
   var changeState = function(fn) { 
     fn(d3Graph) 
   }
@@ -172,10 +192,7 @@ d3_throughput = function() {
       initDOM(el);
       return drawGraph;
     },
-    changeState: changeState,
-    node: d3Graph    
+    changeState: changeState    
   } //end return
 
 }()
-
-

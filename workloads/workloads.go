@@ -27,8 +27,7 @@ func DefaultWorkloadList() *WorkloadList {
 		StepWithContext("rest:push", restContext.Push, "Pushes a simple Ruby application using the REST api. This option requires both rest:target and rest:login to be included in the list of workloads"),
 		Step("gcf:push", Push, "Pushes a simple Ruby application using the CF command-line"),
 		Step("gcf:generateAndPush", GenerateAndPush, "Generates and pushes a unique simple Ruby application using the CF command-line"),
-		Step("dummy", Dummy, "An empty workload that can be used when a CF environment is not available"),
-		Step("dummylogin", Dummy, "An empty workload that can be used when a CF environment is not available"),		
+		Step("dummy", Dummy, "An empty workload that can be used when a CF environment is not available"),		
 		Step("dummyWithErrors", DummyWithErrors, "An empty workload that generates errors. This can be used when a CF environment is not available"),
 	}}
 }
