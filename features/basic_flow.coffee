@@ -1,4 +1,4 @@
-casper.test.begin 'Basic Flow', 5, (test) ->
+casper.test.begin 'Basic Flow', 6, (test) ->
   casper.options.waitTimeout = 60 * 1000
   casper.start "http://localhost:8080/", ->
     @test.assertHttpStatus 200, 'UI is responding'
@@ -25,7 +25,8 @@ casper.test.begin 'Basic Flow', 5, (test) ->
 
   casper.then ->
     @test.assertElementCount "#data tr", 7, "As many rows in the data table as requested pushes"
-    @test.assertElementCount "svg rect.bar", 7, "As many bars in the graph as requested pushes"
+    @test.assertElementCount ".workload rect.bar", 7, "As many bars in the graph as requested pushes"
+    @test.assertElementCount ".throughput path.line", 1, "As many lines in the graph as requested commands"
     @waitFor ->
       @evaluate experimentCountEquals, @previous_experiments_count + 1
 

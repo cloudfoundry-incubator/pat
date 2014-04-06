@@ -88,7 +88,8 @@ pat.experimentList = function() {
 ko.bindingHandlers.chart = {
   c: {},
   init: function(element, valueAccessor) {    
-    ko.bindingHandlers.chart.b = new barchart(element);
+    ko.bindingHandlers.chart.b = d3_workload.init(element);
+    ko.bindingHandlers.chart.t = d3_throughput.init(element);
   },
   update: function(element, valueAccessor) {
     var data = ko.unwrap(valueAccessor())
@@ -97,12 +98,20 @@ ko.bindingHandlers.chart = {
         if (k == "Average" || k == "WallTime" || k == "LastResult" || k == "TotalTime") obj[k + '_fmt'] = (obj[k] / 1000000000).toFixed(2) + " sec";
       }
     });
-    ko.bindingHandlers.chart.b(data);    
+    ko.bindingHandlers.chart.b(data);
+    ko.bindingHandlers.chart.t(data);
   }
 }
 
 pat.view = function(experimentList, experiment) {
-  var self = this
+  var self = this  
+
+  var dom = new DOM();
+  d3_workload.changeState(dom.showGraph)
+  d3_throughput.changeState(dom.hideContent)
+
+  this.workloadVisible = ko.observable(true)
+  this.throughputVisible = ko.observable(false)
 
   this.redirectTo = function(location) { window.location = location }
 
@@ -142,4 +151,14 @@ pat.view = function(experimentList, experiment) {
 
   $(document).ready(function() { self.onHashChange(window.location.hash) })
   $(window).on('hashchange', function() { self.onHashChange(window.location.hash) })
+
+  this.showWorkload = function() { d3_workload.changeState(dom.contentIn); updateVisibility(self.workloadVisible) }
+  this.showThroughput = function() { d3_throughput.changeState(dom.contentIn); updateVisibility(self.throughputVisible) }
+
+  function updateVisibility(ob) {
+    self.workloadVisible(false)
+    self.throughputVisible(false)
+    ob(true)
+  }
+  
 }
