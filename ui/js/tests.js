@@ -192,7 +192,7 @@ describe("Throughput chart", function() {
                     { Commands: { "login": {"Count": 3, "Throughput": 0.6}}}];
 
     var scaleX = d3.scale.linear().domain([0, workload.length]).range([0, svgWidth]);
-    var scaleY = d3.scale.linear().domain([0.6, 0]).range([0, svgHeight]);
+    var scaleY = d3.scale.linear().domain([0.6, 0]).range([10, svgHeight]);
 
     chart(workload);
 
@@ -235,7 +235,7 @@ describe("Throughput chart", function() {
     expect (color2).not.toEqual(color3)
   })
 
-  it("it should show tooltips of throughput values when mouse hover over a line", function() {
+  it("it should show colored tooltips of throughput values when mouse hover over a line", function() {
     var workload = [{ Commands: { "login": {"Count": 1, "Throughput": 0.50}}}, 
                     { Commands: { "login": {"Count": 2, "Throughput": 0.30}}},
                     { Commands: { "login": {"Count": 3, "Throughput": 0.60}}}];
@@ -249,6 +249,9 @@ describe("Throughput chart", function() {
     expect( $(node).find("g.datalogin text")[0].innerHTML ).toEqual("0.50")
     expect( $(node).find("g.datalogin text")[1].innerHTML ).toEqual("0.30")
     expect( $(node).find("g.datalogin text")[2].innerHTML ).toEqual("0.60")
+
+    var color = $(node).find("path.line")[0].getAttribute("stroke");
+    expect( $(node).find("g.datalogin circle")[0].getAttribute("fill") ).toEqual(color)
   })
 
   it("should show the maximum command throughput in seconds in the y-axis", function() {
@@ -316,6 +319,15 @@ describe("Bar chart", function() {
     var totalBars = $( node ).find("rect.bar").length;
     expect( totalBars ).toBe(3);
   });
+
+  it("should not draw a graph if data is empty", function(){
+    $(chartArea).empty();
+    var data = [];
+    chart(data);
+
+    var totalBars = $( node ).find("rect.bar").length;
+    expect( totalBars ).toBe(0);
+  })
 
   it("should show the maximum LastResult in seconds in the y-axis", function() {
     var LastResult = 0;
