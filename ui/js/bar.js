@@ -96,6 +96,8 @@ d3_workload = function() {
   } //end initDOM
 
   var drawGraph = function(data) {
+    if (!data[0]) return;
+
     const second = 1000000000;
     var len = data.length;
     x = x.domain( [1, len, 1] ).range([barWidth + 1, len * (barWidth + 1)]);
@@ -193,7 +195,14 @@ d3_workload = function() {
   }
 
   function getNodeWidth(node) {
-    return node.getBBox().width;
+    //using a try..catch block to get around the Firefox bug, getBBox() fails if svg element is not rendered (display = none)
+    //https://bugzilla.mozilla.org/show_bug.cgi?id=612118
+    try {
+      return node.getBBox().width;
+    }
+    catch(err) {
+      return 0
+    }
   }
 
   function transformChart(node, x, y) {

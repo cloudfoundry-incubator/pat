@@ -1,7 +1,7 @@
 d3_throughput = function() {
   var margin = {top: 50, right: 30, bottom: 30, left: 30};  
   var svgWidth, svgHeight, jqObj, d3Obj, drawArea;
-  var x, y, xAxis, yAxis, svg, graphBox;
+  var x, y, xAxis, yAxis, svg, graphBox, color;
 
   var d3Graph = document.createElement('div');
   d3Graph.className = "throughputContainer";
@@ -16,7 +16,7 @@ d3_throughput = function() {
     svgWidth = jqObj.width() - margin.left - margin.right;
     svgHeight = jqObj.height() - margin.top - margin.bottom;
     x = d3.scale.linear().range([0, svgWidth], 1);
-    y = d3.scale.linear().domain([1,0]).range([0, svgHeight], 1);
+    y = d3.scale.linear().domain([1,0]).range([10, svgHeight], 1);
     color = d3.scale.category10();
 
     xAxis = d3.svg.axis()
@@ -113,7 +113,7 @@ d3_throughput = function() {
         .attr("class", "line")
         .attr("d", function(d, i) {return line(d.throughput); })
         .style("stroke", function (d) { return color(d.cmd) })  
-        .on("mouseover", function(d){ drawToolTip(d) })      
+        .on("mouseover", function(d){ drawToolTip(d, color(d.cmd)) })      
         .on("mouseout", function(d) { svg.selectAll("g.data" + d.cmd).remove() })
 
     var l = legend.enter()
@@ -164,21 +164,22 @@ d3_throughput = function() {
 
   } //end drawGraph
 
-  function drawToolTip(d) {
+  function drawToolTip(d, c) {
+    const pointRadis = 13;
+    const yOffset = 4;
     var tooptip = svg.selectAll("g.data" + d.cmd).data(d.throughput).enter()
       .append("g")
       .attr("class", "data" + d.cmd)
     tooptip.append("circle")        
-        .style("fill", "#333")
+        .style("fill", c)
         .attr("class", d.cmd)
         .attr("cx", function(d, i){ return x(i) })
         .attr("cy", function(d){ return y(d) })
-        .attr("r", function(d, i) { return i?15:0 })
+        .attr("r", pointRadis);
     tooptip.append("text")
-        .attr("dx", function(d,i){ return x(i) })
-        .attr("dy", function(d){ return y(d)+4 })
-        .attr("stroke", "white")
-        .attr("stroke-width", "1px")
+        .attr("x", function(d,i){ return x(i) })
+        .attr("y", function(d){ return y(d) + yOffset })
+        .style("fill", "white")
         .text(function(d){ return parseFloat(d).toFixed(2) })
   }
 
