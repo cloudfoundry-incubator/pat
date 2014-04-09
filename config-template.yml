@@ -1,13 +1,9 @@
-# yaml file template to outline what we wish to run with a jenkins test.
-
-
 # cli_commands are used to specify what the cli commands should be.
-config: ""
 server: false            # true/false should we be running in server mode?
 iterations: 5            # The number of times we wish to itterate over the workload
 concurrency: 1           # The nuber of users we want to simulate running the iterations
-silent: false            # true/false do we want to output the command cli
+silent: false            # true/false do we want to output command line information
 output: "csv.test"       # name of the .csv file we should be writting too
 interval: 0              # how long we should wait before each workload is ran
 stop: 0                  # the total time we want to be runnins workload intervalse
-workload: "login,push"   # A single iteration workload that will be executed in the order commands are provided
+workload: "gcf:push"   # A single iteration workload that will be executed in the order commands are provided
