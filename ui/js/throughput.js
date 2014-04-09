@@ -114,7 +114,7 @@ d3_throughput = function() {
         .attr("d", function(d, i) {return line(d.throughput); })
         .style("stroke", function (d) { return color(d.cmd) })  
         .on("mouseover", function(d){ drawToolTip(d, color(d.cmd)) })      
-        .on("mouseout", function(d) { svg.selectAll("g.data" + d.cmd).remove() })
+        .on("mouseout", function(d) { svg.selectAll("g.data" + d.cmd.replace(/[^a-zA-Z0-9]/g,"_")).remove() })
 
     var l = legend.enter()
       .append("g")
@@ -167,12 +167,13 @@ d3_throughput = function() {
   function drawToolTip(d, c) {
     const pointRadis = 13;
     const yOffset = 4;
-    var tooptip = svg.selectAll("g.data" + d.cmd).data(d.throughput).enter()
+    var className = d.cmd.replace(/[^a-zA-Z0-9]/g,"_");
+    var tooptip = svg.selectAll("g.data" + className).data(d.throughput).enter()
       .append("g")
-      .attr("class", "data" + d.cmd)
+      .attr("class", "data" + className)
     tooptip.append("circle")        
         .style("fill", c)
-        .attr("class", d.cmd)
+        .attr("class", className)
         .attr("cx", function(d, i){ return x(i) })
         .attr("cy", function(d){ return y(d) })
         .attr("r", pointRadis);

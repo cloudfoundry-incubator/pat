@@ -254,6 +254,18 @@ describe("Throughput chart", function() {
     expect( $(node).find("g.datalogin circle")[0].getAttribute("fill") ).toEqual(color)
   })
 
+  it("should replace illegal characters with underscore in tooltip class names", function() {
+    var illegalName = "gcf:login+123";
+    var workload = [{ Commands: { illegalName: {"Count": 1, "Throughput": 0.50}}}];
+
+    chart(workload);
+    d3.select(node).select("path.line").on("mouseover")({cmd: illegalName, throughput:[0.50]});
+
+    expect( $(node).find("g.data" + illegalName).length ).toEqual(0);
+        
+    expect( $(node).find("g.data" + "gcf_login_123").length ).toEqual(1);
+  })  
+
   it("should show the maximum command throughput in seconds in the y-axis", function() {
     var workload = [{ Commands: {
         "login": {"Throughput": 0.5}, 
