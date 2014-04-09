@@ -184,6 +184,39 @@ var _ = Describe("Rest Workloads", func() {
 					})
 				})
 			})
+
+			Context("When more than 1 usernames and passwords are configured", func() {
+				BeforeEach(func() {
+					args = []string{"-rest:target", "APISERVER", "-rest:space", "thespace", "-rest:username", "foo1,foo2,foo3", "-rest:password", "bar1,bar2"}
+				})
+
+				JustBeforeEach(func() {
+					rest.Login(context)
+				})
+
+				It("sets grant_type password", func() {
+					data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["grant_type"]).Should(Equal([]string{"password"}))
+				})
+
+				It("uses each username and password in turn, repeat at the end of list", func() {
+					data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"foo1"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"bar1"}))
+
+					rest.Login(context)
+					data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"foo2"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"bar2"}))
+
+					rest.Login(context)
+					data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"foo3"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"bar1"}))
+				})
+
+			})
+
 		})
 
 		Describe("When the API hasn't been targetted yet", func() {
