@@ -39,7 +39,7 @@ func display(concurrency int, iterations int, interval int, stop int, samples <-
 		fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
 		if s.TotalErrors > 0 {
 			fmt.Printf("\nTotal errors: %d\n", s.TotalErrors)
-			fmt.Printf("Last error: %v\n", "")
+			fmt.Printf("Last error: %v\n", s.LastResult)
 		}
 		fmt.Println()
 		fmt.Println("Type q <Enter> (or ctrl-c) to exit")

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry-community/pat/config"
@@ -19,6 +20,8 @@ type rest struct {
 	target     string
 	space_name string
 	client     httpclient
+	loginCount int
+	pwCount    int
 }
 
 func NewRestWorkload() *rest {
@@ -38,6 +41,8 @@ func (r *rest) DescribeParameters(config config.Config) {
 	config.StringVar(&r.username, "rest:username", "", "username for REST api")
 	config.StringVar(&r.password, "rest:password", "", "password for REST api")
 	config.StringVar(&r.space_name, "rest:space", "dev", "space to target for REST api")
+	r.loginCount = 0
+	r.pwCount = 0
 }
 
 func (r *rest) Target(ctx map[string]interface{}) error {
@@ -205,11 +210,22 @@ func (s SpaceResponse) SpaceExists() bool {
 }
 
 func (r *rest) oauthInputs() url.Values {
+	var userList []string = strings.Split(r.username, ",")
+	var pwList []string = strings.Split(r.password, ",")
 	values := make(url.Values)
 	values.Add("grant_type", "password")
-	values.Add("username", r.username)
-	values.Add("password", r.password)
+	values.Add("username", userList[r.loginCount])
+	values.Add("password", pwList[r.pwCount])
 	values.Add("scope", "")
+
+	r.loginCount += 1
+	r.pwCount += 1
+	if r.loginCount == len(userList) {
+		r.loginCount = 0
+	}
+	if (r.pwCount == len(pwList)) || (r.pwCount == len(userList)) {
+		r.pwCount = 0
+	}
 
 	return values
 }
