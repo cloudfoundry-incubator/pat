@@ -2,123 +2,106 @@
 
 PAT (Performance Acceptance Tests)
 ==================================
-The goal of this project is to create a super-simple load generation/performance testing framework for quickly and easily running load against Cloud Foundry. The tool has both a command line UI, for running quickly during a build and a web UI for tracking longer-running tests.
-
-
-Running PAT as a Cloud Foundry App
-==================================
-Ensure your Cloud Foundry version is current and running
-
-1) Clone the project
-
-        git clone https://github.com/cloudfoundry-community/pat
-
-2) Push the project to Cloud Foundry with our 'go' buildpack that adds gocart support.
-
-        cf push -b https://github.com/jberkhahn/cloudfoundry-buildpack-go pat
-
-3) Open the browser and go to the provided URL
-
-
+The goal of this project is to create a super-simple load generation/performance testing framework for quickly
+and easily running load against Cloud Foundry. The tool has both a command line UI, for running quickly during
+a build and a web UI for tracking longer-running tests.
 
 Setting up PAT to run locally
 ==================================
-To setup this project, a number of requires need to be met for GO.
+These steps are to setup this project and have it run locally on your system. This includes a number of
+requirements for Go and the dependent libraries. If you wish to only run this project as a Cloud Foundry
+application, see the instructions on "Running PAT as a Cloud Foundry App" below.
 
-1) Ensure that GO1.2 (64bit version) has been installed on the system.
+1) Ensure that [Go](http://golang.org/) version 1.2.x-64bit has been installed on the system
 
 2) Setup the GOPATH
 
-        export GOPATH=~/go (or any other workspace repository for all your go code)
-
-        export PATH=$GOPATH/bin:$PATH
+    export GOPATH=~/go
+    export PATH=$GOPATH/bin:$PATH
 
 3) Install [gocart] (https://github.com/vito/gocart)
 
-        go get github.com/vito/gocart
+    go get github.com/vito/gocart
 
-4) Clone the project to the correct location
+4) Download PAT and install the necessary dependencies
 
-        mkdir -p $GOPATH/src/github.com/cloudfoundry-community
+    go get github.com/cloudfoundry-community/pat
+    cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    gocart
 
-        cd $GOPATH/src/github.com/cloudfoundry-community
+5) See [CF CLI] (https://github.com/cloudfoundry/cli) for instructions on installing `cf`
 
-        git clone https://github.com/cloudfoundry-community/pat
+Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been renamed to `gcf` or
+symlinked to `gcf`.
 
-        cd pat
+Running PAT
+=================================
 
-        gocart
+## As a Cloud Foundry App (In the works)
 
-5) Install [gcf] (https://github.com/cloudfoundry/cli)
+Ensure your Cloud Foundry version is current and running
 
-Develop
-===================================
-To develop for this project, you will first need to go through the "Setting up PAT" section. This project will
-be maintained through the use of standard pull requests. When issuing a pull request, make sure to include sufficient
-testing through the ginkgo package (see below) to go along with any code changes. The tests should document 
-functionality and provide an example of how to use it.  
+1) Clone the project if you have not followed the "Setting up PAT to run locally" section
 
-1) Go through the "Setting up PAT to run locally" section
+    git clone https://github.com/cloudfoundry-community/pat
 
-2) Install [ginkgo] (http://onsi.github.io/ginkgo/#getting_ginkgo)
+2) Change into the PAT directory
 
-        go install github.com/onsi/ginkgo/ginkgo
+3) Push the project to Cloud Foundry with our 'go' buildpack that adds gocart support
 
-3) Write and test your code following the ginkgo standards
+    cf push -b https://github.com/jberkhahn/cloudfoundry-buildpack-go pat
 
-4) Install Prerequisites:
+4) Open the browser and go to the provided URL
 
- - *Redis*: e.g. `brew install redis` (using [HomeBrew](https://github.com/Homebrew/homebrew) on OSX)
+## Locally
 
-5) Run all tests within the repository
-
-        ginkgo -r
-
-Run
-==================================
-If you wish to run PAT as a Cloud Foundry app, please refer to the section in the beginning of this guide.
+If you wish to run PAT as a Cloud Foundry app, please refer to the section above.
 
 There are three ways to run PAT locally. For all three ways, you must first:
 
 1) Go through the "Setting up PAT to run locally" section
 
-2) Make sure that you have targeted a Cloud Foundry environment using the gcf tool (# gcf login)
+2) Make sure that you have targeted a Cloud Foundry environment using the gcf tool
+
+    gcf login
 
 ### Option 1. Run the source code directly
-
 1) Change into the top level of this project
 
-        cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    cd $GOPATH/src/github.com/cloudfoundry-community/pat
 
 2) Execute the command line
 
-        go run main.go -workload=gcf:push
+    go run main.go -workload=gcf:push
 
-### Option 2. Compile and run an executable
-
-1) Change into the top level of this project
-
-        cd $GOPATH/src/github.com/cloudfoundry-community/pat
-        go install
-
-2) Run the PAT executable from the command line
-
-        pat -workload=gcf:push
-
-### Option 3. Run PAT with a web user interface
+### Option 2. Run the source code through a web interface
 
 1) Change into the top level of this project
 
-        cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    cd $GOPATH/src/github.com/cloudfoundry-community/pat
 
 2) Run PAT selecting the HTTP server option
 
-        go run main.go -server
+    go run main.go -server
 
 3) Open a browser and go to <http://localhost:8080/ui>
 
+### Option 3. Compile and run a PAT executable
 
-### Example command-line usage (using option 2 to illustrate):
+1) Change into the top level of this project
+
+    cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    go install
+
+2a) Run the PAT executable in command line mode
+
+    pat -workload=gcf:push
+
+2b) Run the PAT executable in web interface mode
+
+    pat -server
+
+### Example command-line usage (using option 3 to illustrate):
 
     pat -h   # will output all of the command line options if installed the recommended way
 
@@ -141,7 +124,7 @@ There are three ways to run PAT locally. For all three ways, you must first:
         -rest:password=PASSWORD \
         -rest:space=xyz_space  \
         -workload=rest:target,rest:login,rest:push,rest:push \
-        -concurrency=5 -iterations=20 -interval=10 # Use the REST API to make operation requests instead of gcf 
+        -concurrency=5 -iterations=20 -interval=10 # Use the REST API to make operation requests instead of gcf
 
 ### Workload options
 The `workload` option specified a comma-separated list of workloads to be used in the test.
@@ -174,9 +157,31 @@ directory called config-template.yml. To use your own custom yaml configuration 
 configuration file. Any setting specified as a command line argument overrides the equivalent setting contained in the config file.
 
 Example:
-  
-      pat -config=config-template.yml -iterations=2 # set iterations to 2 overriding whatever the config file says
 
+    pat -config=config-template.yml -iterations=2 # set iterations to 2 overriding whatever the config file says
+
+Contributing
+===================================
+To contribute to this project, you will first need to go through the "Setting up PAT to run locally" section. This
+project will be maintained through the use of standard pull requests. When issuing a pull request, make sure to
+include sufficient testing through the ginkgo package (see below) to go along with any code changes. The tests
+should document functionality and provide an example of how to use it.
+
+1) Go through the "Setting up PAT to run locally" section
+
+2) Install [ginkgo] (http://onsi.github.io/ginkgo/#getting_ginkgo)
+
+        go install github.com/onsi/ginkgo/ginkgo
+
+3) Write and test your code following the ginkgo standards
+
+4) Install Prerequisites:
+
+ - *Redis*: e.g. `brew install redis` (using [HomeBrew](https://github.com/Homebrew/homebrew) on OSX)
+
+5) Run all tests within the repository
+
+        ginkgo -r
 
 Known Limitations / TODOs etc.
 =====================================
