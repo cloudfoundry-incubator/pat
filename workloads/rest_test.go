@@ -184,6 +184,85 @@ var _ = Describe("Rest Workloads", func() {
 					})
 				})
 			})
+
+			Context("When multiple usernames and passwords are configured", func() {
+				BeforeEach(func() {
+					args = []string{"-rest:target", "APISERVER", "-rest:space", "thespace", "-rest:username", "user1,user2,user3", "-rest:password", "pass1,pass2"}
+				})
+
+				JustBeforeEach(func() {
+					rest.Login(context)
+				})
+
+				It("sets grant_type password", func() {
+					data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["grant_type"]).Should(Equal([]string{"password"}))
+				})
+
+				It("POSTs the username and password", func() {
+					data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
+				})
+
+				It("uses different username and password with different workerIndex", func() {
+					context["workerIndex"] = 0
+					rest.Login(context)
+					data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
+
+					context["workerIndex"] = 2
+					rest.Login(context)
+					data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"user3"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
+				})
+
+				It("recycles the list of username and password when there are more workers than username", func() {
+					context["workerIndex"] = 6
+					rest.Login(context)
+					data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
+				})
+			})
+
+			Context("When multiple usernames and a single password are configured", func() {
+				BeforeEach(func() {
+					args = []string{"-rest:target", "APISERVER", "-rest:space", "thespace", "-rest:username", "user1,user2,user3", "-rest:password", "pass1"}
+				})
+
+				JustBeforeEach(func() {
+					rest.Login(context)					
+				})
+
+				It("sets grant_type password", func() {
+					data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["grant_type"]).Should(Equal([]string{"password"}))
+				})
+				
+				It("re-uses the only avaiable password", func() {
+					context["workerIndex"] = 0
+					rest.Login(context)
+					data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
+
+					context["workerIndex"] = 1
+					rest.Login(context)
+					data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"user2"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
+
+					context["workerIndex"] = 2
+					rest.Login(context)
+					data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+					Ω(data.(url.Values)["username"]).Should(Equal([]string{"user3"}))
+					Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
+				})
+			})
+
 		})
 
 		Describe("When the API hasn't been targetted yet", func() {

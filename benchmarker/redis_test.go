@@ -38,11 +38,11 @@ var _ = Describe("RedisWorker", func() {
 
 				result := make(chan error)
 				go func() {
-					result <- worker.Time("timesout").Error
+					result <- worker.Time("timesout", 0).Error
 				}()
 
 				Eventually(result, 2).Should(Receive())
-			})
+			})			
 		})
 
 		Context("When a slave is running", func() {
@@ -50,6 +50,7 @@ var _ = Describe("RedisWorker", func() {
 				slave    io.Closer
 				delegate *LocalWorker
 				context  map[string]interface{}
+				wasCalledWithWorkerIndex int
 			)
 
 			JustBeforeEach(func() {
@@ -61,6 +62,7 @@ var _ = Describe("RedisWorker", func() {
 				context = make(map[string]interface{})
 				delegate.AddWorkloadStep(workloads.StepWithContext("fooWithContext", func(ctx map[string]interface{}) error { context = ctx; ctx["a"] = 1; return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("barWithContext", func(ctx map[string]interface{}) error { ctx["a"] = ctx["a"].(int) + 2; return nil }, ""))
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx map[string]interface{}) error { wasCalledWithWorkerIndex = ctx["workerIndex"].(int); return nil }, ""))
 
 				slave = StartSlave(conn, delegate)
 			})
@@ -70,37 +72,43 @@ var _ = Describe("RedisWorker", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
+			It("passes workerIndex to delegate.Time()", func() {
+				worker := NewRedisWorkerWithTimeout(conn, 1)
+				worker.Time("recordWorkerIndex", 72); 
+				Ω(wasCalledWithWorkerIndex).Should(Equal(72))				
+			})
+
 			It("Times a function by name", func() {
 				worker := NewRedisWorkerWithTimeout(conn, 1)
-				result := worker.Time("foo")
+				result := worker.Time("foo", 0)
 				Ω(result.Error).Should(BeNil())
 				Ω(result.Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 			})
 
 			It("Sets the function command name in the response struct", func() {
 				worker := NewRedisWorker(conn)
-				result := worker.Time("foo")
+				result := worker.Time("foo", 0)
 				Ω(result.Steps[0].Command).Should(Equal("foo"))
 			})
 
 			It("Returns any errors", func() {
 				worker := NewRedisWorker(conn)
-				result := worker.Time("stepWithError")
+				result := worker.Time("stepWithError", 0)
 				Ω(result.Error).Should(HaveOccurred())
 			})
 
 			It("Passes context to each step", func() {
 				worker := NewRedisWorker(conn)
-				worker.Time("fooWithContext,barWithContext")
+				worker.Time("fooWithContext,barWithContext", 0)
 				Ω(context).Should(HaveKey("a"))
-			})
+			})			
 
 			Describe("When multiple steps are provided separated by commas", func() {
 				var result IterationResult
 
 				JustBeforeEach(func() {
 					worker := NewRedisWorkerWithTimeout(conn, 5)
-					result = worker.Time("foo,bar")
+					result = worker.Time("foo,bar", 0)
 					Ω(result.Error).Should(BeNil())
 				})
 
@@ -118,8 +126,9 @@ var _ = Describe("RedisWorker", func() {
 					Ω(result.Steps).Should(HaveLen(2))
 					Ω(result.Steps[0].Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 					Ω(result.Steps[1].Duration.Seconds()).Should(BeNumerically("~", 2, 0.1))
-				})
+				})				
 			})
+
 		})
 	})
 })

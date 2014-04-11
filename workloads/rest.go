@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry-community/pat/config"
@@ -51,8 +52,9 @@ func (r *rest) Target(ctx map[string]interface{}) error {
 
 func (r *rest) Login(ctx map[string]interface{}) error {
 	body := &LoginResponse{}
+	workerIndex, _ := ctx["workerIndex"].(int)
 	return checkTargetted(ctx, func(loginEndpoint string, apiEndpoint string) error {
-		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", ctx["loginEndpoint"]), r.oauthInputs(), body, func(reply Reply) error {
+		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", ctx["loginEndpoint"]), r.oauthInputs(r.credentialsForWorker(workerIndex)), body, func(reply Reply) error {
 			ctx["token"] = body.Token
 			return r.targetSpace(ctx)
 		})
@@ -204,11 +206,18 @@ func (s SpaceResponse) SpaceExists() bool {
 	return len(s.Resources) > 0
 }
 
-func (r *rest) oauthInputs() url.Values {
+func (r *rest) credentialsForWorker(workerIndex int)(string, string) {
+	var userList = strings.Split(r.username, ",")
+	var passList = strings.Split(r.password, ",")
+	return userList[workerIndex % len(userList)], passList[workerIndex % len(passList)]
+}
+
+func (r *rest) oauthInputs(username string, password string) url.Values {
+	
 	values := make(url.Values)
 	values.Add("grant_type", "password")
-	values.Add("username", r.username)
-	values.Add("password", r.password)
+	values.Add("username", username)
+	values.Add("password", password)
 	values.Add("scope", "")
 
 	return values
