@@ -5,4 +5,5 @@ github.com/vito/cmdtest	4b86f8c2259c55e86e4b971cd7dc5dfb03e41b80
 github.com/pivotal-cf-experimental/cf-test-helpers/cf	430a0c8fc34acb4e09e54c22b61c0cd07311a262
 github.com/gorilla/mux	9ede152210fa25c1377d33e867cb828c19316445
 github.com/garyburd/redigo/redis	ed54f4ed86a815cf09870e4bd1a10a2ee39a4308
+github.com/cloudfoundry/gosteno	5eb8c6e554f0dfc39d6468813b8ac19ec28fe74f
 launchpad.net/goyaml	51

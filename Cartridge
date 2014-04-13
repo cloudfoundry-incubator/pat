@@ -5,4 +5,5 @@ github.com/vito/cmdtest origin/master
 github.com/pivotal-cf-experimental/cf-test-helpers/cf origin/master
 github.com/gorilla/mux origin/master
 github.com/garyburd/redigo/redis origin/master
+github.com/cloudfoundry/gosteno origin/master
 launchpad.net/goyaml last:1
