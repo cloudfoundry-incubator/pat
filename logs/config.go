@@ -30,6 +30,10 @@ func NewLogger(name string) *gosteno.Logger {
 }
 
 func initLogging() {
+	if params.level == "" {
+		params.level = "off"
+	}
+
 	level, err := gosteno.GetLogLevel(strings.ToLower(params.level))
 	if err != nil {
 		panic(err)

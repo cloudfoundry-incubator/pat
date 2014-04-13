@@ -77,6 +77,18 @@ var _ = Describe("Logs", func() {
 		})
 	})
 
+	Context("When -logging:level is empty", func() {
+		BeforeEach(func() {
+			args = []string{"-logging:level", ""}
+		})
+
+		It("Turns logs off (useful for tests)", func() {
+			NewLogger("test").Debug("Debug")
+			NewLogger("test").Info("Info")
+			Ω(sink.records).Should(HaveLen(0))
+		})
+	})
+
 	Context("When -logging:level is specified", func() {
 		BeforeEach(func() {
 			args = []string{"-logging:level", "debug"}

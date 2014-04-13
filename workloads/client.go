@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/cloudfoundry-community/pat/logs"
 )
 
 type httpclient interface {
@@ -24,6 +25,8 @@ type Reply struct {
 	Message  string
 	Location string
 }
+
+const TRACE_REST_CALLS = true
 
 func (client rest) Post(token string, url string, data interface{}, body interface{}) Reply {
 	return client.req(token, "POST", url, "", "", "", jsonToString(data), body)
@@ -107,7 +110,15 @@ func (client rest) req(token string, method string, url string, contentType stri
 		return Reply{0, err.Error(), ""}
 	}
 
+	var logger = logs.NewLogger("workloads.rest")
+
+	if TRACE_REST_CALLS {
+		body := make(map[string]interface{})
+		json.NewDecoder(resp.Body).Decode(&body)
+		logger.Debug1f(">> %s", body)
+	}
+
 	err = json.NewDecoder(resp.Body).Decode(&reply)
-	log.Println(method, " ", url, "-", resp.Status)
+	logger.Debug1f("%s %s %s", method, url, resp.Status)
 	return Reply{resp.StatusCode, resp.Status, resp.Header.Get("Location")}
 }

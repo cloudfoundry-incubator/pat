@@ -2,10 +2,10 @@ package benchmarker
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"strconv"
 
+	"github.com/cloudfoundry-community/pat/logs"
 	"github.com/cloudfoundry-community/pat/redis"
 	"github.com/cloudfoundry-community/pat/workloads"
 	"github.com/nu7hatch/gouuid"
@@ -58,12 +58,14 @@ func (slave slave) Close() error {
 		_, err = slave.conn.Do("BLPOP", "stopped-"+slave.guid, DEFAULT_TIMEOUT)
 	}
 
-	fmt.Println("Redis slave shutting down", err)
+	logs.NewLogger("redis.slave").Infof("Redis slave shutting down, %v", err)
 	return err
 }
 
 func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
-	fmt.Println("Started slave")
+	logger := logs.NewLogger("redis.slave")
+	logger.Info("Started slave")
+
 	for {
 		reply, err := redis.Strings(conn.Do("BLPOP", "stop-"+handle, "tasks", 0))
 
@@ -84,13 +86,13 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 				result := delegate.Time(experiment, i)
 				var encoded []byte
 				encoded, err = json.Marshal(result)
-				fmt.Println("Completed slave task, replying")
+				logger.Debug("Completed slave task, replying")
 				conn.Do("RPUSH", replyTo, string(encoded))
 			}(parts[2], parts[0], parts[1])
 		}
 
 		if err != nil {
-			fmt.Println("ERROR: slave encountered error: ", err)
+			logger.Warnf("ERROR: slave encountered error: %v", err)
 		}
 	}
 }

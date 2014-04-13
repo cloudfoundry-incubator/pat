@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry-community/pat/config"
 	. "github.com/cloudfoundry-community/pat/experiment"
 	. "github.com/cloudfoundry-community/pat/laboratory"
+	"github.com/cloudfoundry-community/pat/logs"
 	"github.com/cloudfoundry-community/pat/store"
 	"github.com/gorilla/mux"
 )
@@ -77,7 +78,7 @@ func redirectBase(w http.ResponseWriter, r *http.Request) {
 func bind() {
 	port := params.port
 
-	fmt.Printf("Starting web ui on http://localhost:%s", port)
+	logs.NewLogger("server").Infof("Starting web ui on http://localhost:%s", port)
 	if err := ListenAndServe(":" + port); err != nil {
 		panic(err)
 	}

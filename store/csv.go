@@ -2,7 +2,6 @@ package store
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-community/pat/experiment"
+	"github.com/cloudfoundry-community/pat/logs"
 	"github.com/cloudfoundry-community/pat/workloads"
 )
 
@@ -49,16 +49,18 @@ func (file *csvFile) AddWorkloadStep(workload workloads.WorkloadStep) {
 }
 
 func (self *csvFile) Write(samples <-chan *experiment.Sample) {
+	var logger = logs.NewLogger("store.csv")
+
 	f, err := os.Create(self.outputPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println("Creating directory, ", filepath.Dir(self.outputPath))
+			logger.Infof("Creating directory, %s", filepath.Dir(self.outputPath))
 			os.MkdirAll(filepath.Dir(self.outputPath), 0755)
 			f, err = os.Create(self.outputPath)
 		}
 
 		if err != nil {
-			fmt.Println("Can't write CSV: ", err)
+			logger.Errorf("Can't write CSV: %v", err)
 		}
 	}
 	defer f.Close()
