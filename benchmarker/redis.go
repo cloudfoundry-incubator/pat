@@ -33,7 +33,6 @@ func (rw rw) Time(experiment string, workerIndex int) (result IterationResult) {
 	reply, err := redis.Strings(rw.conn.Do("BLPOP", "replies-"+guid.String(), rw.timeoutInSeconds))
 
 	if err != nil {
-		fmt.Println(encodeError(err))
 		return IterationResult{0, []StepResult{}, encodeError(err)}
 	} else {
 		json.Unmarshal([]byte(reply[1]), &result)

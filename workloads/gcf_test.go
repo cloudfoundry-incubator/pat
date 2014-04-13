@@ -54,10 +54,6 @@ var _ = Describe("GCF Workloads", func() {
 				dstFile, err := ioutil.ReadFile(path.Join(dstDir, "test.txt"))
 				dstSubfile, err2 := ioutil.ReadFile(path.Join(dstDir, "subdir", "subfile.txt"))
 
-<<<<<<< HEAD
-
-=======
->>>>>>> Convert existing logs to gosteno
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(err2).ShouldNot(HaveOccurred())
 				Ω(string(dstFile)).Should(Equal("abc123"))
