@@ -9,25 +9,27 @@ import (
 )
 
 var _ = Describe("LocalWorker", func() {
+	workloadCtx := make(map[string]interface{})
+
 	Describe("When a single experiment is provided", func() {
 		It("Times a function by name", func() {
 			worker := NewLocalWorker()
 			worker.AddWorkloadStep(Step("foo", func() error { time.Sleep(1 * time.Second); return nil }, ""))
-			result := worker.Time("foo", 0)
+			result := worker.Time("foo", workloadCtx)
 			Ω(result.Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 		})
 
 		It("Sets the function command name in the response struct", func() {
 			worker := NewLocalWorker()
 			worker.AddWorkloadStep(Step("foo", func() error { time.Sleep(1 * time.Second); return nil }, ""))
-			result := worker.Time("foo", 0)
+			result := worker.Time("foo", workloadCtx)
 			Ω(result.Steps[0].Command).Should(Equal("foo"))
 		})
 
 		It("Returns any errors", func() {
 			worker := NewLocalWorker()
 			worker.AddWorkloadStep(Step("foo", func() error { return errors.New("Foo") }, ""))
-			result := worker.Time("foo", 0)
+			result := worker.Time("foo", workloadCtx)
 			Ω(result.Error).Should(HaveOccurred())
 		})
 
@@ -36,7 +38,7 @@ var _ = Describe("LocalWorker", func() {
 			worker := NewLocalWorker()
 			worker.AddWorkloadStep(StepWithContext("foo", func(ctx map[string]interface{}) error { context = ctx; ctx["a"] = 1; return nil }, ""))
 			worker.AddWorkloadStep(StepWithContext("bar", func(ctx map[string]interface{}) error { ctx["a"] = ctx["a"].(int) + 2; return nil }, ""))
-			worker.Time("foo", 0)
+			worker.Time("foo", workloadCtx)
 			Ω(context).Should(HaveKey("a"))
 		})
 	})
@@ -49,7 +51,7 @@ var _ = Describe("LocalWorker", func() {
 			worker = NewLocalWorker()
 			worker.AddWorkloadStep(Step("foo", func() error { time.Sleep(1 * time.Second); return nil }, ""))
 			worker.AddWorkloadStep(Step("bar", func() error { time.Sleep(1 * time.Second); return nil }, ""))
-			result = worker.Time("foo,bar", 0)
+			result = worker.Time("foo,bar", workloadCtx)
 		})
 
 		It("Reports the total time", func() {
@@ -78,7 +80,7 @@ var _ = Describe("LocalWorker", func() {
 			worker.AddWorkloadStep(Step("foo", func() error { time.Sleep(1 * time.Second); return nil }, ""))
 			worker.AddWorkloadStep(Step("bar", func() error { time.Sleep(1 * time.Second); return nil }, ""))
 			worker.AddWorkloadStep(Step("errors", func() error { return errors.New("fishfinger system overflow") }, ""))
-			result = worker.Time("foo,errors,bar", 0)
+			result = worker.Time("foo,errors,bar", workloadCtx)
 		})
 
 		It("Records the error", func() {
@@ -95,4 +97,5 @@ var _ = Describe("LocalWorker", func() {
 			Ω(result.Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 		})
 	})
+
 })

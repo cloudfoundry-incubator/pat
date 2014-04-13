@@ -8,7 +8,7 @@ import (
 )
 
 type Worker interface {
-	Time(experiment string, workerIndex int) IterationResult
+	Time(experiment string, workloadCtx map[string]interface{}) IterationResult
 	AddWorkloadStep(workloads workloads.WorkloadStep)
 	Visit(fn func(workloads.WorkloadStep))
 	Validate(name string) (result bool, err error)

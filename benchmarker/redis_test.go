@@ -17,6 +17,7 @@ import (
 var _ = Describe("RedisWorker", func() {
 	var (
 		conn redis.Conn
+		workloadCtx = make(map[string]interface{})
 	)
 
 	BeforeEach(func() {
@@ -38,7 +39,7 @@ var _ = Describe("RedisWorker", func() {
 
 				result := make(chan error)
 				go func() {
-					result <- worker.Time("timesout", 0).Error
+					result <- worker.Time("timesout", workloadCtx).Error
 				}()
 
 				Eventually(result, 2).Should(Receive())
@@ -74,32 +75,33 @@ var _ = Describe("RedisWorker", func() {
 
 			It("passes workerIndex to delegate.Time()", func() {
 				worker := NewRedisWorkerWithTimeout(conn, 1)
-				worker.Time("recordWorkerIndex", 72); 
+				workloadCtx["workerIndex"] = 72
+				worker.Time("recordWorkerIndex", workloadCtx);
 				Ω(wasCalledWithWorkerIndex).Should(Equal(72))				
 			})
 
 			It("Times a function by name", func() {
-				worker := NewRedisWorkerWithTimeout(conn, 1)
-				result := worker.Time("foo", 0)
+				worker := NewRedisWorkerWithTimeout(conn, 1)				
+				result := worker.Time("foo", workloadCtx)
 				Ω(result.Error).Should(BeNil())
 				Ω(result.Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 			})
 
 			It("Sets the function command name in the response struct", func() {
 				worker := NewRedisWorker(conn)
-				result := worker.Time("foo", 0)
+				result := worker.Time("foo", workloadCtx)
 				Ω(result.Steps[0].Command).Should(Equal("foo"))
 			})
 
 			It("Returns any errors", func() {
 				worker := NewRedisWorker(conn)
-				result := worker.Time("stepWithError", 0)
+				result := worker.Time("stepWithError", workloadCtx)
 				Ω(result.Error).Should(HaveOccurred())
 			})
 
 			It("Passes context to each step", func() {
 				worker := NewRedisWorker(conn)
-				worker.Time("fooWithContext,barWithContext", 0)
+				worker.Time("fooWithContext,barWithContext", workloadCtx)
 				Ω(context).Should(HaveKey("a"))
 			})			
 
@@ -108,7 +110,7 @@ var _ = Describe("RedisWorker", func() {
 
 				JustBeforeEach(func() {
 					worker := NewRedisWorkerWithTimeout(conn, 5)
-					result = worker.Time("foo,bar", 0)
+					result = worker.Time("foo,bar", workloadCtx)
 					Ω(result.Error).Should(BeNil())
 				})
 
@@ -129,6 +131,41 @@ var _ = Describe("RedisWorker", func() {
 				})				
 			})
 
+		})
+	})
+
+	Describe("Rest APIs argument in workloadCtx and workload string contain spaces", func() {
+		AfterEach(func() {
+			workloadCtx["cfTarget"] = ""
+			workloadCtx["cfUsername"] = ""
+			workloadCtx["cfPassword"] = ""			
+		})
+
+		It("returns errors when workload string contains space", func() {
+			worker := NewRedisWorker(conn)			
+			result := worker.Time("foo, foo", workloadCtx)
+			Ω(result.Error).Should(HaveOccurred())
+		})
+
+		It("returns errors when cfTarget in workloadCtx contains space", func() {
+			worker := NewRedisWorker(conn)
+			workloadCtx["cfTarget"] = "http:  // 127.0.0.1"
+			result := worker.Time("foo", workloadCtx)
+			Ω(result.Error).Should(HaveOccurred())
+		})
+
+		It("returns errors when cfUsername in workloadCtx contains space", func() {
+			worker := NewRedisWorker(conn)
+			workloadCtx["cfUsername"] = "user1, user2, user3"
+			result := worker.Time("foo", workloadCtx)
+			Ω(result.Error).Should(HaveOccurred())
+		})
+
+		It("returns errors when cfPassword in workloadCtx contains space", func() {
+			worker := NewRedisWorker(conn)
+			workloadCtx["cfPassword"] = "pass1, pass2, pass3"
+			result := worker.Time("foo", workloadCtx)
+			Ω(result.Error).Should(HaveOccurred())
 		})
 	})
 })

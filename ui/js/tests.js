@@ -5,7 +5,7 @@ describe("The view", function() {
   var throughputNode
 
   beforeEach(function() {
-    experiment = { run: function() {}, url: ko.observable(""), state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { iterations: ko.observable(1), concurrency: ko.observable(1), interval: ko.observable(0), stop: ko.observable(0) } }
+    experiment = { run: function() {}, url: ko.observable(""), state: ko.observable(""), view: function() {}, csvUrl: ko.observable(""), config: { iterations: ko.observable(1), concurrency: ko.observable(1), interval: ko.observable(0), stop: ko.observable(0), cfTarget: ko.observable("http://xio.10.xx.xx.xx"), cfUsername: ko.observable("admin"), cfPassword: ko.observable("admin") } }
     experimentList = { experiments: [], refreshNow: function(){} }
     spyOn(experimentList, "refreshNow")
     spyOn(experiment, "view")
@@ -200,6 +200,97 @@ describe("DOM elements manipulation", function(){
     expect( $(throughputNode).css('display') ).toBe("block")
     expect( $(workloadNode).css('display') ).toBe("none")
   })
+})
+
+describe("Workload List", function(){
+
+  it("draws a button for each workload command", function(){
+    var i = 0;
+    for (var key in WL.workloadItems) {
+      expect( $("#workloadItems").find("button")[i].innerText.trim() ).toBe(key)
+      i++;
+    }
+  })
+
+  it("removes a selected command when user click on the selected command button", function(){    
+    var cmd = "rest:target"
+
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+    expect( $("#selectedList button:contains(" + cmd + ")").length ).toBe(1)
+    
+    $("#selectedList button:contains(" + cmd + ")").trigger("click") 
+    expect( $("#selectedList button:contains(" + cmd + ")").length ).toBe(0)    
+  })
+
+  it("returns a list of selected commands, separated by commas", function(){
+    $("#workloadItems button:contains('gcf:push')").trigger("click")
+    $("#workloadItems button:contains('dummyWithErrors')").trigger("click")
+    $("#workloadItems button:contains('gcf:push')").trigger("click")
+
+    expect( WL.workloads() ).toBe("gcf:push,dummyWithErrors,gcf:push")
+
+    //clean up
+    $("#selectedList button:contains('gcf:push')").trigger("click")
+    $("#selectedList button:contains('dummyWithErrors')").trigger("click")
+    $("#selectedList button:contains('gcf:push')").trigger("click")
+  })
+
+  it("removes a selected command when selected command is clicked", function(){
+    var cmd = "rest:target"
+
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+    expect( $("#selectedList button:contains(" + cmd + ")").length ).toBe(1)
+
+    $("#selectedList button:contains(" + cmd + ")").trigger("click") 
+    expect( $("#selectedList button:contains(" + cmd + ")").length ).toBe(0)
+  })
+
+  it("shows a text input for arguments that is required by the workload command", function(){    
+    var cmd = "rest:login"
+
+    WL.workloadItems[cmd].args.forEach(function(arg){      
+      expect( $("#argumentList label:contains(" + arg + ")").parent()[0].style.getPropertyValue('display') ).toBe('none')      
+    })
+
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+
+    WL.workloadItems[cmd].args.forEach(function(arg){      
+      expect( $("#argumentList label:contains(" + arg + ")").parent()[0].style.getPropertyValue('display') ).toBe('inherit')      
+    })
+  })
+
+  it("inserts required parent commands when the child command is selected", function(){    
+    var i = 0
+    var cmd = "rest:push"
+
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+
+    WL.workloadItems[cmd].requires.forEach(function(parentCmd){      
+      expect( $("#selectedList").find("button")[i].innerText.trim() ).toBe(parentCmd)
+      i++
+    })
+  })
+
+  it("will not remove a selected command when there is a dependency in the selected list, and popup warning in alert box", function(){    
+    var cmd = "rest:push"
+    var alertCalled = false
+
+    //hiject the alert box so it doesn't block
+    var orgAlert = window.alert    
+    window.alert = function () {
+      alertCalled = true
+    };
+    
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+
+    expect( $("#selectedList button:contains('rest:target')").length ).toBe(1)
+    expect( $("#selectedList button:contains('rest:login')").length ).toBe(1)
+
+    $("#selectedList button:contains('rest:target')").trigger("click") 
+    expect(alertCalled).toBe(true)   
+
+    window.alert = orgAlert
+  })
 
 })
 
@@ -372,7 +463,7 @@ describe("Throughput chart", function() {
     
     setTimeout(function () {
       expect( $(node).find("g.tplegend text")[0].innerHTML ).toEqual("list")
-      expect( $(node).find("g.tplegend text")[1].innerHTML ).toEqual(null)
+      expect( $(node).find("g.tplegend text")[1] ).toEqual(null)
     }, 800);    
   })
 

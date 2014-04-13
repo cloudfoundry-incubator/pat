@@ -7,10 +7,10 @@ casper.test.begin 'Basic Flow', 6, (test) ->
     @previous_experiments_count = @evaluate previousExperimentCount
     @echo("Currently #{@.previous_experiments_count} experiments in the previous experiments list")
 
-    @fill 'form', 
-      inputExperiment: "dummy"
+    @fill 'form',       
       inputIterations: 7
-      inputConcurrency: 5
+      inputConcurrency: 5    
+    @click '#workloadItem-dummyWithErrors'
     @click 'button[type=submit]'
     @waitWhileVisible ".noexperimentrunning"
 

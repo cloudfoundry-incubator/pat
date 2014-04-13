@@ -15,13 +15,11 @@ func NewLocalWorker() *LocalWorker {
 	return &LocalWorker{defaultWorker{make(map[string]workloads.WorkloadStep)}}
 }
 
-func (self *LocalWorker) Time(experiment string, workerIndex int) (result IterationResult) {	
+func (self *LocalWorker) Time(experiment string, workloadCtx map[string]interface{}) (result IterationResult) {		
 	experiments := strings.Split(experiment, ",")
 	var start = time.Now()
-	context := make(map[string]interface{})
-	context["workerIndex"] = workerIndex
 	for _, e := range experiments {
-		stepTime, err := Time(func() error { return self.Experiments[e].Fn(context) })
+		stepTime, err := Time(func() error { return self.Experiments[e].Fn(workloadCtx) })
 		result.Steps = append(result.Steps, StepResult{e, stepTime})
 		if err != nil {
 			result.Error = encodeError(err)

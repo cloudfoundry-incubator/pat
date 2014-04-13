@@ -34,7 +34,7 @@ func NewRestWorkloadWithClient(client httpclient) *rest {
 	return ctx
 }
 
-func (r *rest) DescribeParameters(config config.Config) {
+func (r *rest) DescribeParameters(config config.Config) {	
 	config.StringVar(&r.target, "rest:target", "", "the target for the REST api")
 	config.StringVar(&r.username, "rest:username", "", "username for REST api")
 	config.StringVar(&r.password, "rest:password", "", "password for REST api")
@@ -42,6 +42,8 @@ func (r *rest) DescribeParameters(config config.Config) {
 }
 
 func (r *rest) Target(ctx map[string]interface{}) error {
+	if (r.target == "" && ctx["cfTarget"] != nil ) { r.target = ctx["cfTarget"].(string) }
+
 	body := &TargetResponse{}
 	return r.GetSuccessfully("", r.target+"/v2/info", nil, body, func(reply Reply) error {
 		ctx["loginEndpoint"] = body.LoginEndpoint
@@ -51,10 +53,10 @@ func (r *rest) Target(ctx map[string]interface{}) error {
 }
 
 func (r *rest) Login(ctx map[string]interface{}) error {
-	body := &LoginResponse{}
+	body := &LoginResponse{}	
 	workerIndex, _ := ctx["workerIndex"].(int)
 	return checkTargetted(ctx, func(loginEndpoint string, apiEndpoint string) error {
-		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", ctx["loginEndpoint"]), r.oauthInputs(r.credentialsForWorker(workerIndex)), body, func(reply Reply) error {
+		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", ctx["loginEndpoint"]), r.oauthInputs(r.credentialsForWorker(workerIndex, ctx)), body, func(reply Reply) error {
 			ctx["token"] = body.Token
 			return r.targetSpace(ctx)
 		})
@@ -206,14 +208,16 @@ func (s SpaceResponse) SpaceExists() bool {
 	return len(s.Resources) > 0
 }
 
-func (r *rest) credentialsForWorker(workerIndex int)(string, string) {
+func (r *rest) credentialsForWorker(workerIndex int, ctx map[string]interface{})(string, string) {
+	if (r.username == "" && ctx["cfUsername"] != nil ) { r.username = ctx["cfUsername"].(string) }
+	if (r.password == ""  && ctx["cfPassword"] != nil ) { r.password = ctx["cfPassword"].(string) }
+
 	var userList = strings.Split(r.username, ",")
 	var passList = strings.Split(r.password, ",")
 	return userList[workerIndex % len(userList)], passList[workerIndex % len(passList)]
 }
 
-func (r *rest) oauthInputs(username string, password string) url.Values {
-	
+func (r *rest) oauthInputs(username string, password string) url.Values {	
 	values := make(url.Values)
 	values.Add("grant_type", "password")
 	values.Add("username", username)

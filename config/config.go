@@ -3,7 +3,7 @@ package config
 import (
 	"flag"
 	"io/ioutil"
-	"os"
+	"os"	
 
 	"launchpad.net/goyaml"
 )
@@ -79,7 +79,6 @@ func (f *f) Parse(args []string) error {
 			panic("Failed Parsing Config File")
 		}
 	}
-
 	return nil
 }
 
@@ -95,7 +94,7 @@ func (f *f) ParseEnv() error {
 	return nil
 }
 
-func (f *f) ParseConfig(path string) error {
+func (f *f) ParseConfig(path string) error {	
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err

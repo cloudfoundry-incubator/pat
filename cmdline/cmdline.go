@@ -3,6 +3,7 @@ package cmdline
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/cloudfoundry-community/pat/benchmarker"
 	"github.com/cloudfoundry-community/pat/config"
@@ -23,7 +24,7 @@ var params = struct {
 	stop          int
 }{}
 
-func InitCommandLineFlags(config config.Config) {
+func InitCommandLineFlags(config config.Config) {	
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
 	config.IntVar(&params.concurrency, "concurrency", 1, "max number of pushes to attempt in parallel")
 	config.BoolVar(&params.silent, "silent", false, "true to run the commands and print output the terminal")
@@ -36,7 +37,8 @@ func InitCommandLineFlags(config config.Config) {
 	store.DescribeParameters(config)
 }
 
-func RunCommandLine() error {
+func RunCommandLine() error {	
+	params.workload = strings.Replace(params.workload, " ", "", -1)
 	return WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		return validateParameters(worker, func() error {
 			return store.WithStore(func(store Store) error {
@@ -50,10 +52,12 @@ func RunCommandLine() error {
 					})
 				}
 
+				workloadContext := make(map[string]interface{})				
+
 				lab.RunWithHandlers(
 					NewRunnableExperiment(
 						NewExperimentConfiguration(
-							params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
+							params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers, workloadContext)
 
 				BlockExit()
 				return nil

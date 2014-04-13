@@ -18,9 +18,13 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var (
+	workloadContext = make(map[string]interface{})
+)
+
 var _ = Describe("Server", func() {
 	var (
-		lab *DummyLab
+		lab *DummyLab		
 	)
 
 	BeforeEach(func() {
@@ -124,7 +128,7 @@ var _ = Describe("Server", func() {
 		Ω(lab.config.Concurrency).Should(Equal(1))
 		Ω(lab.config.Interval).Should(Equal(0))
 		Ω(lab.config.Stop).Should(Equal(0))
-		Ω(lab.config.Workload).Should(Equal("push"))
+		Ω(lab.config.Workload).Should(Equal("gcf:push"))
 	})
 
 	It("Supports an 'iterations' parameter", func() {
@@ -152,9 +156,38 @@ var _ = Describe("Server", func() {
 		Ω(lab.config.Workload).Should(Equal("flibble"))
 	})
 
-	It("Returns Location based on assigned experiment GUID", func() {
-		json := post("/experiments/")
-		Ω(json["Location"]).Should(Equal("/experiments/some-guid"))
+	It("removes space in 'workload' parameter", func() {
+		post("/experiments/?workload=rest:target, rest: login")
+		Ω(lab.config.Workload).Should(Equal("rest:target,rest:login"))
+	})
+
+	It("Supports a 'cfTarget' parameter", func() {
+		post("/experiments/?cfTarget=http://api.127.0.0.1")
+		Ω(workloadCtxStringValue("cfTarget")).Should(Equal("http://api.127.0.0.1"))
+	})
+
+	It("removes space in 'cfTarget' parameter", func() {
+		post("/experiments/?cfTarget=http: // api.127.0.0.1")
+		Ω(workloadCtxStringValue("cfTarget")).Should(Equal("http://api.127.0.0.1"))
+	})
+
+	It("Supports a 'cfUsername' parameter", func() {
+		post("/experiments/?cfUsername=user1")
+		Ω(workloadCtxStringValue("cfUsername")).Should(Equal("user1"))
+	})
+
+	It("removes space in 'cfUsername' parameter", func() {
+		post("/experiments/?cfUsername=user1, user2, user3")
+		Ω(workloadCtxStringValue("cfUsername")).Should(Equal("user1,user2,user3"))
+	})
+	It("Supports a 'cfPassword' parameter", func() {
+		post("/experiments/?cfPassword=pass1")
+		Ω(workloadCtxStringValue("cfPassword")).Should(Equal("pass1"))
+	})
+
+	It("removes space in 'cfPassword' parameter", func() {
+		post("/experiments/?cfPassword=pass1, pass2, pass3")
+		Ω(workloadCtxStringValue("cfPassword")).Should(Equal("pass1,pass2,pass3"))
 	})
 })
 
@@ -167,13 +200,14 @@ type DummyExperiment struct {
 	guid string
 }
 
-func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample)) (string, error) {
+func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample), workloadCtx map[string]interface {}) (string, error) {
 	Fail("called unexpected dummy function")
 	return "", nil
 }
 
-func (l *DummyLab) Run(ex Runnable) (string, error) {
+func (l *DummyLab) Run(ex Runnable, workloadCtx map[string]interface {}) (string, error) {	
 	l.config = ex.(*RunnableExperiment)
+	workloadContext = workloadCtx
 	return "some-guid", nil
 }
 
@@ -225,4 +259,8 @@ func req(method string, url string) []byte {
 	} else {
 		return body
 	}
+}
+
+func workloadCtxStringValue(key string) string {
+	return workloadContext[key].(string)
 }

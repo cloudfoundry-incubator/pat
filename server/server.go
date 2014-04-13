@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/cloudfoundry-community/pat/benchmarker"
 	"github.com/cloudfoundry-community/pat/config"
@@ -124,15 +125,24 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		stop = 0
 	}
 
-	workload := r.FormValue("workload")
+	cfTarget := removeSpaces( r.FormValue("cfTarget") )
+	cfUsername := removeSpaces( r.FormValue("cfUsername") )
+	cfPassword := removeSpaces( r.FormValue("cfPassword") )
+	workload := removeSpaces( r.FormValue("workload") )
+
 	if workload == "" {
-		workload = "push"
+		workload = "gcf:push"
 	}
+
+	workloadContext := make(map[string]interface{})
+	workloadContext["cfTarget"] = cfTarget
+	workloadContext["cfUsername"] = cfUsername
+	workloadContext["cfPassword"] = cfPassword
 
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
-				pushes, concurrency, interval, stop, ctx.worker, workload)))
+				pushes, concurrency, interval, stop, ctx.worker, workload)), workloadContext)
 
 	return ctx.router.Get("experiment").URL("name", experiment)
 }
@@ -188,6 +198,10 @@ func handler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) h
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+func removeSpaces(value string) string {
+	return strings.Replace(value, " ", "", -1)
 }
 
 var ListenAndServe = func(bind string) error {
