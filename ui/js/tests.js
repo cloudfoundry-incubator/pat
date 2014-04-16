@@ -306,7 +306,50 @@ describe("Throughput chart", function() {
     }
 
     expect( tickMax ).toBeCloseTo(3, tickSize);
-  });    
+  });
+
+  it("should draw legend in the same color of it's corresponding line", function() {
+    var workload = [{ Commands: {
+        "list": {"Throughput": 0.5}
+      } }];
+
+    chart(workload);
+
+    var color = $(node).find("path.line")[0].style.stroke    
+    expect( $(node).find("g.tplegend rect")[0].style.fill ).toEqual(color)
+  })
+
+  it("should show legend to indicate what command the lines are representing", function() {
+    var workload = [{ Commands: {
+        "login": {"Throughput": 0.5}, 
+        "push":  {"Throughput": 0.1}
+      } }];
+
+    chart(workload);
+
+    expect( $(node).find("g.tplegend").length ).toEqual(2);      
+  })
+
+  it("should show updated legend when new command is used in a experiment", function() {
+    var workload = [{ Commands: {
+        "login": {"Throughput": 0.5}, 
+        "push":  {"Throughput": 0.1}
+      } }];
+
+    chart(workload);
+
+    expect( $(node).find("g.tplegend text")[0].innerHTML ).toEqual("login")
+    expect( $(node).find("g.tplegend text")[1].innerHTML ).toEqual("push")
+
+    workload = [{ Commands: { "list": {"Throughput": 0.2} }}];
+    
+    chart(workload);
+    
+    setTimeout(function () {
+      expect( $(node).find("g.tplegend text")[0].innerHTML ).toEqual("list")
+      expect( $(node).find("g.tplegend text")[1].innerHTML ).toEqual(null)
+    }, 800);    
+  })
 
 })
 

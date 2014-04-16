@@ -119,22 +119,26 @@ d3_throughput = function() {
     var l = legend.enter()
       .append("g")
         .attr("class", "tplegend")
-    
+
+    legend.transition()
+      .select("g.tplegend text")
+        .text(function(d){ return d.cmd }) 
+
     l.append("rect")
       .attr("x", 30)
       .attr("y", function(d, i) { return i * 15 + 2} )
       .attr("height", 10)
       .attr("width", 55)
-      .attr("fill", function(d) { return color(d.cmd) })
+      .style("fill", function(d) { return color(d.cmd) })
     l.append("text")
       .attr("x", 90 )
       .attr("y", function(d, i) { return i * 15 + 3 } )
       .attr("dy", ".7em")
-      .attr("stroke", function(d) { return color(d.cmd) })
+      .style("stroke", function(d) { return color(d.cmd) })
       .attr("stroke-width", "1px")
       .attr("style", "text-anchor: start;")
-      .text(function(d){ return d.cmd })
-      
+      .text(function(d){ return d.cmd }) 
+
     lineChart.exit().remove();
     legend.exit().remove();    
 
