@@ -35,8 +35,8 @@ var _ = Describe("GCF Workloads", func() {
 				info, err := os.Lstat(dstDir)
 				subInfo, err2 := os.Lstat(path.Join(dstDir, "subdir"))
 
-				Ω(err).ShouldNot(HaveOccured())
-				Ω(err2).ShouldNot(HaveOccured())
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(err2).ShouldNot(HaveOccurred())
 				Ω(info.IsDir()).Should(Equal(true))
 				Ω(subInfo.IsDir()).Should(Equal(true))
 			})
@@ -55,8 +55,8 @@ var _ = Describe("GCF Workloads", func() {
 				dstSubfile, err2 := ioutil.ReadFile(path.Join(dstDir, "subdir", "subfile.txt"))
 
 
-				Ω(err).ShouldNot(HaveOccured())
-				Ω(err2).ShouldNot(HaveOccured())
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(err2).ShouldNot(HaveOccurred())
 				Ω(string(dstFile)).Should(Equal("abc123"))
 				Ω(string(dstSubfile)).Should(Equal("foobar"))
 			})
@@ -76,8 +76,8 @@ var _ = Describe("GCF Workloads", func() {
 				dstFile, err := ioutil.ReadFile(path.Join(dstDir, "test.txt"))
 				dstSubfile, err2 := ioutil.ReadFile(path.Join(dstDir, "subdir", "subfile.txt"))
 
-				Ω(err).ShouldNot(HaveOccured())
-				Ω(err2).ShouldNot(HaveOccured())
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(err2).ShouldNot(HaveOccurred())
 				Ω(strings.Contains(string(dstFile), "qwerty")).Should(Equal(true))
 				Ω(strings.Contains(string(dstSubfile), "qwerty")).Should(Equal(false))
 			})
