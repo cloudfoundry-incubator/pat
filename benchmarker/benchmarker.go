@@ -11,9 +11,9 @@ type StepResult struct {
 }
 
 type IterationResult struct {
-	Duration time.Duration
-	Steps    []StepResult
-	Error    *EncodableError
+	Duration    time.Duration
+	Steps       []StepResult
+	Error       *EncodableError
 }
 
 func Time(experiment func() error) (result time.Duration, err error) {
@@ -23,30 +23,30 @@ func Time(experiment func() error) (result time.Duration, err error) {
 	return t1.Sub(t0), err
 }
 
-func Counted(out chan<- int, fn func()) func() {
-	return func() {
+func Counted(out chan<- int, fn func(int)) func(int) {
+	return func(workerIndex int) {
 		out <- 1
-		fn()
+		fn(workerIndex)
 		out <- -1
 	}
 }
 
-func TimedWithWorker(out chan<- IterationResult, worker Worker, experiment string) func() {
-	return func() {
-		time := worker.Time(experiment)
+func TimedWithWorker(out chan<- IterationResult, worker Worker, experiment string) func(int) {
+	return func(workerIndex int) {
+		time := worker.Time(experiment, workerIndex)
 		out <- time
 	}
 }
 
-func Once(fn func()) <-chan func() {
+func Once(fn func(int)) <-chan func(int) {
 	return Repeat(1, fn)
 }
 
-func RepeatEveryUntil(repeatInterval int, runTime int, fn func(), quit <-chan bool) <-chan func() {
+func RepeatEveryUntil(repeatInterval int, runTime int, fn func(int), quit <-chan bool) <-chan func(int) {
 	if repeatInterval == 0 || runTime == 0 {
 		return Once(fn)
 	} else {
-		ch := make(chan func())
+		ch := make(chan func(int))
 		var tickerQuit *time.Ticker
 		ticker := time.NewTicker(time.Duration(repeatInterval) * time.Second)
 		if runTime > 0 {
@@ -72,8 +72,8 @@ func RepeatEveryUntil(repeatInterval int, runTime int, fn func(), quit <-chan bo
 	}
 }
 
-func Repeat(n int, fn func()) <-chan func() {
-	ch := make(chan func())
+func Repeat(n int, fn func(int)) <-chan func(int) {
+	ch := make(chan func(int))
 	go func() {
 		defer close(ch)
 		for i := 0; i < n; i++ {
@@ -83,22 +83,22 @@ func Repeat(n int, fn func()) <-chan func() {
 	return ch
 }
 
-func Execute(tasks <-chan func()) {
+func Execute(tasks <-chan func(int)) {
 	for task := range tasks {
-		task()
+		task(1)
 	}
 }
 
-func ExecuteConcurrently(workers int, tasks <-chan func()) {
+func ExecuteConcurrently(workers int, tasks <-chan func(int)) {
 	var wg sync.WaitGroup
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go func(t <-chan func()) {
+		go func(t <-chan func(int), n int) {
 			defer wg.Done()
 			for task := range t {
-				task()
+				task(n)
 			}
-		}(tasks)
+		}(tasks, i)
 	}
 	wg.Wait()
 }

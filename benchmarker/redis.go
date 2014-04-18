@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"strconv"
 
 	"github.com/cloudfoundry-community/pat/redis"
 	"github.com/cloudfoundry-community/pat/workloads"
@@ -26,12 +27,13 @@ func NewRedisWorkerWithTimeout(conn redis.Conn, timeoutInSeconds int) Worker {
 	return &rw{defaultWorker{make(map[string]workloads.WorkloadStep)}, conn, timeoutInSeconds}
 }
 
-func (rw rw) Time(experiment string) (result IterationResult) {
+func (rw rw) Time(experiment string, workerIndex int) (result IterationResult) {
 	guid, _ := uuid.NewV4()
-	rw.conn.Do("RPUSH", "tasks", "replies-"+guid.String()+" "+experiment)
+	rw.conn.Do("RPUSH", "tasks", "replies-"+guid.String()+" "+strconv.Itoa(workerIndex)+" "+experiment)	
 	reply, err := redis.Strings(rw.conn.Do("BLPOP", "replies-"+guid.String(), rw.timeoutInSeconds))
 
 	if err != nil {
+		fmt.Println(encodeError(err))
 		return IterationResult{0, []StepResult{}, encodeError(err)}
 	} else {
 		json.Unmarshal([]byte(reply[1]), &result)
@@ -75,14 +77,16 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 		}
 
 		if err == nil {
-			parts := strings.SplitN(reply[1], " ", 2)
-			go func(experiment string, replyTo string) {
-				result := delegate.Time(experiment)
+			parts := strings.SplitN(reply[1], " ", 3)
+
+			go func(experiment string, replyTo string, workerIndex string) {
+				i, _ := strconv.Atoi(workerIndex)
+				result := delegate.Time(experiment, i)
 				var encoded []byte
 				encoded, err = json.Marshal(result)
 				fmt.Println("Completed slave task, replying")
 				conn.Do("RPUSH", replyTo, string(encoded))
-			}(parts[1], parts[0])
+			}(parts[2], parts[0], parts[1])
 		}
 
 		if err != nil {
