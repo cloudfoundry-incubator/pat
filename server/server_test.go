@@ -216,12 +216,12 @@ func req(method string, url string) []byte {
 	resp := httptest.NewRecorder()
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		Ω(err).NotTo(HaveOccured())
+		Ω(err).NotTo(HaveOccurred())
 	}
 
 	http.DefaultServeMux.ServeHTTP(resp, req)
 	if body, err := ioutil.ReadAll(resp.Body); err != nil {
-		Ω(err).NotTo(HaveOccured())
+		Ω(err).NotTo(HaveOccurred())
 		return nil
 	} else {
 		fmt.Printf("Body: %s", body)

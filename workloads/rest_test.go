@@ -189,7 +189,7 @@ var _ = Describe("Rest Workloads", func() {
 		Describe("When the API hasn't been targetted yet", func() {
 			It("Will return an error", func() {
 				err := rest.Login(context)
-				Ω(err).To(HaveOccured())
+				Ω(err).To(HaveOccurred())
 			})
 		})
 	})
