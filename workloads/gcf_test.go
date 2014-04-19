@@ -16,7 +16,7 @@ var _ = Describe("GCF Workloads", func() {
 	var (
 		srcDir string
 		dstDir string
-	)	
+	)
 	BeforeEach(func() {
 		srcDir = path.Join(os.TempDir(), "src")
 		dstDir = path.Join(os.TempDir(), "dst")
@@ -40,7 +40,7 @@ var _ = Describe("GCF Workloads", func() {
 				Ω(info.IsDir()).Should(Equal(true))
 				Ω(subInfo.IsDir()).Should(Equal(true))
 			})
-			
+
 			It("Copies any files contained the source directory or subdirectories", func() {
 				os.MkdirAll(path.Join(srcDir, "subdir"), 0777)
 				file, _ := os.Create(path.Join(srcDir, "test.txt"))
@@ -49,11 +49,10 @@ var _ = Describe("GCF Workloads", func() {
 				subFile, _ := os.Create(path.Join(srcDir, "subdir", "subfile.txt"))
 				subFile.WriteString("foobar")
 				subFile.Close()
-				
+
 				CopyAndReplaceText(srcDir, dstDir, "", "")
 				dstFile, err := ioutil.ReadFile(path.Join(dstDir, "test.txt"))
 				dstSubfile, err2 := ioutil.ReadFile(path.Join(dstDir, "subdir", "subfile.txt"))
-
 
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(err2).ShouldNot(HaveOccurred())
@@ -72,7 +71,7 @@ var _ = Describe("GCF Workloads", func() {
 				subFile.Close()
 
 				CopyAndReplaceText(srcDir, dstDir, "$RANDOM_TEXT", "qwerty")
-			
+
 				dstFile, err := ioutil.ReadFile(path.Join(dstDir, "test.txt"))
 				dstSubfile, err2 := ioutil.ReadFile(path.Join(dstDir, "subdir", "subfile.txt"))
 

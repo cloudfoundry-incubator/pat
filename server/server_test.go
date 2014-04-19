@@ -2,7 +2,6 @@ package server_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -224,7 +223,6 @@ func req(method string, url string) []byte {
 		Ω(err).NotTo(HaveOccurred())
 		return nil
 	} else {
-		fmt.Printf("Body: %s", body)
 		return body
 	}
 }

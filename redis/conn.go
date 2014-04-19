@@ -3,6 +3,7 @@ package redis
 import (
 	"fmt"
 
+	"github.com/cloudfoundry-community/pat/logs"
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -17,7 +18,7 @@ type conn struct {
 }
 
 func Connect(host string, port int, password string) (Conn, error) {
-	fmt.Printf("Dialling redis on %s:%d", host, port)
+	logs.NewLogger("redis.conn").Debugf("Dialling redis on %s:%d", host, port)
 	return test(&conn{redis.NewPool(func() (redis.Conn, error) { return connect(host, port, password) }, MAX_IDLE)}, nil)
 }
 
@@ -40,7 +41,7 @@ func test(conn *conn, err error) (Conn, error) {
 	}
 
 	if err != nil {
-		fmt.Println("Redis connection failed")
+		logs.NewLogger("redis.conn").Error("Redis connection failed")
 	}
 	return conn, err
 }
