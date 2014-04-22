@@ -150,6 +150,31 @@ describe("The view", function() {
       });
     })
   })
+
+  describe("Experiment Configuration Popup", function() {
+    it("should be hidden from the view by default", function() {    
+      var property = $('#experimentPopup').css('display');
+      expect(property).toBe("none")
+    })
+
+    it("should be visible when experiment configuration button is clicked", function() {    
+      $('[data-target = "#experimentPopup"]').trigger("click");      
+      waits(300);
+      runs(function() {
+        var property = $('#experimentPopup').css('display');
+        expect(property).toBe("block")  
+      });
+    })
+
+    it("should hide from view when close button is clicked", function() {    
+      $('#experimentPopup').find('.close').trigger("click");
+      waits(600);
+      runs(function() {
+        var property = $('#experimentPopup').css('display');          
+        expect(property).toBe("none")  
+      });
+    })
+  })
 })
 
 describe("DOM elements manipulation", function(){  
