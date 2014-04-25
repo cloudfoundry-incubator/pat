@@ -40,13 +40,21 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#87e0fd', end
 
 
 }
-#graph { min-height: 800px; max-height: 800px; min-width: 98%; position: absolute; left: 5px; margin: 12px }
-#tbl { position: absolute; width: 380px; top: 138px; left: 14px; bottom: 2% }
-.controls { position: absolute; top: 14px; width: 380px; left: 14px;text-align: center;  background: white; border-bottom: 2px solid #ddd; padding: 12px; z-index: 99; }
-.selector { position: absolute; top: 64px; width: 380px; text-align: center; left: 14px; background: white; border-bottom: 2px solid #ddd; padding: 12px; z-index: 99; }
+#graph { min-height: 800px; max-height: 800px; min-width: 98%; position: absolute; left: 5px; padding: 40px; padding-top: 140px; padding-bottom: 250px }
+#tbl { position: absolute; width: 96%; bottom: 220px; left: 2%; bottom: 2% }
+.controls { position: absolute; top: 14px; width: 480px; left: 14px;text-align: center;  background: white; border-bottom: 2px solid #ddd; padding: 12px; z-index: 99; }
+.selector { position: absolute; top: 14px; width: 380px; text-align: center; right: 20px; background: white; border-bottom: 2px solid #ddd; padding: 12px; z-index: 99; }
+#tbl, .controls, .selector {
+	-webkit-box-shadow: 0px 3px 12px 0px rgba(50, 50, 50, 0.87);
+	-moz-box-shadow:    0px 3px 12px 0px rgba(50, 50, 50, 0.87);
+	box-shadow:         0px 3px 12px 0px rgba(50, 50, 50, 0.87);
+}
 .state-Finished { color: green }
 .state-Running { color: blue }
 .state-Failed { color: red }
+.dropper h2 {
+padding-bottom: 1em; border-bottom: 1px dotted #bbb; font-weight: 700; font-size: 12px; color: #bbb; text-transform: uppercase
+}
 </style>
 </head>
 
@@ -58,19 +66,101 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#87e0fd', end
 
   <div class="graph row">
     <div class="controls">
-      <button class="btn btn-primary btn-xs" style="" data-toggle="modal" data-target="#experimentPopup">
-        <span class="glyphicon glyphicon-flash"></span> Configure / Run Experiment
+      <button class="btn btn-success btn-lg" style="" data-toggle="collapse" data-target="#experimentPopup">
+				<span class="glyphicon glyphicon-flash"></span> Run Experiment.. &nbsp;<span class="glyphicon glyphicon-chevron-down"></span>
       </button>
-      <span style="">&nbsp&nbsp|&nbsp&nbsp</span>
-      <button class="btn btn-primary btn-xs" style="" data-toggle="modal" data-target="#historyPopup">
-        <span class="glyphicon glyphicon-time"></span> History
+			<span>&nbsp;&nbsp;|&nbsp;&nbsp;</span>
+      <button class="btn btn-default btn-lg" style="" data-toggle="collapse" data-target="#historyPopup">
+        <span class="glyphicon glyphicon-time"></span> History&nbsp; <span class="glyphicon glyphicon-chevron-down"></span>
       </button>
+
+  <div class="collapse dropper" id="experimentPopup" tabindex="-1" aria-hidden="true" >
+    <div class="" style="">
+      <div class="" style="background:rgba(255,255,255,0.75);">
+        <div class="panel-body">
+          <form class="form-horizontal" role="form">
+            <div class="form-group">
+						  <h2>Configure Experiment</h2>
+              <label for="inputExperiment" class="col-sm-4 control-label">Experiment</label>
+              <div class="col-sm-8">
+                <select id="cmdSelect" name="inputExperiment" class="form-control">
+                  <option value="gcf:push">Simple Push</option>
+                  <option value="dummy,dummyWithErrors">Dummies (dummy, dummyWithErrors)</option>
+                  <option value="dummy">Dummy Push</option>
+                  <option value="gcf:push,gcf:push">Multiple Pushes</option>
+                  <option value="dummyWithErrors">Dummy with Errors</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" data-bind="css: { 'has-error': numIterationsHasError }">
+              <label for="inputIterations" class="col-sm-4 control-label">Iterations</label>
+              <div class="col-sm-8">
+                <input type="number" class="form-control" id="inputIterations" name="inputIterations" placeholder="1" data-bind="value: numIterations">
+              </div>
+            </div>
+            <div class="form-group" data-bind="css: { 'has-error': numConcurrentHasError }">
+              <label for="inputConcurrency" class="col-sm-4 control-label">Concurrency</label>
+              <div class="col-sm-8">
+                <input type="number" class="form-control" id="inputConcurrency" name="inputConcurrency" placeholder="1" data-bind="value: numConcurrent">
+              </div>
+            </div>
+            <div class="form-group" data-bind="css: { 'has-error': numIntervalHasError }">
+              <label for="inputInterval" class="col-sm-4 control-label">Interval</label>
+              <div class="col-sm-8">
+                <input type="number" class="form-control" id="inputInterval" name="inputInterval" placeholder="0" data-bind="value: numInterval">
+              </div>
+            </div>
+            <div class="form-group" data-bind="css: { 'has-error': numStopHasError }">
+              <label for="inputStop" class="col-sm-4 control-label">Stop</label>
+              <div class="col-sm-8">
+                <input type="number" class="form-control" id="inputStop" name="inputStop" placeholder="0" data-bind="value: numStop">
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-10">
+                <button data-bind="click: start, enable: formHasNoErrors" data-toggle="collapse" data-target="#experimentPopup" id="startbtn" type="submit" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="dropper collapse" id="historyPopup" tabindex="-1" aria-labelledby="historyPopupLabel" aria-hidden="true" >
+    <div class="" style="">
+      <div class="" style="background:rgba(255,255,255,0.75);">
+				<h2>Previous Experiments</h2>
+        <div class="" style="max-height: 350px; overflow-y: scroll">
+          <table class="table table-hover" style="text-align: left">
+            <thead>
+              <th>Name</th>
+              <th>State</th>
+              <th>Actions</th>
+            </thead>
+            <tbody id="previousExperiments" data-bind="foreach: previousExperiments">
+              <tr data-bind="css: { warning: active }">
+                <td data-bind="text: Name"></td>
+                <td data-bind="text: State, css: 'state-'+State "></td>
+                <td>
+                  <a data-bind="attr: { href: '#' + Location }"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;&nbsp;Show</a> &nbsp;
+                  <a data-bind="attr: { href: CsvLocation }"><span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp;CSV</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
     </div><div class="selector">
       <div class="btn-group">
-        <button type="button" data-bind="click: showWorkload, css: {'btn-primary': workloadVisible}" class="btn-default btn" style="background: white; color: black; height: 45px">
+        <button type="button" data-bind="click: showWorkload, css: {'btn-success': workloadVisible}" class="btn-default btn" style="background: white; color: black; height: 45px">
           <span class="glyphicon"><img src="images/glyphicons_bars.png" /></span> Bar Chart
         </button>
-        <button type="button" data-bind="click: showThroughput, css: {'btn-primary': throughputVisible}" class="btn-default btn "  style="background: white; color: black; height: 45px">
+        <button type="button" data-bind="click: showThroughput, css: {'btn-success': throughputVisible}" class="btn-default btn "  style="background: white; color: black; height: 45px">
           <span class="glyphicon"><img src="images/glyphicons_lines.png" /></span> Throughput Graph
         </button>
       </div>
@@ -106,96 +196,6 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#87e0fd', end
     </div>
   </div>
 
-  <div class="modal fade" id="experimentPopup" tabindex="-1" role="dialog" aria-labelledby="experimentPopupLabel" aria-hidden="true" >
-    <div class="modal-dialog" style="width: 90%; max-width: 900px;">
-      <div class="modal-content" style="background:rgba(255,255,255,0.75);">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title" >Previous Experiments</h4>
-        </div>
-        <div class="panel-body">
-          <form class="form-horizontal" role="form">
-            <div class="form-group">
-              <label for="inputExperiment" class="col-sm-2 control-label">Experiment</label>
-              <div class="col-sm-6">
-                <select id="cmdSelect" name="inputExperiment" class="form-control">
-                  <option value="gcf:push">Simple Push</option>
-                  <option value="dummy,dummyWithErrors">Dummies (dummy, dummyWithErrors)</option>
-                  <option value="dummy">Dummy Push</option>
-                  <option value="gcf:push,gcf:push">Multiple Pushes</option>
-                  <option value="dummyWithErrors">Dummy with Errors</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group" data-bind="css: { 'has-error': numIterationsHasError }">
-              <label for="inputIterations" class="col-sm-2 control-label">Iterations</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputIterations" name="inputIterations" placeholder="1" data-bind="value: numIterations">
-              </div>
-            </div>
-            <div class="form-group" data-bind="css: { 'has-error': numConcurrentHasError }">
-              <label for="inputConcurrency" class="col-sm-2 control-label">Concurrency</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputConcurrency" name="inputConcurrency" placeholder="1" data-bind="value: numConcurrent">
-              </div>
-            </div>
-            <div class="form-group" data-bind="css: { 'has-error': numIntervalHasError }">
-              <label for="inputInterval" class="col-sm-2 control-label">Interval</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputInterval" name="inputInterval" placeholder="0" data-bind="value: numInterval">
-              </div>
-            </div>
-            <div class="form-group" data-bind="css: { 'has-error': numStopHasError }">
-              <label for="inputStop" class="col-sm-2 control-label">Stop</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputStop" name="inputStop" placeholder="0" data-bind="value: numStop">
-              </div>
-            </div>
-            <div class="form-group">
-              <div class="col-sm-offset-2 col-sm-10">
-                <button data-bind="click: start, enable: formHasNoErrors" id="startbtn" type="submit" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
-                <button data-bind="click: stop, visible: canStop" id="stopbtn" type="button" style="display: none" class="btn btn-danger navbar-btn"><span class="glyphicon glyphicon-stop"></span> Stop Experiment</button>
-                <button data-bind="click: downloadCsv, enable: canDownloadCsv" id="csvbtn" type="button" disabled=true" class="btn btn-default navbar-btn"><span class="glyphicon glyphicon-floppy-save"></span> Download CSV</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="historyPopup" tabindex="-1" role="dialog" aria-labelledby="historyPopupLabel" aria-hidden="true" >
-    <div class="modal-dialog" style="width: 90%; max-width: 900px;">
-      <div class="modal-content" style="background:rgba(255,255,255,0.75);">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title" >Experiments Configuration</h4>
-        </div>
-        <div class="modal-body">
-          <table class="table table-hover">
-            <thead>
-              <th>Name</th>
-              <th>State</th>
-              <th>Actions</th>
-            </thead>
-            <tbody id="previousExperiments" data-bind="foreach: previousExperiments">
-              <tr data-bind="css: { warning: active }">
-                <td data-bind="text: Name"></td>
-                <td data-bind="text: State, css: 'state-'+State "></td>
-                <td>
-                  <a data-bind="attr: { href: '#' + Location }"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;&nbsp;Show</a> &nbsp;
-                  <a data-bind="attr: { href: CsvLocation }"><span class="glyphicon glyphicon-cloud-download"></span>&nbsp;&nbsp;Download CSV</a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <script>
     ko.applyBindings(new pat.view( new pat.experimentList(), pat.experiment(800) ));
