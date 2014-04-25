@@ -16,6 +16,7 @@ before_script:
   # - cd casperjs; git checkout -q tags/1.1-beta1; cd ../
   # - export PATH=$PATH:`pwd`/casperjs/bin
   - gocart
+  - go build github.com/onsi/ginkgo/ginkgo
   - go install github.com/onsi/ginkgo/ginkgo
   - go run main.go -server &
   - npm install -g casperjs

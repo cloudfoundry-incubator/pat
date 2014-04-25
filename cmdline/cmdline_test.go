@@ -1,6 +1,8 @@
 package cmdline_test
 
 import (
+	"fmt"
+
 	"github.com/cloudfoundry-community/pat/benchmarker"
 	. "github.com/cloudfoundry-community/pat/cmdline"
 	"github.com/cloudfoundry-community/pat/config"
@@ -116,15 +118,16 @@ var _ = Describe("Cmdline", func() {
 })
 
 type runWithMatcher struct {
-	field string
-	value interface{}
+	field     string
+	value     interface{}
+	lastMatch interface{}
 }
 
 func HaveBeenRunWith(field string, value interface{}) OmegaMatcher {
-	return &runWithMatcher{field, value}
+	return &runWithMatcher{field, value, nil}
 }
 
-func (m *runWithMatcher) Match(actualLab interface{}) (bool, string, error) {
+func (m *runWithMatcher) Match(actualLab interface{}) (bool, error) {
 	runWith := actualLab.(*dummyLab).lastRunWith
 	var actual interface{}
 	switch m.field {
@@ -139,7 +142,16 @@ func (m *runWithMatcher) Match(actualLab interface{}) (bool, string, error) {
 	case "stop":
 		actual = runWith.Stop
 	}
+	m.lastMatch = actual
 	return Equal(actual).Match(m.value)
+}
+
+func (m *runWithMatcher) NegatedFailureMessage(actual interface{}) string {
+	return fmt.Sprintf("Expected\n\t%#v\n not to to have been run with \n\t-%#v: %#v (but was run with: %#v)", actual, m.field, m.value, m.lastMatch)
+}
+
+func (m *runWithMatcher) FailureMessage(actual interface{}) string {
+	return fmt.Sprintf("Expected\n\t%#v\nto to have been run with \n\t-%#v: %#v", actual, m.field, m.value, m.lastMatch)
 }
 
 type dummyLab struct {
