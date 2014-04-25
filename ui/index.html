@@ -19,8 +19,31 @@
 <title>Cloud Foundry Performance Suite</title>
 
 <style>
-body { padding: 8px; }
-#graph { min-height: 450px; height: 450px }
+body { padding: 4px;ckground: rgba(73,155,234,1);
+background: rgb(0,183,234); /* Old browsers */
+background: -moz-radial-gradient(center, ellipse cover,  rgba(0,183,234,1) 0%, rgba(0,158,195,1) 100%); /* FF3.6+ */
+background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,rgba(0,183,234,1)), color-stop(100%,rgba(0,158,195,1))); /* Chrome,Safari4+ */
+background: -webkit-radial-gradient(center, ellipse cover,  rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%); /* Chrome10+,Safari5.1+ */
+background: -o-radial-gradient(center, ellipse cover,  rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%); /* Opera 12+ */
+background: -ms-radial-gradient(center, ellipse cover,  rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%); /* IE10+ */
+background: radial-gradient(ellipse at center,  rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00b7ea', endColorstr='#009ec3',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+
+background: rgb(135,224,253); /* Old browsers */
+background: -moz-radial-gradient(center, ellipse cover,  rgba(135,224,253,1) 0%, rgba(83,203,241,1) 40%, rgba(5,171,224,1) 100%); /* FF3.6+ */
+background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,rgba(135,224,253,1)), color-stop(40%,rgba(83,203,241,1)), color-stop(100%,rgba(5,171,224,1))); /* Chrome,Safari4+ */
+background: -webkit-radial-gradient(center, ellipse cover,  rgba(135,224,253,1) 0%,rgba(83,203,241,1) 40%,rgba(5,171,224,1) 100%); /* Chrome10+,Safari5.1+ */
+background: -o-radial-gradient(center, ellipse cover,  rgba(135,224,253,1) 0%,rgba(83,203,241,1) 40%,rgba(5,171,224,1) 100%); /* Opera 12+ */
+background: -ms-radial-gradient(center, ellipse cover,  rgba(135,224,253,1) 0%,rgba(83,203,241,1) 40%,rgba(5,171,224,1) 100%); /* IE10+ */
+background: radial-gradient(ellipse at center,  rgba(135,224,253,1) 0%,rgba(83,203,241,1) 40%,rgba(5,171,224,1) 100%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#87e0fd', endColorstr='#05abe0',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+
+
+}
+#graph { min-height: 800px; max-height: 800px; min-width: 98%; position: absolute; left: 5px; margin: 12px }
+#tbl { position: absolute; width: 380px; top: 138px; left: 14px; bottom: 2% }
+.controls { position: absolute; top: 14px; width: 380px; left: 14px;text-align: center;  background: white; border-bottom: 2px solid #ddd; padding: 12px; z-index: 99; }
+.selector { position: absolute; top: 64px; width: 380px; text-align: center; left: 14px; background: white; border-bottom: 2px solid #ddd; padding: 12px; z-index: 99; }
 .state-Finished { color: green }
 .state-Running { color: blue }
 .state-Failed { color: red }
@@ -29,38 +52,34 @@ body { padding: 8px; }
 
 <body>
 
-<div class="container">
-  <div class="header row">
-    <h1>Performance Acceptance Tests <small>v0.1</small></h1>
-  </div>
-
+<div class="" style="margin: 4px">
   <div class="row">
   </div>
 
-  <div class="row panel panel-default">
-    <div class="panel-heading">
-      Experiment Results
-      <button class="btn btn-primary btn-xs" style="float: right" data-toggle="modal" data-target="#historyPopup">
-        <span class="glyphicon glyphicon-time"></span> Histories
+  <div class="graph row">
+    <div class="controls">
+      <button class="btn btn-primary btn-xs" style="" data-toggle="modal" data-target="#experimentPopup">
+        <span class="glyphicon glyphicon-flash"></span> Configure / Run Experiment
       </button>
-      <span style="float: right">&nbsp&nbsp|&nbsp&nbsp</span>
-      <button class="btn btn-primary btn-xs" style="float: right" data-toggle="modal" data-target="#experimentPopup">        
-        <span class="glyphicon glyphicon-flash"></span> Configure Experiment
+      <span style="">&nbsp&nbsp|&nbsp&nbsp</span>
+      <button class="btn btn-primary btn-xs" style="" data-toggle="modal" data-target="#historyPopup">
+        <span class="glyphicon glyphicon-time"></span> History
       </button>
+    </div><div class="selector">
+      <div class="btn-group">
+        <button type="button" data-bind="click: showWorkload, css: {'btn-primary': workloadVisible}" class="btn-default btn" style="background: white; color: black; height: 45px">
+          <span class="glyphicon"><img src="images/glyphicons_bars.png" /></span> Bar Chart
+        </button>
+        <button type="button" data-bind="click: showThroughput, css: {'btn-primary': throughputVisible}" class="btn-default btn "  style="background: white; color: black; height: 45px">
+          <span class="glyphicon"><img src="images/glyphicons_lines.png" /></span> Throughput Graph
+        </button>
+      </div>
     </div>
     <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data" style="">
-      <div class="btn-group-vertical" style="position:absolute; left:-60px; top: 15px;">
-        <button type="button" data-bind="click: showWorkload, css: {'btn-default': workloadVisible}" class="btn btn-default btn-lg" style="border-top-right-radius: 0; border-right: 0">
-          <span class="glyphicon"><img src="images/glyphicons_bars.png" /></span>
-        </button>
-        <button type="button" data-bind="click: showThroughput, css: {'btn-default': throughputVisible}" class="btn btn-lg"  style="border-bottom-right-radius: 0; border-right: 0">
-          <span class="glyphicon"><img src="images/glyphicons_lines.png" /></span>
-        </button>        
-      </div>
       <p data-bind="visible: noExperimentRunning" class="noexperimentrunning text-muted text-center" style="position: absolute; width: 300px; margin-left: -150px; left: 50%; top: 20%">(No Experiment Running)</p>
     </div>
-    <div style="border-top: 2px solid #ddd">
-      <table class="table table-striped" style="table-layout: fixed; margin-bottom: 0px">
+    <div id="tbl" style="border-top: 2px solid #ddd; background: #efefef; border: 2px solid #eee; padding: 4px">
+      <table class="table table-striped" style="table-layout: fixed; background: white; margin-bottom: 0px">
         <thead>
           <tr>
             <th>Wall Time</th>
@@ -101,7 +120,7 @@ body { padding: 8px; }
               <div class="col-sm-6">
                 <select id="cmdSelect" name="inputExperiment" class="form-control">
                   <option value="gcf:push">Simple Push</option>
-                  <option value="dummy,dummyWithErrors">Dummies (dummy, dummyWithErrors)</option>            
+                  <option value="dummy,dummyWithErrors">Dummies (dummy, dummyWithErrors)</option>
                   <option value="dummy">Dummy Push</option>
                   <option value="gcf:push,gcf:push">Multiple Pushes</option>
                   <option value="dummyWithErrors">Dummy with Errors</option>
@@ -169,10 +188,10 @@ body { padding: 8px; }
                 </td>
               </tr>
             </tbody>
-          </table>        
+          </table>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>          
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
@@ -184,3 +203,4 @@ body { padding: 8px; }
 </div>
 </body>
 </html>
+
