@@ -11,6 +11,20 @@ tr, td {
   padding:0;
 }
 
+.patTitle {
+  width: 550px;
+  position: absolute;
+  left:50%;
+  top: 0px;
+  text-shadow: 0 1px 0 #555;
+  margin-left: -275px;
+  color: #aaa;
+  text-shadow: 0 1px 0 #fff;
+  text-align: center;
+  font-size: 20pt;
+  text-transform: uppercase;
+}
+
 .popover{ /* overwrite the max width for bootstrap popover */
     max-width: 650px;
 }
