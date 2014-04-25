@@ -41,9 +41,9 @@ body { padding: 8px; }
     <div class="panel-heading">
       <button class="btn btn-primary btn-xs" style="float: right" data-toggle="modal" data-target="#historyPopup">
         <span class="glyphicon glyphicon-time"></span> Histories
-      </button>      
-      <button class="btn btn-primary btn-xs" data-toggle="modal" data-target="#experimentPopup">        
-        <span class="glyphicon glyphicon-flash"></span> Run Experiment
+      </button>
+      <button class="btn btn-primary btn-xs" data-toggle="modal" data-target="#experimentPopup">
+        <span class="glyphicon glyphicon-flash"></span> Run Experiment..
       </button>
     </div>
     <div id="graph" class="panel-body col-md-12 center-block" data-bind="chart: data" style="">
@@ -133,8 +133,6 @@ body { padding: 8px; }
             <div class="form-group">
               <div class="col-sm-offset-2 col-sm-10">
                 <button data-bind="click: start, enable: formHasNoErrors" id="startbtn" type="submit" data-dismiss="modal" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
-                <button data-bind="click: stop, visible: canStop" id="stopbtn" type="button" style="display: none" class="btn btn-danger navbar-btn"><span class="glyphicon glyphicon-stop"></span> Stop Experiment</button>
-                <button data-bind="click: downloadCsv, enable: canDownloadCsv" id="csvbtn" type="button" disabled=true" class="btn btn-default navbar-btn"><span class="glyphicon glyphicon-floppy-save"></span> Download CSV</button>
               </div>
             </div>
           </form>
