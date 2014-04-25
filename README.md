@@ -119,7 +119,7 @@ There are three ways to run PAT locally. For all three ways, you must first:
 
     pat -config=config/template.yml  # Include a configuration template specifying any number of command line arguments. (See "Using a Configuration file" section below).
 
-    pat -rest:target http://api.xyz.abc.net \
+    pat -rest:target=http://api.xyz.abc.net \
         -rest:username=testuser1@xyz.com \
         -rest:password=PASSWORD \
         -rest:space=xyz_space  \
@@ -136,6 +136,14 @@ The following options are available:
 - `gcf:push` - pushes a simple Ruby application using the CF command-line
 - `dummy` - an empty workload that can be used when a CF environment is not available.
 - `dummyWithErrors` - an empty workload that generates errors. This can be used when a CF environment is not available.
+
+### Required arguments
+Certain `workload` options require one or more arguments to be defined
+The following are a list of arguments
+
+- `-rest:target` - The Cloud Foundry URL PAT should target to. Mandatory if workload option `rest:target` is used.
+- `-rest:username` - Username for workload option `rest:login`. PAT supports multi credentials, for example, if you supply  `-rest:username=user1,user2,user3`, PAT will loop through the list and use a different credential at each iteration. This argument is mandatory for workload option `rest:login`.
+- `-rest:password` - Similar to `-rest:username`, used to define the password for workload option `rest:login`.
 
 Using Redis to create a cluster of PAT workers
 =====================================
