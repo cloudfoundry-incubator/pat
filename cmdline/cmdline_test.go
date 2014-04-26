@@ -127,7 +127,7 @@ func HaveBeenRunWith(field string, value interface{}) OmegaMatcher {
 	return &runWithMatcher{field, value, nil}
 }
 
-func (m *runWithMatcher) Match(actualLab interface{}) (bool, error) {
+func (m *runWithMatcher) Match(actualLab interface{}) (bool, string, error) {
 	runWith := actualLab.(*dummyLab).lastRunWith
 	var actual interface{}
 	switch m.field {
