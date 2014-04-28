@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 	"strconv"
-	"errors"
-	
+
 	"github.com/cloudfoundry-community/pat/logs"
 	"github.com/cloudfoundry-community/pat/redis"
 	"github.com/cloudfoundry-community/pat/workloads"
@@ -20,6 +19,8 @@ type rw struct {
 
 const DEFAULT_TIMEOUT = 60 * 5
 
+const spaceEscapeStr = "<%>"
+
 func NewRedisWorker(conn redis.Conn) Worker {
 	return NewRedisWorkerWithTimeout(conn, DEFAULT_TIMEOUT)
 }
@@ -28,30 +29,20 @@ func NewRedisWorkerWithTimeout(conn redis.Conn, timeoutInSeconds int) Worker {
 	return &rw{defaultWorker{make(map[string]workloads.WorkloadStep)}, conn, timeoutInSeconds}
 }
 
-func (rw rw) Time(experiment string, workloadCtx map[string]interface{}) (result IterationResult) {
-	guid, _ := uuid.NewV4()
+func (rw rw) Time(workload string, workloadCtx map[string]interface{}) (result IterationResult) {
+	guid, _ := uuid.NewV4()	
+	workloadCtx = initNilContextMap(workloadCtx)
+	escapeStr := generateEscapeStr(workloadCtx)
+	workloadCtx = replaceSpaceWithEscape(workloadCtx, escapeStr)
+	ctxStr := concatContextStr(workloadCtx)
 
-	if (workloadCtx["cfTarget"] == nil) { workloadCtx["cfTarget"] = "" }
-	if (workloadCtx["cfUsername"] == nil) { workloadCtx["cfUsername"] = "" }
-	if (workloadCtx["cfPassword"] == nil) { workloadCtx["cfPassword"] = "" }
 	if (workloadCtx["workerIndex"] == nil) { workloadCtx["workerIndex"] = 0 }
 	workerIndex := strconv.Itoa(workloadCtx["workerIndex"].(int))
+	
+	redisStr := escapeStr + " replies-"+guid.String() + " " + workerIndex + ctxStr + " " + workload
+	rw.conn.Do("RPUSH", "tasks", redisStr)
 
-	if (strings.Contains(workloadCtx["cfTarget"].(string)," ") || strings.Contains(workloadCtx["cfUsername"].(string)," ") || 
-		strings.Contains(workloadCtx["cfPassword"].(string)," ") || strings.Contains(experiment," ")) {
-		return IterationResult{0, []StepResult{}, encodeError(errors.New("Redis worker error: workload, cfTarget, cfUsername or cfPassword cannot contain space in the string"))}
-	}
-	
-	redisStr := "replies-"+guid.String() +
-		" " + workerIndex + 
-		" " + workloadCtx["cfTarget"].(string) +
-		" " + workloadCtx["cfUsername"].(string) +
-		" " + workloadCtx["cfPassword"].(string) +
-		" " +	experiment
-	
-	rw.conn.Do("RPUSH", "tasks", redisStr)	
 	reply, err := redis.Strings(rw.conn.Do("BLPOP", "replies-"+guid.String(), rw.timeoutInSeconds))
-
 	if err != nil {
 		return IterationResult{0, []StepResult{}, encodeError(err)}
 	} else {
@@ -98,25 +89,77 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 		}
 
 		if err == nil {
-			parts := strings.SplitN(reply[1], " ", 6)
+			parts := strings.SplitN(reply[1], " ", 4 + len(RedisContextMapStr))
+			escapeStr := parts[0]
 			workloadCtx := make(map[string]interface{})
-			workerIndex, _ := strconv.Atoi(parts[1])
+			workerIndex, _ := strconv.Atoi(parts[2])
 			workloadCtx["workerIndex"] = workerIndex
-			workloadCtx["cfTarget"] = parts[2]
-			workloadCtx["cfUsername"] = parts[3]
-			workloadCtx["cfPassword"] = parts[4]
+			for i, v := range RedisContextMapStr {
+				workloadCtx[v] = parts[(i+3)]				
+				workloadCtx[v] = strings.Replace(workloadCtx[v].(string), escapeStr, " ", -1)
+			}
 
 			go func(experiment string, replyTo string, workloadCtx map[string]interface{}) {				
-				result := delegate.Time(experiment, workloadCtx)
+				result := delegate.Time(experiment, workloadCtx)				
 				var encoded []byte
 				encoded, err = json.Marshal(result)
 				logger.Debug("Completed slave task, replying")
 				conn.Do("RPUSH", replyTo, string(encoded))
-			}(parts[5], parts[0], workloadCtx)
+			}(parts[6], parts[1], workloadCtx)
 		}
 
 		if err != nil {
 			logger.Warnf("ERROR: slave encountered error: %v", err)
 		}
 	}
+}
+
+func replaceSpaceWithEscape(workloadCtx map[string]interface{}, escapeStr string) map[string]interface{} {
+	for _, v := range RedisContextMapStr {
+		workloadCtx[v] = strings.Replace(workloadCtx[v].(string), " ", escapeStr, -1)				
+	}
+	return workloadCtx
+}
+
+func generateEscapeStr(workloadCtx map[string]interface{}) string {
+	escapeStr := ""
+	noEscape := false
+
+	for noEscape != true {
+
+		noEscape = true
+		escapeStr = escapeStr + spaceEscapeStr
+
+		//check to see context strings contain escapeStr
+		for _, v := range RedisContextMapStr {
+			if strings.Contains(workloadCtx[v].(string), escapeStr) {
+				noEscape = false
+			}
+		}
+			
+	}
+
+	return escapeStr
+}
+
+func concatContextStr(workloadCtx map[string]interface{}) string {
+	ctxStr := ""
+
+	for _, v := range RedisContextMapStr {
+		if (workloadCtx[v] == nil) {
+			workloadCtx[v] = ""		
+		}
+		ctxStr = ctxStr + " " + workloadCtx[v].(string)
+	}
+
+	return ctxStr
+}
+
+func initNilContextMap(workloadCtx map[string]interface{}) map[string]interface{} { 
+	for _, v := range RedisContextMapStr {
+		if (workloadCtx[v] == nil) {
+			workloadCtx[v] = ""
+		}
+	}
+	return workloadCtx
 }

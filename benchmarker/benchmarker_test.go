@@ -108,7 +108,7 @@ var _ = Describe("Benchmarker", func() {
 			workloadCtx["cfUsername"] = ""
 		})
 
-		It("passes workloadCtx map to the test functions", func() {
+		It("passes workloadCtx map to the test functions", func() {			
 			var cfUsername = ""
 
 			workloadCtx["cfUsername"] = "user1,user2"
@@ -128,7 +128,7 @@ var _ = Describe("Benchmarker", func() {
 			workloadCtx["cfTarget"] = ""
 		})
 
-		It("passes workloadCtx map to the test functions", func() {			
+		It("passes workloadCtx map to the test functions", func() {		
  			var cfTarget = ""
 			workloadCtx["cfTarget"] = "http://localhost/"
  			var fn = func(ctx map[string]interface{}) { 

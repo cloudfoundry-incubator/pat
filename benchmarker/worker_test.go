@@ -1,10 +1,10 @@
 package benchmarker
 
 import (
-	"time"
 	. "github.com/cloudfoundry-community/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 var _ = Describe("LocalWorker", func() {

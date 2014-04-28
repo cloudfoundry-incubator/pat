@@ -16,10 +16,12 @@ func NewLocalWorker() *LocalWorker {
 }
 
 func (self *LocalWorker) Time(experiment string, workloadCtx map[string]interface{}) (result IterationResult) {		
+	
 	experiments := strings.Split(experiment, ",")
+
 	var start = time.Now()
-	for _, e := range experiments {
-		stepTime, err := Time(func() error { return self.Experiments[e].Fn(workloadCtx) })
+	for _, e := range experiments {		
+		stepTime, err := Time(func() error { return self.Experiments[e].Fn(workloadCtx) })		
 		result.Steps = append(result.Steps, StepResult{e, stepTime})
 		if err != nil {
 			result.Error = encodeError(err)
