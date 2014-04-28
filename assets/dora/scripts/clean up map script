@@ -1,3 +1,5 @@
+#$RANDOM_TEXT
+
 [done] clean up map script
 [done] script the actual running of the performance test
 [done] add log endpoint to dora

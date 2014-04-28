@@ -1,3 +1,5 @@
+#$RANDOM_TEXT
+
 class Instances < Sinatra::Base
   get '/id' do
     ID

@@ -1,3 +1,5 @@
+#$RANDOM_TEXT
+
 require "logging_service"
 
 class LogUtils < Sinatra::Base

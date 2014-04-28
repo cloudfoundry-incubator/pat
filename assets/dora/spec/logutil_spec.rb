@@ -1,3 +1,5 @@
+#$RANDOM_TEXT
+
 require "spec_helper"
 
 describe LogUtils do
