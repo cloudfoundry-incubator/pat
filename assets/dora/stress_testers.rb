@@ -1,3 +1,5 @@
+#$RANDOM_TEXT
+
 require "open3"
 
 class StressTesters < Sinatra::Base

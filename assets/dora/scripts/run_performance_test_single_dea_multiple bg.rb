@@ -1,3 +1,5 @@
+#$RANDOM_TEXT
+
 #!/usr/bin/env ruby
 DEFAULT_APPLICATION_URL = "dora.sunset.cf-app.com"
 app_url = ENV['EXPERIMENT_APP_URL'] || DEFAULT_APPLICATION_URL

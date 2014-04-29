@@ -1,3 +1,5 @@
+#$RANDOM_TEXT
+
 #!/usr/bin/env ruby
 require "json"
 DEFAULT_APPLICATION_NAME = "dora"
