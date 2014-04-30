@@ -75,7 +75,7 @@ type SamplableExperiment struct {
 }
 
 type Executable interface {
-	Execute()
+	Execute(workloadCtx map[string]interface{})
 }
 
 type Samplable interface {
@@ -98,7 +98,7 @@ func newRunningExperiment(iterations int, iterationResults chan IterationResult,
 	return &SamplableExperiment{iterations, iterationResults, workers, samples, quit}
 }
 
-func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
+func (config *RunnableExperiment) Run(tracker func(<-chan *Sample), workloadCtx map[string]interface{}) error {
 	iteration := make(chan IterationResult)
 	errors := make(chan error)
 	workers := make(chan int)
@@ -114,15 +114,15 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
 		d <- true
 	}(done)
 
-	config.executerFactory(iteration, errors, workers, quit).Execute()
+	config.executerFactory(iteration, errors, workers, quit).Execute(workloadCtx)
 	<-done
 	return nil
 }
 
-func (ex *ExecutableExperiment) Execute() {
-	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func(int) {
-		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))))
-	}, ex.quit))
+func (ex *ExecutableExperiment) Execute(workloadCtx map[string]interface{}) {
+	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func(map[string]interface{}) {
+		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))), workloadCtx)
+	}, ex.quit), workloadCtx)
 
 	close(ex.iteration)
 }

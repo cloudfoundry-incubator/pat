@@ -8,6 +8,8 @@ import (
 	"github.com/cloudfoundry-community/pat/workloads"
 )
 
+var RedisContextMapStr = []string{"cfTarget", "cfUsername", "cfPassword"}
+
 var params = struct {
 	startMasterAndSlave bool
 }{}

@@ -17,6 +17,7 @@ import (
 var _ = Describe("RedisWorker", func() {
 	var (
 		conn redis.Conn
+		workloadCtx = make(map[string]interface{})
 	)
 
 	BeforeEach(func() {
@@ -38,7 +39,7 @@ var _ = Describe("RedisWorker", func() {
 
 				result := make(chan error)
 				go func() {
-					result <- worker.Time("timesout", 0).Error
+					result <- worker.Time("timesout", workloadCtx).Error
 				}()
 
 				Eventually(result, 2).Should(Receive())
@@ -51,6 +52,8 @@ var _ = Describe("RedisWorker", func() {
 				delegate *LocalWorker
 				context  map[string]interface{}
 				wasCalledWithWorkerIndex int
+				wasCalledWithWorkerUsername string
+				wasCalledWithNonListed string
 			)
 
 			JustBeforeEach(func() {
@@ -63,6 +66,17 @@ var _ = Describe("RedisWorker", func() {
 				delegate.AddWorkloadStep(workloads.StepWithContext("fooWithContext", func(ctx map[string]interface{}) error { context = ctx; ctx["a"] = 1; return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("barWithContext", func(ctx map[string]interface{}) error { ctx["a"] = ctx["a"].(int) + 2; return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx map[string]interface{}) error { wasCalledWithWorkerIndex = ctx["workerIndex"].(int); return nil }, ""))
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerUsername", func(ctx map[string]interface{}) error { wasCalledWithWorkerUsername = ctx["cfUsername"].(string); return nil }, ""))
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerInfo", func(ctx map[string]interface{}) error { 
+					if (ctx["non_listed"] == nil) {
+						wasCalledWithNonListed = ""
+					} else {
+						wasCalledWithNonListed = ctx["non_listed"].(string); 
+					}
+					
+					wasCalledWithWorkerUsername = ctx["cfUsername"].(string); 
+					return nil 
+				}, ""))
 
 				slave = StartSlave(conn, delegate)
 			})
@@ -74,32 +88,33 @@ var _ = Describe("RedisWorker", func() {
 
 			It("passes workerIndex to delegate.Time()", func() {
 				worker := NewRedisWorkerWithTimeout(conn, 1)
-				worker.Time("recordWorkerIndex", 72); 
-				Ω(wasCalledWithWorkerIndex).Should(Equal(72))				
+				workloadCtx["workerIndex"] = 72
+				worker.Time("recordWorkerIndex", workloadCtx);
+				Ω(wasCalledWithWorkerIndex).Should(Equal(72))								
 			})
 
-			It("Times a function by name", func() {
-				worker := NewRedisWorkerWithTimeout(conn, 1)
-				result := worker.Time("foo", 0)
+			It("Times a function by name", func() {				
+				worker := NewRedisWorkerWithTimeout(conn, 1)				
+				result := worker.Time("foo", workloadCtx)
 				Ω(result.Error).Should(BeNil())
 				Ω(result.Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 			})
 
-			It("Sets the function command name in the response struct", func() {
+			It("Sets the function command name in the response struct", func() {				
 				worker := NewRedisWorker(conn)
-				result := worker.Time("foo", 0)
+				result := worker.Time("foo", workloadCtx)
 				Ω(result.Steps[0].Command).Should(Equal("foo"))
 			})
 
-			It("Returns any errors", func() {
+			It("Returns any errors", func() {				
 				worker := NewRedisWorker(conn)
-				result := worker.Time("stepWithError", 0)
+				result := worker.Time("stepWithError", workloadCtx)
 				Ω(result.Error).Should(HaveOccurred())
 			})
 
-			It("Passes context to each step", func() {
+			It("Passes context to each step", func() {				
 				worker := NewRedisWorker(conn)
-				worker.Time("fooWithContext,barWithContext", 0)
+				worker.Time("fooWithContext,barWithContext", workloadCtx)
 				Ω(context).Should(HaveKey("a"))
 			})			
 
@@ -108,7 +123,7 @@ var _ = Describe("RedisWorker", func() {
 
 				JustBeforeEach(func() {
 					worker := NewRedisWorkerWithTimeout(conn, 5)
-					result = worker.Time("foo,bar", 0)
+					result = worker.Time("foo,bar", workloadCtx)
 					Ω(result.Error).Should(BeNil())
 				})
 
@@ -129,8 +144,53 @@ var _ = Describe("RedisWorker", func() {
 				})				
 			})
 
+			Describe("Workload context map sending over Redis", func() {
+
+				const spaceEscapeStr = "<%>"
+
+				AfterEach(func() {
+						workloadCtx["cfTarget"] = ""
+						workloadCtx["cfUsername"] = ""
+						workloadCtx["cfPassword"] = ""			
+				})
+
+				Describe("Contents in the context map", func() {
+					It("should only be sent over redis if content key is listed in benchmarker config.go 'RedisContextMapStr' ", func() {					
+						worker := NewRedisWorker(conn)
+						workloadCtx["cfUsername"] = "user1"
+						workloadCtx["non_listed"] = "some info"
+						_ = worker.Time("recordWorkerInfo", workloadCtx)
+						Ω(wasCalledWithWorkerUsername).Should(Equal("user1"))
+						Ω(wasCalledWithNonListed).Should(Equal(""))
+					})
+
+					It("could contain the predefined escape character in the string and will not conflict", func() {
+						worker := NewRedisWorker(conn)
+						workloadCtx["cfUsername"] = "user1" + spaceEscapeStr + ", user2"
+						_ = worker.Time("recordWorkerUsername", workloadCtx)
+						Ω(wasCalledWithWorkerUsername).Should(Equal("user1" + spaceEscapeStr + ", user2"))
+					})
+				})
+				
+				Describe("When content string contain spaces", func() {
+					It("should run on slave worker with no errors", func() {					
+						worker := NewRedisWorker(conn)
+						workloadCtx["cfPassword"] = "pass1, pass2, pass3"
+						result := worker.Time("foo", workloadCtx)			
+						Ω(result.Error).Should(BeNil())					
+					})
+
+					It("should retain all the spaces in content while passing over redis", func() {					
+						worker := NewRedisWorker(conn)
+						workloadCtx["cfUsername"] = " user1, user2, user3 "
+						_ = worker.Time("recordWorkerUsername", workloadCtx)			
+						Ω(wasCalledWithWorkerUsername).Should(Equal(" user1, user2, user3 "))
+					})
+				})
+			})			
 		})
 	})
+	
 })
 
 func StartRedis(config string) {

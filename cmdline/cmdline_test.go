@@ -40,7 +40,6 @@ var _ = Describe("Cmdline", func() {
 		flags = config.NewConfig()
 		InitCommandLineFlags(flags)
 		flags.Parse(args)
-
 		BlockExit = func() {}
 		RunCommandLine()
 	})
@@ -66,12 +65,24 @@ var _ = Describe("Cmdline", func() {
 	})
 
 	Describe("When -workload is supplied", func() {
-		BeforeEach(func() {
-			args = []string{"-workload", "login,push"}
+		Describe("When -workload contains no white spaces", func() {
+			BeforeEach(func() {
+				args = []string{"-workload", "login,push"}
+			})
+
+			It("configures the experiment with the parameter", func() {
+				Ω(lab).Should(HaveBeenRunWith("workload", "login,push"))
+			})
 		})
 
-		It("configures the experiment with the parameter", func() {
-			Ω(lab).Should(HaveBeenRunWith("workload", "login,push"))
+		Describe("When -workload contains white spaces", func() {
+			BeforeEach(func() {
+				args = []string{"-workload", "  login ,  push , gcf:push"}
+			})
+
+			It("removes white spaces in the parameter", func() {
+				Ω(lab).Should(HaveBeenRunWith("workload", "login,push,gcf:push"))
+			})
 		})
 	})
 
@@ -162,11 +173,11 @@ func (d *dummyLab) GetData(guid string) ([]*experiment.Sample, error) {
 	return nil, nil
 }
 
-func (d *dummyLab) Run(runnable laboratory.Runnable) (string, error) {
+func (d *dummyLab) Run(runnable laboratory.Runnable, workloadCtx map[string]interface{}) (string, error) {
 	return "", nil
 }
 
-func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample)) (string, error) {
+func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample), workloadCtx map[string]interface{}) (string, error) {
 	d.lastRunWith = runnable.(*experiment.RunnableExperiment)
 	return "", nil
 }

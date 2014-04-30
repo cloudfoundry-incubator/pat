@@ -29,7 +29,7 @@ var _ = Describe("Rest Workloads", func() {
 		context           map[string]interface{}
 	)
 
-	BeforeEach(func() {
+	BeforeEach(func() {		
 		replies = make(map[string]interface{})
 		replyWithLocation = make(map[string]string)
 		client = &dummyClient{replies, replyWithLocation, make(map[call]interface{})}
