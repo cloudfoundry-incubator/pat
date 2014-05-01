@@ -3,7 +3,7 @@ package redis
 import (
 	"fmt"
 
-	"github.com/cloudfoundry-community/pat/logs"
+	"github.com/cloudfoundry-incubator/pat/logs"
 	"github.com/garyburd/redigo/redis"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cloudfoundry-community/pat/experiment"
+	"github.com/cloudfoundry-incubator/pat/experiment"
 )
 
 func display(concurrency int, iterations int, interval int, stop int, samples <-chan *experiment.Sample) {

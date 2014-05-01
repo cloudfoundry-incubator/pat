@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry-community/pat/benchmarker"
-	"github.com/cloudfoundry-community/pat/config"
-	. "github.com/cloudfoundry-community/pat/experiment"
-	. "github.com/cloudfoundry-community/pat/laboratory"
-	"github.com/cloudfoundry-community/pat/store"
-	"github.com/cloudfoundry-community/pat/workloads"
+	"github.com/cloudfoundry-incubator/pat/benchmarker"
+	"github.com/cloudfoundry-incubator/pat/config"
+	. "github.com/cloudfoundry-incubator/pat/experiment"
+	. "github.com/cloudfoundry-incubator/pat/laboratory"
+	"github.com/cloudfoundry-incubator/pat/store"
+	"github.com/cloudfoundry-incubator/pat/workloads"
 )
 
 var params = struct {

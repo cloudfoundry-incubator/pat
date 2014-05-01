@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/cloudfoundry-community/pat/logs"
+	"github.com/cloudfoundry-incubator/pat/logs"
 )
 
 type httpclient interface {

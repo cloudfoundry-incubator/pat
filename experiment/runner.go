@@ -3,7 +3,7 @@ package experiment
 import (
 	"math"
 	"time"
-	. "github.com/cloudfoundry-community/pat/benchmarker"
+	. "github.com/cloudfoundry-incubator/pat/benchmarker"
 )
 
 type SampleType int

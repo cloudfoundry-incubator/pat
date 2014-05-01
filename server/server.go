@@ -7,12 +7,12 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/cloudfoundry-community/pat/benchmarker"
-	"github.com/cloudfoundry-community/pat/config"
-	. "github.com/cloudfoundry-community/pat/experiment"
-	. "github.com/cloudfoundry-community/pat/laboratory"
-	"github.com/cloudfoundry-community/pat/logs"
-	"github.com/cloudfoundry-community/pat/store"
+	"github.com/cloudfoundry-incubator/pat/benchmarker"
+	"github.com/cloudfoundry-incubator/pat/config"
+	. "github.com/cloudfoundry-incubator/pat/experiment"
+	. "github.com/cloudfoundry-incubator/pat/laboratory"
+	"github.com/cloudfoundry-incubator/pat/logs"
+	"github.com/cloudfoundry-incubator/pat/store"
 	"github.com/gorilla/mux"
 )
 

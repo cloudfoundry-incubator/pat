@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cloudfoundry-community/pat/config"
+	"github.com/cloudfoundry-incubator/pat/config"
 	"github.com/cloudfoundry/gosteno"
 )
 

@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	. "github.com/cloudfoundry-community/pat/config"
+	. "github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
