@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cloudfoundry-community/pat.svg?branch=master)](https://travis-ci.org/cloudfoundry-community/pat)
+[![Build Status](https://travis-ci.org/cloudfoundry-incubator/pat.svg?branch=master)](https://travis-ci.org/cloudfoundry-incubator/pat)
 
 PAT (Performance Acceptance Tests)
 ==================================
@@ -25,8 +25,8 @@ application, see the instructions on "Running PAT as a Cloud Foundry App" below.
 
 4) Download PAT and install the necessary dependencies
 
-    go get github.com/cloudfoundry-community/pat
-    cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    go get github.com/cloudfoundry-incubator/pat
+    cd $GOPATH/src/github.com/cloudfoundry-incubator/pat
     gocart
 
 5) See [CF CLI] (https://github.com/cloudfoundry/cli) for instructions on installing `cf`
@@ -43,7 +43,7 @@ Ensure your Cloud Foundry version is current and running
 
 1) Clone the project if you have not followed the "Setting up PAT to run locally" section
 
-    git clone https://github.com/cloudfoundry-community/pat
+    git clone https://github.com/cloudfoundry-incubator/pat
 
 2) Change into the PAT directory
 
@@ -68,7 +68,7 @@ There are three ways to run PAT locally. For all three ways, you must first:
 ### Option 1. Run the source code directly
 1) Change into the top level of this project
 
-    cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    cd $GOPATH/src/github.com/cloudfoundry-incubator/pat
 
 2) Execute the command line
 
@@ -78,7 +78,7 @@ There are three ways to run PAT locally. For all three ways, you must first:
 
 1) Change into the top level of this project
 
-    cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    cd $GOPATH/src/github.com/cloudfoundry-incubator/pat
 
 2) Run PAT selecting the HTTP server option
 
@@ -90,7 +90,7 @@ There are three ways to run PAT locally. For all three ways, you must first:
 
 1) Change into the top level of this project
 
-    cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    cd $GOPATH/src/github.com/cloudfoundry-incubator/pat
     go install
 
 2a) Run the PAT executable in command line mode
@@ -150,7 +150,7 @@ Using Redis to create a cluster of PAT workers
 
 Pat supports shipping workload to multiple instances using redis. This simple example starts four pat instances on the local computer which all communicate to run a workload.
 
-    cd $GOPATH/src/github.com/cloudfoundry-community/pat
+    cd $GOPATH/src/github.com/cloudfoundry-incubator/pat
     redis-server redis/redis.conf # start up with in-memory only db config, good for testing, replace with a real config and change ports for real use
     VCAP_APP_PORT=8080 go run main.go -use-redis-worker=true -server -redis-port=63798 -redis-host=127.0.0.1 -redis-password=p4ssw0rd -use-redis-store # instance 1
     VCAP_APP_PORT=8081 go run main.go -use-redis-worker=true -server -redis-port=63798 -redis-host=127.0.0.1 -redis-password=p4ssw0rd -use-redis-store # instance 2

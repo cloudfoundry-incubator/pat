@@ -1,10 +1,10 @@
 package store
 
 import (
-	"github.com/cloudfoundry-community/pat/config"
-	"github.com/cloudfoundry-community/pat/laboratory"
-	"github.com/cloudfoundry-community/pat/redis"
-	"github.com/cloudfoundry-community/pat/workloads"
+	"github.com/cloudfoundry-incubator/pat/config"
+	"github.com/cloudfoundry-incubator/pat/laboratory"
+	"github.com/cloudfoundry-incubator/pat/redis"
+	"github.com/cloudfoundry-incubator/pat/workloads"
 )
 
 var params = struct {

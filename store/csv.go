@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry-community/pat/experiment"
-	"github.com/cloudfoundry-community/pat/logs"
-	"github.com/cloudfoundry-community/pat/workloads"
+	"github.com/cloudfoundry-incubator/pat/experiment"
+	"github.com/cloudfoundry-incubator/pat/logs"
+	"github.com/cloudfoundry-incubator/pat/workloads"
 )
 
 type CsvStore struct {

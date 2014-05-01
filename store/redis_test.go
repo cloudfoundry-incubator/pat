@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/cloudfoundry-community/pat/experiment"
-	"github.com/cloudfoundry-community/pat/redis"
-	. "github.com/cloudfoundry-community/pat/store"
+	"github.com/cloudfoundry-incubator/pat/experiment"
+	"github.com/cloudfoundry-incubator/pat/redis"
+	. "github.com/cloudfoundry-incubator/pat/store"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

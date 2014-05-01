@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
-	. "github.com/cloudfoundry-community/pat/redis"
+	. "github.com/cloudfoundry-incubator/pat/redis"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

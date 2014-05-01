@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry-community/pat/config"
+	"github.com/cloudfoundry-incubator/pat/config"
 	"github.com/nu7hatch/gouuid"
 )
 
@@ -206,14 +206,14 @@ func (s SpaceResponse) SpaceExists() bool {
 	return len(s.Resources) > 0
 }
 
-func (r *rest) credentialsForWorker(workerIndex int)(string, string) {
+func (r *rest) credentialsForWorker(workerIndex int) (string, string) {
 	var userList = strings.Split(r.username, ",")
 	var passList = strings.Split(r.password, ",")
-	return userList[workerIndex % len(userList)], passList[workerIndex % len(passList)]
+	return userList[workerIndex%len(userList)], passList[workerIndex%len(passList)]
 }
 
 func (r *rest) oauthInputs(username string, password string) url.Values {
-	
+
 	values := make(url.Values)
 	values.Add("grant_type", "password")
 	values.Add("username", username)

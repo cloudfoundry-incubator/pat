@@ -3,7 +3,7 @@ package redis
 import (
 	"encoding/json"
 
-	"github.com/cloudfoundry-community/pat/config"
+	"github.com/cloudfoundry-incubator/pat/config"
 )
 
 var params = struct {
