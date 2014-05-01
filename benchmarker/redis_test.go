@@ -146,7 +146,7 @@ var _ = Describe("RedisWorker", func() {
 
 			Describe("Workload context map sending over Redis", func() {
 
-				const spaceEscapeStr = "<%>"
+				const spaceEscapeStr = "%20"
 
 				AfterEach(func() {
 						workloadCtx["cfTarget"] = ""
@@ -162,14 +162,7 @@ var _ = Describe("RedisWorker", func() {
 						_ = worker.Time("recordWorkerInfo", workloadCtx)
 						Ω(wasCalledWithWorkerUsername).Should(Equal("user1"))
 						Ω(wasCalledWithNonListed).Should(Equal(""))
-					})
-
-					It("could contain the predefined escape character in the string and will not conflict", func() {
-						worker := NewRedisWorker(conn)
-						workloadCtx["cfUsername"] = "user1" + spaceEscapeStr + ", user2"
-						_ = worker.Time("recordWorkerUsername", workloadCtx)
-						Ω(wasCalledWithWorkerUsername).Should(Equal("user1" + spaceEscapeStr + ", user2"))
-					})
+					})					
 				})
 				
 				Describe("When content string contain spaces", func() {

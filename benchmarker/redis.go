@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 	"strconv"
+	"net/url"
+	"reflect"
 
 	"github.com/cloudfoundry-community/pat/logs"
 	"github.com/cloudfoundry-community/pat/redis"
@@ -17,12 +19,10 @@ type rw struct {
 	timeoutInSeconds int
 }
 
-const DEFAULT_TIMEOUT = 60 * 5
-
-const spaceEscapeStr = "<%>"
+const DefaultTimeout = 60 * 5
 
 func NewRedisWorker(conn redis.Conn) Worker {
-	return NewRedisWorkerWithTimeout(conn, DEFAULT_TIMEOUT)
+	return NewRedisWorkerWithTimeout(conn, DefaultTimeout)
 }
 
 func NewRedisWorkerWithTimeout(conn redis.Conn, timeoutInSeconds int) Worker {
@@ -31,15 +31,14 @@ func NewRedisWorkerWithTimeout(conn redis.Conn, timeoutInSeconds int) Worker {
 
 func (rw rw) Time(workload string, workloadCtx map[string]interface{}) (result IterationResult) {
 	guid, _ := uuid.NewV4()	
-	workloadCtx = initNilContextMap(workloadCtx)
-	escapeStr := generateEscapeStr(workloadCtx)
-	workloadCtx = replaceSpaceWithEscape(workloadCtx, escapeStr)
+	workloadCtx = initNilContextMap(workloadCtx)	
+	workloadCtx = replaceSpaceWithEscape(workloadCtx)
 	ctxStr := concatContextStr(workloadCtx)
 
 	if (workloadCtx["workerIndex"] == nil) { workloadCtx["workerIndex"] = 0 }
 	workerIndex := strconv.Itoa(workloadCtx["workerIndex"].(int))
 	
-	redisStr := escapeStr + " replies-"+guid.String() + " " + workerIndex + ctxStr + " " + workload
+	redisStr := "replies-"+guid.String() + " " + workerIndex + ctxStr + " " + workload
 	rw.conn.Do("RPUSH", "tasks", redisStr)
 
 	reply, err := redis.Strings(rw.conn.Do("BLPOP", "replies-"+guid.String(), rw.timeoutInSeconds))
@@ -65,7 +64,7 @@ func StartSlave(conn redis.Conn, delegate Worker) slave {
 func (slave slave) Close() error {
 	_, err := slave.conn.Do("RPUSH", "stop-"+slave.guid, true)
 	if err == nil {
-		_, err = slave.conn.Do("BLPOP", "stopped-"+slave.guid, DEFAULT_TIMEOUT)
+		_, err = slave.conn.Do("BLPOP", "stopped-"+slave.guid, DefaultTimeout)
 	}
 
 	logs.NewLogger("redis.slave").Infof("Redis slave shutting down, %v", err)
@@ -90,14 +89,14 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 
 		if err == nil {
 			parts := strings.SplitN(reply[1], " ", 4 + len(RedisContextMapStr))
-			escapeStr := parts[0]
 			workloadCtx := make(map[string]interface{})
-			workerIndex, _ := strconv.Atoi(parts[2])
+			workerIndex, _ := strconv.Atoi(parts[1])
 			workloadCtx["workerIndex"] = workerIndex
+
 			for i, v := range RedisContextMapStr {
-				workloadCtx[v] = parts[(i+3)]				
-				workloadCtx[v] = strings.Replace(workloadCtx[v].(string), escapeStr, " ", -1)
-			}
+				workloadCtx[v] = parts[(i+2)]								
+				workloadCtx[v], _ = url.QueryUnescape(workloadCtx[v].(string))
+			}			
 
 			go func(experiment string, replyTo string, workloadCtx map[string]interface{}) {				
 				result := delegate.Time(experiment, workloadCtx)				
@@ -105,7 +104,7 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 				encoded, err = json.Marshal(result)
 				logger.Debug("Completed slave task, replying")
 				conn.Do("RPUSH", replyTo, string(encoded))
-			}(parts[6], parts[1], workloadCtx)
+			}(parts[5], parts[0], workloadCtx)
 		}
 
 		if err != nil {
@@ -114,32 +113,11 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 	}
 }
 
-func replaceSpaceWithEscape(workloadCtx map[string]interface{}, escapeStr string) map[string]interface{} {
-	for _, v := range RedisContextMapStr {
-		workloadCtx[v] = strings.Replace(workloadCtx[v].(string), " ", escapeStr, -1)				
+func replaceSpaceWithEscape(workloadCtx map[string]interface{}) map[string]interface{} {
+	for _, v := range RedisContextMapStr {		
+		workloadCtx[v] = url.QueryEscape(workloadCtx[v].(string))
 	}
 	return workloadCtx
-}
-
-func generateEscapeStr(workloadCtx map[string]interface{}) string {
-	escapeStr := ""
-	noEscape := false
-
-	for noEscape != true {
-
-		noEscape = true
-		escapeStr = escapeStr + spaceEscapeStr
-
-		//check to see context strings contain escapeStr
-		for _, v := range RedisContextMapStr {
-			if strings.Contains(workloadCtx[v].(string), escapeStr) {
-				noEscape = false
-			}
-		}
-			
-	}
-
-	return escapeStr
 }
 
 func concatContextStr(workloadCtx map[string]interface{}) string {
