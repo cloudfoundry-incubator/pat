@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
 
-	"github.com/cloudfoundry-community/pat/logs"
+	"github.com/cloudfoundry-incubator/pat/logs"
 )
 
 type httpclient interface {
@@ -112,13 +113,15 @@ func (client rest) req(token string, method string, url string, contentType stri
 
 	var logger = logs.NewLogger("workloads.rest")
 
+	resp_body, _ := ioutil.ReadAll(resp.Body)
+	
 	if TRACE_REST_CALLS {
 		body := make(map[string]interface{})
-		json.NewDecoder(resp.Body).Decode(&body)
+		json.Unmarshal(resp_body, &body)
 		logger.Debug1f(">> %s", body)
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(&reply)
+	json.Unmarshal(resp_body, &reply)
 	logger.Debug1f("%s %s %s", method, url, resp.Status)
 	return Reply{resp.StatusCode, resp.Status, resp.Header.Get("Location")}
 }

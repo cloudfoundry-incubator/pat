@@ -1,7 +1,7 @@
 package laboratory
 
 import (
-	"github.com/cloudfoundry-community/pat/experiment"
+	"github.com/cloudfoundry-incubator/pat/experiment"
 	"github.com/nu7hatch/gouuid"
 )
 

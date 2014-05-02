@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/cloudfoundry-community/pat/workloads"
+	"github.com/cloudfoundry-incubator/pat/workloads"
 )
 
 type Worker interface {

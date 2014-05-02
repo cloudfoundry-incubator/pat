@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cloudfoundry-community/pat/benchmarker"
-	"github.com/cloudfoundry-community/pat/config"
-	. "github.com/cloudfoundry-community/pat/experiment"
-	. "github.com/cloudfoundry-community/pat/laboratory"
-	"github.com/cloudfoundry-community/pat/logs"
-	"github.com/cloudfoundry-community/pat/store"
+	"github.com/cloudfoundry-incubator/pat/benchmarker"
+	"github.com/cloudfoundry-incubator/pat/config"
+	. "github.com/cloudfoundry-incubator/pat/experiment"
+	. "github.com/cloudfoundry-incubator/pat/laboratory"
+	"github.com/cloudfoundry-incubator/pat/logs"
+	"github.com/cloudfoundry-incubator/pat/store"
 	"github.com/gorilla/mux"
 )
 
@@ -198,6 +198,10 @@ func handler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) h
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+func removeSpaces(value string) string {
+	return strings.Replace(value, " ", "", -1)
 }
 
 var ListenAndServe = func(bind string) error {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry-community/pat/cmdline"
-	"github.com/cloudfoundry-community/pat/config"
-	"github.com/cloudfoundry-community/pat/logs"
-	"github.com/cloudfoundry-community/pat/server"
+	"github.com/cloudfoundry-incubator/pat/cmdline"
+	"github.com/cloudfoundry-incubator/pat/config"
+	"github.com/cloudfoundry-incubator/pat/logs"
+	"github.com/cloudfoundry-incubator/pat/server"
 )
 
 func main() {

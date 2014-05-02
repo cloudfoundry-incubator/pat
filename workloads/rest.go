@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry-community/pat/config"
+	"github.com/cloudfoundry-incubator/pat/config"
 	"github.com/nu7hatch/gouuid"
 )
 

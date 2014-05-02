@@ -3,7 +3,7 @@ package experiment
 import (
 	"errors"
 	"time"
-	. "github.com/cloudfoundry-community/pat/benchmarker"
+	. "github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

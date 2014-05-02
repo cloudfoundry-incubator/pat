@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry-community/pat/workloads"
+	"github.com/cloudfoundry-incubator/pat/workloads"
 )
 
 type LocalWorker struct {

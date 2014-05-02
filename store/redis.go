@@ -3,8 +3,8 @@ package store
 import (
 	"encoding/json"
 
-	"github.com/cloudfoundry-community/pat/experiment"
-	"github.com/cloudfoundry-community/pat/redis"
+	"github.com/cloudfoundry-incubator/pat/experiment"
+	"github.com/cloudfoundry-incubator/pat/redis"
 )
 
 const MAX_RESULTS = 10000

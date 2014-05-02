@@ -2,7 +2,7 @@ package benchmarker
 
 import (
 	"errors"
-	. "github.com/cloudfoundry-community/pat/workloads"
+	. "github.com/cloudfoundry-incubator/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"time"

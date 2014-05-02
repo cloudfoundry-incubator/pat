@@ -3,9 +3,9 @@ package benchmarker
 import (
 	"io"
 
-	"github.com/cloudfoundry-community/pat/config"
-	"github.com/cloudfoundry-community/pat/redis"
-	"github.com/cloudfoundry-community/pat/workloads"
+	"github.com/cloudfoundry-incubator/pat/config"
+	"github.com/cloudfoundry-incubator/pat/redis"
+	"github.com/cloudfoundry-incubator/pat/workloads"
 )
 
 var RedisContextMapStr = []string{"cfTarget", "cfUsername", "cfPassword"}
