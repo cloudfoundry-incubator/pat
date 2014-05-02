@@ -42,7 +42,7 @@ var _ = Describe("RedisWorker", func() {
 					result <- worker.Time("timesout", workloadCtx).Error
 				}()
 
-				Eventually(result, 2).Should(Receive())
+				Eventually(result, 2).Should(Receive())				
 			})			
 		})
 
@@ -53,7 +53,10 @@ var _ = Describe("RedisWorker", func() {
 				context  map[string]interface{}
 				wasCalledWithWorkerIndex int
 				wasCalledWithWorkerUsername string
-				wasCalledWithNonListed string
+				wasCalledWithRandomKey string
+				wasCalledWithIntTypeKey int
+				wasCalledWithInt64TypeKey int64
+				wasCalledWithBoolTypeKey bool
 			)
 
 			JustBeforeEach(func() {
@@ -67,16 +70,11 @@ var _ = Describe("RedisWorker", func() {
 				delegate.AddWorkloadStep(workloads.StepWithContext("barWithContext", func(ctx map[string]interface{}) error { ctx["a"] = ctx["a"].(int) + 2; return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx map[string]interface{}) error { wasCalledWithWorkerIndex = ctx["workerIndex"].(int); return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerUsername", func(ctx map[string]interface{}) error { wasCalledWithWorkerUsername = ctx["cfUsername"].(string); return nil }, ""))
-				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerInfo", func(ctx map[string]interface{}) error { 
-					if (ctx["non_listed"] == nil) {
-						wasCalledWithNonListed = ""
-					} else {
-						wasCalledWithNonListed = ctx["non_listed"].(string); 
-					}
-					
-					wasCalledWithWorkerUsername = ctx["cfUsername"].(string); 
-					return nil 
-				}, ""))
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerInfo", func(ctx map[string]interface{}) error { wasCalledWithRandomKey = ctx["RandomKey"].(string); wasCalledWithWorkerUsername = ctx["cfUsername"].(string); return nil }, ""))
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerInt", func(ctx map[string]interface{}) error { wasCalledWithIntTypeKey = ctx["intTypeKey"].(int); return nil }, ""))
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerInt64", func(ctx map[string]interface{}) error { wasCalledWithInt64TypeKey = ctx["int64TypeKey"].(int64); return nil }, ""))
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerBool", func(ctx map[string]interface{}) error { wasCalledWithBoolTypeKey = ctx["boolTypeKey"].(bool); return nil }, ""))
+
 
 				slave = StartSlave(conn, delegate)
 			})
@@ -146,23 +144,42 @@ var _ = Describe("RedisWorker", func() {
 
 			Describe("Workload context map sending over Redis", func() {
 
-				const spaceEscapeStr = "%20"
-
 				AfterEach(func() {
-						workloadCtx["cfTarget"] = ""
-						workloadCtx["cfUsername"] = ""
-						workloadCtx["cfPassword"] = ""			
+					workloadCtx = make(map[string]interface{})
 				})
 
 				Describe("Contents in the context map", func() {
-					It("should only be sent over redis if content key is listed in benchmarker config.go 'RedisContextMapStr' ", func() {					
+					It("should send all the keys in the context over redis", func() {
 						worker := NewRedisWorker(conn)
 						workloadCtx["cfUsername"] = "user1"
-						workloadCtx["non_listed"] = "some info"
+						workloadCtx["RandomKey"] = "some info"
 						_ = worker.Time("recordWorkerInfo", workloadCtx)
 						Ω(wasCalledWithWorkerUsername).Should(Equal("user1"))
-						Ω(wasCalledWithNonListed).Should(Equal(""))
-					})					
+						Ω(wasCalledWithRandomKey).Should(Equal("some info"))
+					})
+
+					It("should retain 'int' type content when sending over redis", func() {
+						worker := NewRedisWorker(conn)						
+						workloadCtx["intTypeKey"] = 100
+						_ = worker.Time("recordWorkerInt", workloadCtx)					
+						Ω(wasCalledWithIntTypeKey).Should(Equal(100))
+					})
+
+					It("should retain 'bool' type content when sending over redis", func() {
+						worker := NewRedisWorker(conn)						
+						workloadCtx["boolTypeKey"] = true
+						_ = worker.Time("recordWorkerBool", workloadCtx)					
+						Ω(wasCalledWithBoolTypeKey).Should(Equal(true))
+					})
+
+					It("should retain 'int64' type content when sending over redis", func() {
+						var i int64
+						i = 50
+						worker := NewRedisWorker(conn)						
+						workloadCtx["int64TypeKey"] = i
+						_ = worker.Time("recordWorkerInt64", workloadCtx)					
+						Ω(wasCalledWithInt64TypeKey).Should(Equal(int64(50)))
+					})
 				})
 				
 				Describe("When content string contain spaces", func() {

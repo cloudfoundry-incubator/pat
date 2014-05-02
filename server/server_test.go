@@ -185,10 +185,6 @@ var _ = Describe("Server", func() {
 		Ω(workloadCtxStringValue("cfPassword")).Should(Equal("pass1"))
 	})
 
-	It("removes space in 'cfPassword' parameter", func() {
-		post("/experiments/?cfPassword=pass1, pass2, pass3")
-		Ω(workloadCtxStringValue("cfPassword")).Should(Equal("pass1,pass2,pass3"))
-	})
 })
 
 type DummyLab struct {

@@ -5,8 +5,7 @@ import (
 	"strings"
 	"strconv"
 	"net/url"
-	"reflect"
-
+	
 	"github.com/cloudfoundry-community/pat/logs"
 	"github.com/cloudfoundry-community/pat/redis"
 	"github.com/cloudfoundry-community/pat/workloads"
@@ -31,14 +30,10 @@ func NewRedisWorkerWithTimeout(conn redis.Conn, timeoutInSeconds int) Worker {
 
 func (rw rw) Time(workload string, workloadCtx map[string]interface{}) (result IterationResult) {
 	guid, _ := uuid.NewV4()	
-	workloadCtx = initNilContextMap(workloadCtx)	
 	workloadCtx = replaceSpaceWithEscape(workloadCtx)
-	ctxStr := concatContextStr(workloadCtx)
+	ctxContentStr, ctxTypeStr, ctxKeyStr := turnContextToRedisStr(workloadCtx)
 
-	if (workloadCtx["workerIndex"] == nil) { workloadCtx["workerIndex"] = 0 }
-	workerIndex := strconv.Itoa(workloadCtx["workerIndex"].(int))
-	
-	redisStr := "replies-"+guid.String() + " " + workerIndex + ctxStr + " " + workload
+	redisStr := "replies-"+guid.String() + " " + ctxTypeStr + " " + ctxKeyStr + " " + ctxContentStr + " " + workload
 	rw.conn.Do("RPUSH", "tasks", redisStr)
 
 	reply, err := redis.Strings(rw.conn.Do("BLPOP", "replies-"+guid.String(), rw.timeoutInSeconds))
@@ -88,15 +83,9 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 		}
 
 		if err == nil {
-			parts := strings.SplitN(reply[1], " ", 4 + len(RedisContextMapStr))
-			workloadCtx := make(map[string]interface{})
-			workerIndex, _ := strconv.Atoi(parts[1])
-			workloadCtx["workerIndex"] = workerIndex
+			parts := strings.SplitN(reply[1], " ", 5)
 
-			for i, v := range RedisContextMapStr {
-				workloadCtx[v] = parts[(i+2)]								
-				workloadCtx[v], _ = url.QueryUnescape(workloadCtx[v].(string))
-			}			
+			workloadCtx := fillContextFromRedisStr(parts[1], parts[2], parts[3])
 
 			go func(experiment string, replyTo string, workloadCtx map[string]interface{}) {				
 				result := delegate.Time(experiment, workloadCtx)				
@@ -104,7 +93,7 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 				encoded, err = json.Marshal(result)
 				logger.Debug("Completed slave task, replying")
 				conn.Do("RPUSH", replyTo, string(encoded))
-			}(parts[5], parts[0], workloadCtx)
+			}(parts[4], parts[0], workloadCtx)
 		}
 
 		if err != nil {
@@ -113,30 +102,66 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 	}
 }
 
-func replaceSpaceWithEscape(workloadCtx map[string]interface{}) map[string]interface{} {
-	for _, v := range RedisContextMapStr {		
-		workloadCtx[v] = url.QueryEscape(workloadCtx[v].(string))
+func turnContextToRedisStr(workloadCtx map[string]interface{})(strValue string, strType string, strKey string){	
+	for k, v := range workloadCtx {
+		if (strValue != "") { strValue = strValue + "," }
+		if (strType != "") { strType = strType + "," }
+		if (strKey != "") { strKey = strKey + "," }
+	
+		strKey = strKey + k
+
+		switch v.(type) {
+			default:
+				logger := logs.NewLogger("redis")
+				logger.Error("Unsupported type in context map")
+			case int:
+				strType = strType + "int"				
+				strValue = strValue + strconv.Itoa(v.(int))
+			case int64:
+				strType = strType + "int64"	
+				strValue = strValue + strconv.FormatInt(v.(int64), 10)
+			case string:
+				strType = strType + "string"
+				strValue = strValue + v.(string)
+			case bool:
+				strType = strType + "bool"
+				strValue = strValue + strconv.FormatBool(v.(bool))
+		}
+	}
+	return strValue, strType, strKey
+}
+
+func fillContextFromRedisStr(ctxType string, ctxKey string, ctxContent string) map[string]interface{} {
+	var intStr int64
+	
+	workloadCtx := make(map[string]interface{})
+	contentList := strings.Split(ctxContent, ",")
+	keyList := strings.Split(ctxKey, ",")
+
+	for i, v := range strings.Split(ctxType,",") {
+		switch {
+		case v == "string":
+			workloadCtx[keyList[i]], _ = url.QueryUnescape(contentList[i])
+			break
+		case v == "int":		
+			intStr, _ = strconv.ParseInt(contentList[i], 0, 0)
+			workloadCtx[keyList[i]] = int(intStr)
+			break
+		case v == "int64":
+			workloadCtx[keyList[i]], _ = strconv.ParseInt(contentList[i], 0, 64)
+			break
+		case v == "bool":			
+			workloadCtx[keyList[i]], _ =  strconv.ParseBool(contentList[i])
+			break
+		}
 	}
 	return workloadCtx
 }
 
-func concatContextStr(workloadCtx map[string]interface{}) string {
-	ctxStr := ""
-
-	for _, v := range RedisContextMapStr {
-		if (workloadCtx[v] == nil) {
-			workloadCtx[v] = ""		
-		}
-		ctxStr = ctxStr + " " + workloadCtx[v].(string)
-	}
-
-	return ctxStr
-}
-
-func initNilContextMap(workloadCtx map[string]interface{}) map[string]interface{} { 
-	for _, v := range RedisContextMapStr {
-		if (workloadCtx[v] == nil) {
-			workloadCtx[v] = ""
+func replaceSpaceWithEscape(workloadCtx map[string]interface{}) map[string]interface{} {
+	for k, _ := range workloadCtx {
+		if (reflect.TypeOf(workloadCtx[k]).Name() == "string") {
+			workloadCtx[k] = url.QueryEscape(workloadCtx[k].(string))
 		}
 	}
 	return workloadCtx

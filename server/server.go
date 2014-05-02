@@ -127,8 +127,8 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 
 	cfTarget := removeSpaces( r.FormValue("cfTarget") )
 	cfUsername := removeSpaces( r.FormValue("cfUsername") )
-	cfPassword := removeSpaces( r.FormValue("cfPassword") )
 	workload := removeSpaces( r.FormValue("workload") )
+	cfPassword := r.FormValue("cfPassword")
 
 	if workload == "" {
 		workload = "gcf:push"
@@ -198,10 +198,6 @@ func handler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) h
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-}
-
-func removeSpaces(value string) string {
-	return strings.Replace(value, " ", "", -1)
 }
 
 var ListenAndServe = func(bind string) error {
