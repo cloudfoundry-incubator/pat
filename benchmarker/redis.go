@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"net/url"
 	"reflect"
+	"fmt"
 	
 	"github.com/cloudfoundry-incubator/pat/logs"
 	"github.com/cloudfoundry-incubator/pat/redis"
@@ -17,6 +18,12 @@ type rw struct {
 	defaultWorker
 	conn             redis.Conn
 	timeoutInSeconds int
+}
+
+type RedisMessage struct { 
+	Reply string
+	Workload string
+	WorkloadCtx map[string]interface{} 
 }
 
 const DefaultTimeout = 60 * 5
@@ -32,10 +39,26 @@ func NewRedisWorkerWithTimeout(conn redis.Conn, timeoutInSeconds int) Worker {
 func (rw rw) Time(workload string, workloadCtx map[string]interface{}) (result IterationResult) {
 	guid, _ := uuid.NewV4()	
 	workloadCtx = replaceSpaceWithEscape(workloadCtx)
-	ctxContentStr, ctxTypeStr, ctxKeyStr := turnContextToRedisStr(workloadCtx)
+	//ctxContentStr, ctxTypeStr, ctxKeyStr := turnContextToRedisStr(workloadCtx)
 
-	redisStr := "replies-"+guid.String() + " " + ctxTypeStr + " " + ctxKeyStr + " " + ctxContentStr + " " + workload
-	rw.conn.Do("RPUSH", "tasks", redisStr)
+	// use json, put replies and workload into context
+	
+	redisMsg := RedisMessage{
+		Workload: workload,
+		Reply: "replies-"+guid.String(),
+		WorkloadCtx: workloadCtx,
+	}
+
+	var jsonRedisMsg []byte
+
+	jsonRedisMsg, _ = json.Marshal(redisMsg)
+	
+	fmt.Println("MEssage:" + string(jsonRedisMsg))
+	//end encoding json
+
+	//redisStr := "replies-"+guid.String() + " " + ctxTypeStr + " " + ctxKeyStr + " " + ctxContentStr + " " + workload
+	//rw.conn.Do("RPUSH", "tasks", redisStr)
+	rw.conn.Do("RPUSH", "tasks", string(jsonRedisMsg))
 
 	reply, err := redis.Strings(rw.conn.Do("BLPOP", "replies-"+guid.String(), rw.timeoutInSeconds))
 	if err != nil {
@@ -83,18 +106,37 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 			break
 		}
 
-		if err == nil {
-			parts := strings.SplitN(reply[1], " ", 5)
+		if err!= nil {
+			fmt.Println("THere is error, skipping, that is why!!!")
+			fmt.Println(err)
+		}
 
-			workloadCtx := fillContextFromRedisStr(parts[1], parts[2], parts[3])
+		if err == nil {
+			//parts := strings.SplitN(reply[1], " ", 5)
+			
+			//workloadCtx := fillContextFromRedisStr(parts[1], parts[2], parts[3])
+			var redisMsg RedisMessage
+			
+fmt.Println(reply[0] + " 0")
+fmt.Println(reply[1] + " 1")
+			var workloadCtx map[string]interface{}
+			
+			_ = json.Unmarshal([]byte(reply[1]), &redisMsg)
+			workloadCtx = redisMsg.WorkloadCtx
+
+			//workloadCtx = UnescapeString(workloadCtx)
 
 			go func(experiment string, replyTo string, workloadCtx map[string]interface{}) {				
+				fmt.Println("====== go func() 1" )
 				result := delegate.Time(experiment, workloadCtx)				
+				fmt.Println("====== go func() 2" )
 				var encoded []byte
-				encoded, err = json.Marshal(result)
+				encoded, err = json.Marshal(result)				
 				logger.Debug("Completed slave task, replying")
 				conn.Do("RPUSH", replyTo, string(encoded))
-			}(parts[4], parts[0], workloadCtx)
+			//}(parts[4], parts[0], workloadCtx)
+			}(redisMsg.Workload, redisMsg.Reply, workloadCtx)
+
 		}
 
 		if err != nil {
@@ -160,9 +202,18 @@ func fillContextFromRedisStr(ctxType string, ctxKey string, ctxContent string) m
 }
 
 func replaceSpaceWithEscape(workloadCtx map[string]interface{}) map[string]interface{} {
-	for k, _ := range workloadCtx {
+	for k, _ := range workloadCtx {		
 		if (reflect.TypeOf(workloadCtx[k]).Name() == "string") {
 			workloadCtx[k] = url.QueryEscape(workloadCtx[k].(string))
+		}
+	}
+	return workloadCtx
+}
+
+func UnescapeString(workloadCtx map[string]interface{}) map[string]interface{} {
+	for k, _ := range workloadCtx {
+		if (reflect.TypeOf(workloadCtx[k]).Name() == "string") {
+			workloadCtx[k], _ = url.QueryUnescape(workloadCtx[k].(string))
 		}
 	}
 	return workloadCtx

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+	"fmt"
 
 	"github.com/cloudfoundry-incubator/pat/redis"
 	"github.com/cloudfoundry-incubator/pat/workloads"
@@ -21,6 +22,7 @@ var _ = Describe("RedisWorker", func() {
 	)
 
 	BeforeEach(func() {
+		fmt.Println("in redis test before each")
 		StartRedis("../redis/redis.conf")
 		var err error
 		conn, err = redis.Connect("", 63798, "p4ssw0rd")
@@ -68,7 +70,7 @@ var _ = Describe("RedisWorker", func() {
 				context = make(map[string]interface{})
 				delegate.AddWorkloadStep(workloads.StepWithContext("fooWithContext", func(ctx map[string]interface{}) error { context = ctx; ctx["a"] = 1; return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("barWithContext", func(ctx map[string]interface{}) error { ctx["a"] = ctx["a"].(int) + 2; return nil }, ""))
-				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx map[string]interface{}) error { wasCalledWithWorkerIndex = ctx["workerIndex"].(int); return nil }, ""))
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx map[string]interface{}) error { fmt.Println("in recordWorkerIndex()"); wasCalledWithWorkerIndex = (int)(ctx["workerIndex"].(float64)); return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerUsername", func(ctx map[string]interface{}) error { wasCalledWithWorkerUsername = ctx["cfUsername"].(string); return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerInfo", func(ctx map[string]interface{}) error { wasCalledWithRandomKey = ctx["RandomKey"].(string); wasCalledWithWorkerUsername = ctx["cfUsername"].(string); return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerInt", func(ctx map[string]interface{}) error { wasCalledWithIntTypeKey = ctx["intTypeKey"].(int); return nil }, ""))
@@ -85,10 +87,12 @@ var _ = Describe("RedisWorker", func() {
 			})
 
 			It("passes workerIndex to delegate.Time()", func() {
+				fmt.Println("in test 1")
 				worker := NewRedisWorkerWithTimeout(conn, 1)
-				workloadCtx["workerIndex"] = 72
+				workloadCtx["workerIndex"] = int(72)
 				worker.Time("recordWorkerIndex", workloadCtx);
-				Ω(wasCalledWithWorkerIndex).Should(Equal(72))								
+				Ω(wasCalledWithWorkerIndex).Should(Equal(72))
+				fmt.Println("in test 1 done **")
 			})
 
 			It("Times a function by name", func() {				
