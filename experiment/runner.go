@@ -7,10 +7,11 @@ import (
 )
 
 type SampleType int
+type schedule chan int
 
 const (
 	ResultSample SampleType = iota
-	WorkerSample	
+	WorkerSample
 	ErrorSample
 	OtherSample
 )
@@ -25,18 +26,18 @@ type Command struct {
 }
 
 type Sample struct {
-	Commands     map[string]Command
-	Average      time.Duration
-	TotalTime    time.Duration
-	Total        int64
-	TotalErrors  int
-	TotalWorkers int
-	LastResult   time.Duration
-	LastError    error
-	WorstResult  time.Duration
+	Commands              map[string]Command
+	Average               time.Duration
+	TotalTime             time.Duration
+	Total                 int64
+	TotalErrors           int
+	TotalWorkers          int
+	LastResult            time.Duration
+	LastError             error
+	WorstResult           time.Duration
 	NinetyfifthPercentile time.Duration
-	WallTime     time.Duration
-	Type         SampleType
+	WallTime              time.Duration
+	Type                  SampleType
 }
 
 type Experiment interface {
@@ -45,12 +46,13 @@ type Experiment interface {
 }
 
 type ExperimentConfiguration struct {
-	Iterations  int
-	Concurrency int
-	Interval    int
-	Stop        int
-	Worker      Worker
-	Workload    string
+	Iterations          int
+	Concurrency         []int
+	ConcurrencyStepTime time.Duration
+	Interval            int
+	Stop                int
+	Worker              Worker
+	Workload            string
 }
 
 type RunnableExperiment struct {
@@ -64,14 +66,15 @@ type ExecutableExperiment struct {
 	iteration chan IterationResult
 	workers   chan int
 	quit      chan bool
+	schedule  chan int
 }
 
 type SamplableExperiment struct {
-  maxIterations int
-	iteration chan IterationResult
-	workers   chan int
-	samples   chan *Sample
-	quit      chan bool
+	maxIterations int
+	iteration     chan IterationResult
+	workers       chan int
+	samples       chan *Sample
+	quit          chan bool
 }
 
 type Executable interface {
@@ -82,8 +85,8 @@ type Samplable interface {
 	Sample()
 }
 
-func NewExperimentConfiguration(iterations int, concurrency int, interval int, stop int, worker Worker, workload string) ExperimentConfiguration {
-	return ExperimentConfiguration{iterations, concurrency, interval, stop, worker, workload}
+func NewExperimentConfiguration(iterations int, concurrency []int, concurrencyStepTime time.Duration, interval int, stop int, worker Worker, workload string) ExperimentConfiguration {
+	return ExperimentConfiguration{iterations, concurrency, concurrencyStepTime, interval, stop, worker, workload}
 }
 
 func NewRunnableExperiment(config ExperimentConfiguration) *RunnableExperiment {
@@ -91,7 +94,13 @@ func NewRunnableExperiment(config ExperimentConfiguration) *RunnableExperiment {
 }
 
 func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan IterationResult, errors chan error, workers chan int, quit chan bool) Executable {
-	return &ExecutableExperiment{c, iterationResults, workers, quit}
+	startingWorkers := c.Concurrency[0]
+	totalWorkers := startingWorkers
+	if len(c.Concurrency) > 1 {
+		totalWorkers = c.Concurrency[1]
+	}
+	schedule := linearSchedule(startingWorkers, totalWorkers, c.ConcurrencyStepTime)
+	return &ExecutableExperiment{c, iterationResults, workers, quit, schedule}
 }
 
 func newRunningExperiment(iterations int, iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
@@ -106,7 +115,9 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
 	quit := make(chan bool)
 	done := make(chan bool)
 	maxIterations := config.Iterations
-	if (config.Stop != 0 && config.Interval != 0 && config.Interval < config.Stop) {maxIterations *= config.Stop/config.Interval}
+	if config.Stop != 0 && config.Interval != 0 && config.Interval < config.Stop {
+		maxIterations *= config.Stop / config.Interval
+	}
 	sampler := config.samplerFactory(maxIterations, iteration, errors, workers, samples, quit)
 	go sampler.Sample()
 	go func(d chan bool) {
@@ -121,7 +132,7 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
 
 func (ex *ExecutableExperiment) Execute() {
 	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func(int) {
-		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))))
+		ExecuteConcurrently(ex.schedule, Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))))
 	}, ex.quit))
 
 	close(ex.iteration)
@@ -130,9 +141,31 @@ func (ex *ExecutableExperiment) Execute() {
 func clone(src map[string]Command) map[string]Command {
 	var clone = make(map[string]Command)
 	for k, v := range src {
-    	clone[k] = v
+		clone[k] = v
 	}
 	return clone
+}
+
+func linearSchedule(startingWorkers int, totalWorkers int, concurrencyStepTime time.Duration) chan int {
+	ch := make(chan int)
+	go func() {
+		defer close(ch)
+		for i := 0; i < startingWorkers; i++ {
+			ch <- 1
+		}
+		if concurrencyStepTime > 0 && startingWorkers < totalWorkers {
+			tick := time.NewTicker(concurrencyStepTime)
+			for _ = range tick.C {
+				ch <- 1
+				startingWorkers++
+				if startingWorkers >= totalWorkers {
+					tick.Stop()
+					break
+				}
+			}
+		}
+	}()
+	return ch
 }
 
 func (ex *SamplableExperiment) Sample() {
@@ -146,8 +179,8 @@ func (ex *SamplableExperiment) Sample() {
 	var workers int
 	var worstResult time.Duration
 	var ninetyfifthPercentile time.Duration
-	var percentileLength = int(math.Floor(float64(ex.maxIterations)*.05+0.95))
- 	var percentile  = make([]time.Duration, percentileLength, percentileLength)
+	var percentileLength = int(math.Floor(float64(ex.maxIterations)*.05 + 0.95))
+	var percentile = make([]time.Duration, percentileLength, percentileLength)
 	var heartbeat = time.NewTicker(1 * time.Second)
 	startTime := time.Now()
 
@@ -162,8 +195,8 @@ func (ex *SamplableExperiment) Sample() {
 			sampleType = ResultSample
 			iterations = iterations + 1
 			totalTime = totalTime + iteration.Duration
-			avg = time.Duration(totalTime.Nanoseconds() / iterations)	
-			lastResult = iteration.Duration	
+			avg = time.Duration(totalTime.Nanoseconds() / iterations)
+			lastResult = iteration.Duration
 			if iteration.Duration > worstResult {
 				worstResult = iteration.Duration
 			}
@@ -176,8 +209,8 @@ func (ex *SamplableExperiment) Sample() {
 				}
 			}
 
-			ninetyfifthPercentile = percentile[percentileLength - int(math.Floor(float64(iterations)*.05+0.95))]
-			
+			ninetyfifthPercentile = percentile[percentileLength-int(math.Floor(float64(iterations)*.05+0.95))]
+
 			for _, step := range iteration.Steps {
 				cmd := commands[step.Command]
 				cmd.Count = cmd.Count + 1
@@ -188,7 +221,7 @@ func (ex *SamplableExperiment) Sample() {
 				if step.Duration > cmd.WorstTime {
 					cmd.WorstTime = step.Duration
 				}
-			
+
 				commands[step.Command] = cmd
 			}
 
@@ -199,8 +232,8 @@ func (ex *SamplableExperiment) Sample() {
 		case w := <-ex.workers:
 			workers = workers + w
 		case _ = <-heartbeat.C:
-			//heatbeat for updating CLI Walltime every second	
-		}		
+			//heartbeat for updating CLI Walltime every second
+		}
 		ex.samples <- &Sample{clone(commands), avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, ninetyfifthPercentile, time.Now().Sub(startTime), sampleType}
 	}
 }

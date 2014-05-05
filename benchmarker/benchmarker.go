@@ -89,16 +89,19 @@ func Execute(tasks <-chan func(int)) {
 	}
 }
 
-func ExecuteConcurrently(workers int, tasks <-chan func(int)) {
+func ExecuteConcurrently(schedule <-chan int, tasks <-chan func(int)) {
 	var wg sync.WaitGroup
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func(t <-chan func(int), n int) {
-			defer wg.Done()
-			for task := range t {
-				task(n)
-			}
-		}(tasks, i)
+
+	for increment := range schedule {
+		for i:=0; i<increment; i++ {
+			wg.Add(1)
+			go func(t <-chan func(int), n int) {
+				defer wg.Done()
+				for task := range t {
+					task(n)
+				}
+			}(tasks, i)
+		}
 	}
 	wg.Wait()
 }

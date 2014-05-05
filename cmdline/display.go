@@ -7,11 +7,12 @@ import (
 	"github.com/cloudfoundry-incubator/pat/experiment"
 )
 
-func display(concurrency int, iterations int, interval int, stop int, samples <-chan *experiment.Sample) {
+func display(concurrency string, iterations int, interval int, stop int, concurrencyStepTime int, samples <-chan *experiment.Sample) {
 	for s := range samples {
 		fmt.Print("\033[2J\033[;H")
 		fmt.Println("\x1b[32;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
-		fmt.Printf("Test underway. Concurrency: \x1b[36m%v\x1b[0m  Workload iterations: \x1b[36m%v\x1b[0m  Interval: \x1b[36m%v\x1b[0m  Stop: \x1b[36m%v\x1b[0m\n", concurrency, iterations, interval, stop)
+		fmt.Printf("Test underway. Concurrency: \x1b[36m%v\x1b[0m  Concurrency:TimeBetwenSteps: \x1b[36m%v\x1b[0m Workload iterations: \x1b[36m%v\x1b[0m  Interval: \x1b[36m%v\x1b[0m  Stop: \x1b[36m%v\x1b[0m\n", 
+			concurrency, concurrencyStepTime, iterations, interval, stop)
 		fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n")
 
 		fmt.Printf("\x1b[36mTotal iterations\x1b[0m:    %v  \x1b[36m%v\x1b[0m / %v\n", bar(s.Total, totalIterations(iterations, interval, stop), 25), s.Total, totalIterations(iterations, interval, stop))

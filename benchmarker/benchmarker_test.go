@@ -1,10 +1,11 @@
 package benchmarker
 
 import (
+	"time"
+	
 	. "github.com/cloudfoundry-incubator/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
 var _ = Describe("Benchmarker", func() {
@@ -101,24 +102,78 @@ var _ = Describe("Benchmarker", func() {
 		})
 	})
 
-	Describe("Repeat Concurrently", func() {
-		Context("with 1 worker", func() {
-			It("Runs in series", func() {
-				result, _ := Time(func() error {
-					ExecuteConcurrently(1, Repeat(3, func(int) { time.Sleep(1 * time.Second) }))
-					return nil
-				})
-				Ω(result.Seconds()).Should(BeNumerically("~", 3, 1))
+	Describe("#ExecuteConcurrently", func() {
+		Context("When a single one is pushed", func() {
+			It("Creates a new goroutine that executes the tasks serially", func() {
+				schedule := make(chan int)
+				tasks := make(chan func(int))
+				orderWasExecuted := 0
+				go func() {
+					orderWasQueued := make(chan int, 1)
+					defer close(tasks)
+					for i:=0; i<10; i++ {
+						orderWasQueued <- i
+						tasks <- func(n int) {
+							defer GinkgoRecover()
+							Ω(orderWasExecuted).Should(Equal(<-orderWasQueued))
+							orderWasExecuted++
+						}
+					}
+				}()
+				go func() {
+					defer close(schedule)
+					schedule <- 1 
+				}()
+				ExecuteConcurrently(schedule, tasks)
 			})
 		})
 
-		Context("With 3 workers", func() {
-			It("Runs in parallel", func() {
-				result, _ := Time(func() error {
-					ExecuteConcurrently(3, Repeat(3, func(int) { time.Sleep(2 * time.Second) }))
-					return nil
-				})
-				Ω(result.Seconds()).Should(BeNumerically("~", 2, 1))
+		Context("When an event larger than one is pushed", func() {
+			It("Creates mutlple new goroutines that execute the tasks concurrent", func() {
+				schedule := make(chan int)
+				tasks := make(chan func(int))
+				executedInOrder := 0
+				orderWasExecuted := 0
+				go func() {
+					defer close(tasks)
+					for i:=0; i<10; i++ {
+						tasks <- func(n int) {
+							if orderWasExecuted == i { executedInOrder++ }
+							orderWasExecuted++
+						}
+					}
+				}()
+				go func() {
+					defer close(schedule)
+					schedule <- 2
+				}()
+				ExecuteConcurrently(schedule, tasks)
+				Ω(executedInOrder).Should(BeNumerically("~", 5, 1))
+			})
+		})
+
+		Context("When multiple ones are pushed", func() {
+			It("Creates a goroutine each time an event is pushed that executes the tasks concurrently", func() {
+				schedule := make(chan int)
+				tasks := make(chan func(int))
+				executedInOrder := 0
+				orderWasExecuted := 0
+				go func() {
+					defer close(tasks)
+					for i:=0; i<10; i++ {
+						tasks <- func(n int) {
+							if orderWasExecuted == i { executedInOrder++ }
+							orderWasExecuted++
+						}
+					}
+				}()
+				go func() {
+					defer close(schedule)
+					schedule <- 1 
+					schedule <- 1 
+				}()
+				ExecuteConcurrently(schedule, tasks)
+				Ω(executedInOrder).Should(BeNumerically("~", 5, 1))
 			})
 		})
 	})

@@ -25,7 +25,7 @@ describe("The view", function() {
 
   describe("showThroughput()", function() {
     it("shows throughput graph and hides others when called", function() {
-      v.showThroughput()      
+      v.showThroughput()
       expect( $(throughputNode).css('display') ).toBe("block")
       expect( $(workloadNode).css('display') ).toBe("none")
     })
@@ -123,30 +123,30 @@ describe("The view", function() {
         v.downloadCsv()
         expect(v.redirectTo).toHaveBeenCalledWith("some-url.csv")
       })
-    })    
+    })
   })
 
   describe("Previous Histories Popup", function() {
-    it("should be hidden from the view by default", function() {    
+    it("should be hidden from the view by default", function() {
       var property = $('#historyPopup').css('display');
       expect(property).toBe("none")
     })
 
-    it("should be visible when histories button is clicked", function() {    
+    it("should be visible when histories button is clicked", function() {
       $('[data-target = "#historyPopup"]').trigger("click");
       waits(300);
       runs(function() {
         var property = $('#historyPopup').css('display');
-        expect(property).toBe("block")  
+        expect(property).toBe("block")
       });
     })
 
-    it("should hide from view when close button is clicked", function() {    
+    it("should hide from view when close button is clicked", function() {
       $('#historyPopup').find('.close').trigger("click");
       waits(600);
       runs(function() {
-        var property = $('#historyPopup').css('display');          
-        expect(property).toBe("none")  
+        var property = $('#historyPopup').css('display');
+        expect(property).toBe("none")
       });
     })
   })
@@ -177,7 +177,7 @@ describe("The view", function() {
   })
 })
 
-describe("DOM elements manipulation", function(){  
+describe("DOM elements manipulation", function(){
   $("div", "#target").empty();
   d3_workload.init(document.getElementById("target"));
   d3_throughput.init(document.getElementById("target"));
@@ -192,7 +192,7 @@ describe("DOM elements manipulation", function(){
     d3_throughput.changeState(dom.hideContent)
     expect( $(throughputNode).css('display') ).toBe("none")
   })
-  
+
   it("hides current graph when a new graph is swapped into view", function(){
     d3_workload.changeState(dom.showGraph)
     expect( $(workloadNode).css('display') ).toBe("block")
@@ -203,7 +203,7 @@ describe("DOM elements manipulation", function(){
 
 })
 
-describe("Throughput chart", function() {  
+describe("Throughput chart", function() {
   const margin = {top: 50, right: 30, bottom: 30, left: 30};
   $("div.throughputContainer").empty();
   var chart = d3_throughput.init(document.getElementById("target"));
@@ -212,7 +212,7 @@ describe("Throughput chart", function() {
   var node = $("div.throughputContainer").get(0)
 
   it("should draw a line to go through points based on the throughput", function() {
-    var workload = [{ Commands: { "login": {"Count": 1, "Throughput": 0.5}}}, 
+    var workload = [{ Commands: { "login": {"Count": 1, "Throughput": 0.5}}},
                     { Commands: { "login": {"Count": 2, "Throughput": 0.3}}},
                     { Commands: { "login": {"Count": 3, "Throughput": 0.6}}}];
 
@@ -232,19 +232,19 @@ describe("Throughput chart", function() {
 
   it("should draw a line for each command in a workload", function() {
     var workload = [{ Commands: {
-        "login": {"Throughput": 0.5}, 
+        "login": {"Throughput": 0.5},
         "push":  {"Throughput": 0.1},
         "list":  {"Throughput": 0.3}
       } }];
 
     chart(workload);
-        
+
     expect( $(node).find("path.line").length ).toBe(3);
   })
 
   it("should draw with a different color for each command", function() {
     var workload = [{ Commands: {
-        "login": {"Throughput": 0.5}, 
+        "login": {"Throughput": 0.5},
         "push": {"Throughput": 0.1},
         "list": {"Throughput": 0.3}
       } }];
@@ -254,20 +254,20 @@ describe("Throughput chart", function() {
     var color1 = $(node).find("path.line")[0].style.stroke
     var color2 = $(node).find("path.line")[1].style.stroke
     var color3 = $(node).find("path.line")[2].style.stroke
-    
+
     expect (color1).not.toEqual(color2)
     expect (color1).not.toEqual(color3)
     expect (color2).not.toEqual(color3)
   })
 
   it("it should show colored tooltips of throughput values when mouse hover over a line", function() {
-    var workload = [{ Commands: { "login": {"Count": 1, "Throughput": 0.50}}}, 
+    var workload = [{ Commands: { "login": {"Count": 1, "Throughput": 0.50}}},
                     { Commands: { "login": {"Count": 2, "Throughput": 0.30}}},
                     { Commands: { "login": {"Count": 3, "Throughput": 0.60}}}];
 
     chart(workload);
 
-    expect( $(node).find("g.datalogin").length ).toEqual(0);    
+    expect( $(node).find("g.datalogin").length ).toEqual(0);
     d3.select(node).select("path.line").on("mouseover")({cmd:"login", throughput:[0.5, 0.3, 0.6]});
     expect( $(node).find("g.datalogin").length ).toEqual(3);
 
@@ -287,31 +287,31 @@ describe("Throughput chart", function() {
     d3.select(node).select("path.line").on("mouseover")({cmd: illegalName, throughput:[0.50]});
 
     expect( $(node).find("g.data" + illegalName).length ).toEqual(0);
-        
+
     expect( $(node).find("g.data" + "gcf_login_123").length ).toEqual(1);
-  })  
+  })
 
   it("should show the maximum command throughput in seconds in the y-axis", function() {
     var workload = [{ Commands: {
-        "login": {"Throughput": 0.5}, 
+        "login": {"Throughput": 0.5},
         "push": {"Throughput": 0.3},
         "list": {"Throughput": 0.9}
       } }];
     chart(workload);
 
     var tickSize = 0;
-    var tickMax = 0; 
+    var tickMax = 0;
     var ticks = $(node).find(".y.axis text");
 
     for (var i =0; i < ticks.length; i++) {
-      if (parseFloat(ticks[i].innerHTML) > tickMax) {        
+      if (parseFloat(ticks[i].innerHTML) > tickMax) {
         tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
         tickMax = parseFloat(ticks[i].innerHTML);
-      } 
+      }
     }
 
     expect( tickMax ).toBeCloseTo(0.9, tickSize);
-  });  
+  });
 
   it("should show the number of iteration in the x-axis", function() {
     var workload = [{ Commands: {"login": {"Throughput": 0.5}} },
@@ -320,14 +320,14 @@ describe("Throughput chart", function() {
     chart(workload);
 
     var tickSize = 0;
-    var tickMax = 0; 
+    var tickMax = 0;
     var ticks = $(node).find(".x.axis text");
-    
+
     for (var i =0; i < ticks.length; i++) {
-      if (parseFloat(ticks[i].innerHTML) > tickMax) {        
+      if (parseFloat(ticks[i].innerHTML) > tickMax) {
         tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
         tickMax = parseFloat(ticks[i].innerHTML);
-      } 
+      }
     }
 
     expect( tickMax ).toBeCloseTo(3, tickSize);
@@ -340,24 +340,24 @@ describe("Throughput chart", function() {
 
     chart(workload);
 
-    var color = $(node).find("path.line")[0].style.stroke    
+    var color = $(node).find("path.line")[0].style.stroke
     expect( $(node).find("g.tplegend rect")[0].style.fill ).toEqual(color)
   })
 
   it("should show legend to indicate what command the lines are representing", function() {
     var workload = [{ Commands: {
-        "login": {"Throughput": 0.5}, 
+        "login": {"Throughput": 0.5},
         "push":  {"Throughput": 0.1}
       } }];
 
     chart(workload);
 
-    expect( $(node).find("g.tplegend").length ).toEqual(2);      
+    expect( $(node).find("g.tplegend").length ).toEqual(2);
   })
 
   it("should show updated legend when new command is used in a experiment", function() {
     var workload = [{ Commands: {
-        "login": {"Throughput": 0.5}, 
+        "login": {"Throughput": 0.5},
         "push":  {"Throughput": 0.1}
       } }];
 
@@ -367,13 +367,13 @@ describe("Throughput chart", function() {
     expect( $(node).find("g.tplegend text")[1].innerHTML ).toEqual("push")
 
     workload = [{ Commands: { "list": {"Throughput": 0.2} }}];
-    
+
     chart(workload);
-    
+
     setTimeout(function () {
       expect( $(node).find("g.tplegend text")[0].innerHTML ).toEqual("list")
       expect( $(node).find("g.tplegend text")[1].innerHTML ).toEqual(null)
-    }, 800);    
+    }, 800);
   })
 
 })
@@ -389,13 +389,13 @@ describe("Bar chart", function() {
   var node = $("div.workloadContainer").get(0);
   var chartArea = $('svg.workload > g > g:eq(1) > g ').get(0);
 
-  it("should draw a bar for each element", function() {  
+  it("should draw a bar for each element", function() {
     var data = [];
     for (var i = 0; i < 3; i ++) {
         data.push( {"LastResult" : 1 * sec} );
     }
-    chart(data);        
-    
+    chart(data);
+
     var totalBars = $( node ).find("rect.bar").length;
     expect( totalBars ).toBe(3);
   });
@@ -415,21 +415,21 @@ describe("Bar chart", function() {
     for (var i = 1; i <= 10; i ++) {
       LastResult = i * sec ;
       data.push( {"LastResult" : LastResult} );
-    }    
+    }
     chart(data);
 
     var tickSize = 0;
-    var tickMax = 0; 
+    var tickMax = 0;
     var ticks = $(node).find(".y.axis text");
-    
+
     for (var i =0; i < ticks.length; i++) {
-      if (parseFloat(ticks[i].innerHTML) > tickMax) {        
+      if (parseFloat(ticks[i].innerHTML) > tickMax) {
         tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
         tickMax = parseFloat(ticks[i].innerHTML);
-      } 
+      }
     }
 
-    expect( tickMax ).toBeCloseTo(10, tickSize);   
+    expect( tickMax ).toBeCloseTo(10, tickSize);
   });
 
   it("should show error by drawing the bar in the color brown with the CSS class 'error'", function() {
@@ -439,8 +439,8 @@ describe("Bar chart", function() {
     chart(data);
 
     var bars = d3.select( node ).selectAll("rect.bar");
-    
-    bars.each(function(d,i) {      
+
+    bars.each(function(d,i) {
       if (d.TotalErrors == 0) {
         expect( d3.select(this).classed("error") ).toBe(false)
       } else {
@@ -448,20 +448,20 @@ describe("Bar chart", function() {
       }
     })
   })
-    
+
   it("should auto-pan to the left when new data is drawn outside of the viewable area", function() {
     var data = [];
     var viewableWidth = $(node).width() - margin.left - margin.right;
-    var max_data = parseInt(viewableWidth / (barWidth + gap));    
+    var max_data = parseInt(viewableWidth / (barWidth + gap));
 
     for (var i = 1; i <= max_data; i ++) {
       data.push( {"LastResult" : 5} );
     }
     chart(data);
-    
+
     waits(500);
-    runs(function () {      
-      expect(parseInt(getTranslateX(d3.select( chartArea )))).toBe(0);               
+    runs(function () {
+      expect(parseInt(getTranslateX(d3.select( chartArea )))).toBe(0);
     }, 500);
 
     var extra_data = 5;
@@ -472,15 +472,15 @@ describe("Bar chart", function() {
       }
       chart(data);
     }, 50);
-    
-    waits(500);    
+
+    waits(500);
     runs(function() {
-      expect(parseInt(getTranslateX(d3.select( chartArea )))).toBeLessThan(-1 * extra_data * (barWidth + gap));  
+      expect(parseInt(getTranslateX(d3.select( chartArea )))).toBeLessThan(-1 * extra_data * (barWidth + gap));
     });
   });
 
   it("should auto-pan back into view if the chart is panned out of the viewable area", function() {
-    var data = [];    
+    var data = [];
     var viewableWidth = $(node).width() - margin.left - margin.right;
 
     var interval = setInterval(function() {
@@ -488,26 +488,26 @@ describe("Bar chart", function() {
       chart(data);
     }, 80);
 
-  
+
     waits(500);
     runs(function(){
       d3.select( chartArea )
         .attr("transform","translate(" + (viewableWidth * 2) + ", 0)");
     }, 500);
-      
+
     waits(1000);
     runs(function () {
-      expect(parseInt(getTranslateX(d3.select( chartArea )))).toBeLessThan( viewableWidth );         
+      expect(parseInt(getTranslateX(d3.select( chartArea )))).toBeLessThan( viewableWidth );
       clearInterval(interval);
     }, 1000);
 
   });
 
-  function getTranslateX(node) {    
-    var splitted = node.attr("transform").split(",");  
+  function getTranslateX(node) {
+    var splitted = node.attr("transform").split(",");
     return parseInt(splitted [0].split("(")[1]);
   };
-  
+
 });
 
 describe("The experiment list", function() {

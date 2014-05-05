@@ -2,6 +2,7 @@ package cmdline_test
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/cloudfoundry-incubator/pat/cmdline"
@@ -55,13 +56,23 @@ var _ = Describe("Cmdline", func() {
 		})
 	})
 
-	Describe("When -concurrency is supplied", func() {
+	Describe("When -concurrency is supplied with a single integer", func() {
 		BeforeEach(func() {
 			args = []string{"-concurrency", "3"}
 		})
 
 		It("configures the experiment with the parameter", func() {
-			Ω(lab).Should(HaveBeenRunWith("concurrency", 3))
+			Ω(lab).Should(HaveBeenRunWith("concurrency", []int{3}))
+		})
+	})
+
+	Describe("When -concurrency is supplied with a range", func() {
+		BeforeEach(func() {
+			args = []string{"-concurrency", "1..3"}
+		})
+
+		It("configures the experiment with the parameter", func() {
+			Ω(lab).Should(HaveBeenRunWith("concurrency", []int{1, 3}))
 		})
 	})
 
@@ -115,6 +126,16 @@ var _ = Describe("Cmdline", func() {
 			Ω(lab).Should(HaveBeenRunWith("stop", 11))
 		})
 	})
+
+	Describe("When -concurrency:timeBetweenSteps is supplied", func() {
+		BeforeEach(func() {
+			args = []string{"-concurrency:timeBetweenSteps", "3"}
+		})
+
+		It("configures the experiment with the parameter", func() {
+			Ω(lab).Should(HaveBeenRunWith("concurrencysteptime", 3*time.Second))
+		})
+	})
 })
 
 type runWithMatcher struct {
@@ -141,6 +162,8 @@ func (m *runWithMatcher) Match(actualLab interface{}) (bool, error) {
 		actual = runWith.Interval
 	case "stop":
 		actual = runWith.Stop
+	case "concurrencysteptime":
+		actual = runWith.ConcurrencyStepTime
 	}
 	m.lastMatch = actual
 	return Equal(actual).Match(m.value)
