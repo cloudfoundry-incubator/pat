@@ -2,12 +2,9 @@ package store_test
 
 import (
 	"errors"
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"time"
 
 	"github.com/cloudfoundry-incubator/pat/experiment"
+	"github.com/cloudfoundry-incubator/pat/ginkgo/redis_helpers"
 	"github.com/cloudfoundry-incubator/pat/redis"
 	. "github.com/cloudfoundry-incubator/pat/store"
 	. "github.com/onsi/ginkgo"
@@ -25,11 +22,11 @@ var _ = Describe("Redis Store", func() {
 	)
 
 	BeforeEach(func() {
-		StartRedis("redis.conf")
+		redis_helpers.StartRedis("redis.conf")
 	})
 
 	AfterEach(func() {
-		StopRedis()
+		redis_helpers.StopRedis()
 	})
 
 	Describe("Saving and Loading", func() {
@@ -100,16 +97,3 @@ var _ = Describe("Redis Store", func() {
 		})
 	})
 })
-
-func StartRedis(config string) {
-	_, filename, _, _ := runtime.Caller(0)
-	dir, _ := filepath.Abs(filepath.Dir(filename))
-	StopRedis()
-	exec.Command("redis-server", dir+"/"+config).Run()
-	time.Sleep(450 * time.Millisecond) // yuck(jz)
-}
-
-func StopRedis() {
-	exec.Command("redis-cli", "-p", "63798", "shutdown").Run()
-	exec.Command("redis-cli", "-p", "63798", "-a", "p4ssw0rd", "shutdown").Run()
-}

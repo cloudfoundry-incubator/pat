@@ -30,6 +30,7 @@ type context struct {
 	router *mux.Router
 	lab    Laboratory
 	worker benchmarker.Worker
+	meta   *store.MetaStore
 }
 
 var params = struct {
@@ -56,7 +57,9 @@ func Serve() {
 func ServeWithLab(lab Laboratory) {
 	benchmarker.WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		r := mux.NewRouter()
-		ctx := &context{r, lab, worker}
+
+		meta, _ := store.MetaStoreFactory("output/meta")
+		ctx := &context{r, lab, worker, meta}
 
 		r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx.handleListExperiments))
 		r.Methods("GET").Path("/experiments/{name}.csv").HandlerFunc(csvHandler(ctx.handleGetExperiment)).Name("csv")
@@ -141,6 +144,10 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
 				pushes, concurrency, concurrencyStepTime, interval, stop, ctx.worker, workload)))
+
+	if ctx.meta != nil {
+		ctx.meta.Write(experiment, concurrency, pushes, interval, stop, workload, "")
+	}
 
 	return ctx.router.Get("experiment").URL("name", experiment)
 }

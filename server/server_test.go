@@ -35,6 +35,10 @@ var _ = Describe("Server", func() {
 		ServeWithLab(lab)
 	})
 
+	AfterEach(func() {
+		os.RemoveAll("output")
+	})
+
 	Describe("VCAP_APP_PORT", func() {
 		var (
 			listen string

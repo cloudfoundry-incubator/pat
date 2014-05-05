@@ -3,6 +3,7 @@ package cmdline_test
 import (
 	"fmt"
 	"time"
+	"os"
 
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/cloudfoundry-incubator/pat/cmdline"
@@ -45,6 +46,10 @@ var _ = Describe("Cmdline", func() {
 
 		BlockExit = func() {}
 		err = RunCommandLine()
+	})
+
+	AfterEach(func() {
+		os.RemoveAll("output")
 	})
 
 	Describe("When -iterations is supplied", func() {

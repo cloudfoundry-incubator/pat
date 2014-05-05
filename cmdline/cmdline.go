@@ -25,6 +25,7 @@ var params = struct {
 	workload            string
 	interval            int
 	stop                int
+	note                string
 }{}
 
 func InitCommandLineFlags(config config.Config) {
@@ -37,6 +38,7 @@ func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload at n second interval, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "stop a repeating interval after n second, to be used with -interval")
 	config.BoolVar(&params.listWorkloads, "list-workloads", false, "Lists the available workloads")
+	config.StringVar(&params.note, "note", "", "Description about the experiment")
 	benchmarker.DescribeParameters(config)
 	store.DescribeParameters(config)
 }
@@ -44,12 +46,12 @@ func InitCommandLineFlags(config config.Config) {
 func RunCommandLine() error {
 	return WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		return validateParameters(worker, func() error {
-			return store.WithStore(func(store Store) error {
+			return store.WithStore(func(lab_store Store) error {
 
 				parsedConcurrency, err := parseConcurrency(params.concurrency)
 				parsedConcurrencyStepTime := parseConcurrencyStepTime(params.concurrencyStepTime)
 
-				lab := LaboratoryFactory(store)
+				lab := LaboratoryFactory(lab_store)
 
 				handlers := make([]func(<-chan *Sample), 0)
 				if !params.silent {
@@ -58,10 +60,15 @@ func RunCommandLine() error {
 					})
 				}
 
-				lab.RunWithHandlers(
+				guid, _ := lab.RunWithHandlers(
 					NewRunnableExperiment(
 						NewExperimentConfiguration(
 							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers)
+
+				meta, _ := store.MetaStoreFactory("output/meta")
+				if meta != nil {
+					meta.Write(guid, params.concurrency, params.iterations, params.interval, params.stop, params.workload, params.note)
+				}
 
 				BlockExit()
 				return err

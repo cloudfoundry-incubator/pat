@@ -1,10 +1,7 @@
 package redis_test
 
 import (
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"time"
+	"github.com/cloudfoundry-incubator/pat/ginkgo/redis_helpers"
 	. "github.com/cloudfoundry-incubator/pat/redis"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -12,11 +9,11 @@ import (
 
 var _ = Describe("Conn", func() {
 	BeforeEach(func() {
-		StartRedis("redis.conf")
+		redis_helpers.StartRedis("redis.conf")
 	})
 
 	AfterEach(func() {
-		StopRedis()
+		redis_helpers.StopRedis()
 	})
 
 	Describe("Connecting", func() {
@@ -51,8 +48,8 @@ var _ = Describe("Conn", func() {
 
 			Context("When the server has no password", func() {
 				It("works", func() {
-					StopRedis()
-					StartRedis("redis.nopass.conf")
+					redis_helpers.StopRedis()
+					redis_helpers.StartRedis("redis.nopass.conf")
 					_, err := Connect("localhost", 63798, "")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -60,16 +57,3 @@ var _ = Describe("Conn", func() {
 		})
 	})
 })
-
-func StartRedis(config string) {
-	_, filename, _, _ := runtime.Caller(0)
-	dir, _ := filepath.Abs(filepath.Dir(filename))
-	StopRedis()
-	exec.Command("redis-server", dir+"/"+config).Run()
-	time.Sleep(450 * time.Millisecond) // yuck(jz)
-}
-
-func StopRedis() {
-	exec.Command("redis-cli", "-p", "63798", "shutdown").Run()
-	exec.Command("redis-cli", "-p", "63798", "-a", "p4ssw0rd", "shutdown").Run()
-}
