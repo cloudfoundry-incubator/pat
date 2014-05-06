@@ -1,5 +1,7 @@
 package benchmarker
 
+import "encoding/json"
+
 type EncodableError struct {
 	Message string
 }
@@ -14,4 +16,12 @@ func encodeError(err error) *EncodableError {
 	}
 
 	return &EncodableError{err.Error()}
+}
+
+func (e *EncodableError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.Error())
+}
+
+func (e *EncodableError) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, e.Message)
 }
