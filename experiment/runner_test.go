@@ -34,7 +34,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 				sampler = &DummySampler{maxIterations, samples, iterationResults, workers, errors, sampleFunc}
 				return sampler
 			}
-			config = &RunnableExperiment{ExperimentConfiguration{5, 2, 1, 3, worker, "push"}, executorFactory, samplerFactory}
+			config = &RunnableExperiment{ExperimentConfiguration{5, []int{2}, 1*time.Second, 1, 3, worker, "push"}, executorFactory, samplerFactory}
 		})
 
 		It("Sends Samples from Sampler to the passed tracker function", func() {
@@ -130,7 +130,6 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			Ω(got).Should(HaveLen(1))
 			Ω(got[0].Error()).Should(Equal("Foo"))
 		})		
-
 	})
 
 	Describe("Executing", func() {
@@ -274,6 +273,34 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			for q := 0; q < maxIterations; q++ {
 				Ω((<-samples).NinetyfifthPercentile).Should(Equal(time.Duration(expectedPercentiles[q]) * time.Second))
 			}
+		})
+	})
+
+	Describe("Scheduling", func() {
+		Context("#linearSchedule", func() {
+			It("Creates a prepopulated channel containing the starting amount of events", func() {
+				schedule := linearSchedule(3, 0, 0*time.Second)
+				for i:=0; i<3; i++ { Ω(<-schedule).ShouldNot(BeNil()) }
+				Ω(schedule).Should(BeClosed())
+			})
+
+			It("Pushes events at the provided interval", func() {
+				schedule := linearSchedule(0, 3, 3*time.Second)
+				for i:=0; i< 3; i++ {
+					delay, _ := Time(func() error {
+						<-schedule
+						return nil
+					})
+					Ω(delay.Seconds()).Should(BeNumerically("~", 3, .1))
+				}
+				Ω(schedule).Should(BeClosed())
+			})
+
+			It("Only pushes the starting workers when supplied with a concurrencyStepTime of 0", func() {
+				schedule := linearSchedule(3, 6, 0*time.Second)
+				for i:=0; i<3; i++ { Ω(<-schedule).ShouldNot(BeNil()) }
+				Ω(schedule).Should(BeClosed())
+			})
 		})
 	})
 })

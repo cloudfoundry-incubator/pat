@@ -3,6 +3,9 @@ package cmdline
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	"github.com/cloudfoundry-incubator/pat/config"
@@ -13,19 +16,21 @@ import (
 )
 
 var params = struct {
-	iterations    int
-	listWorkloads bool
-	concurrency   int
-	silent        bool
-	output        string
-	workload      string
-	interval      int
-	stop          int
+	iterations          int
+	listWorkloads       bool
+	concurrency         string
+	concurrencyStepTime int
+	silent              bool
+	output              string
+	workload            string
+	interval            int
+	stop                int
 }{}
 
 func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
-	config.IntVar(&params.concurrency, "concurrency", 1, "max number of pushes to attempt in parallel")
+	config.StringVar(&params.concurrency, "concurrency", "1", "number of workers to execute the workload in parallel, can be static or ramping up, i.e. 1..3")
+	config.IntVar(&params.concurrencyStepTime, "concurrency:timeBetweenSteps", 60, "seconds between adding additonal workers when ramping works up")
 	config.BoolVar(&params.silent, "silent", false, "true to run the commands and print output the terminal")
 	config.StringVar(&params.output, "output", "", "if specified, writes benchmark results to a CSV file")
 	config.StringVar(&params.workload, "workload", "gcf:push", "a comma-separated list of operations a user should issue (use -list-workloads to see available workload options)")
@@ -41,25 +46,42 @@ func RunCommandLine() error {
 		return validateParameters(worker, func() error {
 			return store.WithStore(func(store Store) error {
 
+				parsedConcurrency := parseConcurrency(params.concurrency)
+				parsedConcurrencyStepTime := parseConcurrencyStepTime(params.concurrencyStepTime)
+
 				lab := LaboratoryFactory(store)
 
 				handlers := make([]func(<-chan *Sample), 0)
 				if !params.silent {
 					handlers = append(handlers, func(s <-chan *Sample) {
-						display(params.concurrency, params.iterations, params.interval, params.stop, s)
+						display(params.concurrency, params.iterations, params.interval, params.stop, params.concurrencyStepTime, s)
 					})
 				}
 
 				lab.RunWithHandlers(
 					NewRunnableExperiment(
 						NewExperimentConfiguration(
-							params.iterations, params.concurrency, params.interval, params.stop, worker, params.workload)), handlers)
+							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers)
 
 				BlockExit()
 				return nil
 			})
 		})
 	})
+}
+
+func parseConcurrency(concurrency string) []int {
+	rawConcurrency := strings.SplitN(concurrency, "..", 2)
+	parsedConcurrency := make([]int, len(rawConcurrency))
+	for i, v := range rawConcurrency {
+		parsedConcurrency[i], _ = strconv.Atoi(v)
+	}
+	return parsedConcurrency
+}
+
+func parseConcurrencyStepTime(concurrencyStepTime int) time.Duration {
+	parsedConcurrencyStepTime := time.Duration(concurrencyStepTime) * time.Second
+	return parsedConcurrencyStepTime
 }
 
 func validateParameters(worker benchmarker.Worker, then func() error) error {

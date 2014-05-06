@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
@@ -121,7 +122,8 @@ var _ = Describe("Server", func() {
 	It("Runs experiment with default arguments", func() {
 		post("/experiments/")
 		Ω(lab.config.Iterations).Should(Equal(1))
-		Ω(lab.config.Concurrency).Should(Equal(1))
+		Ω(lab.config.Concurrency).Should(Equal([]int{1}))
+		Ω(lab.config.ConcurrencyStepTime).Should(Equal(60 * time.Second))
 		Ω(lab.config.Interval).Should(Equal(0))
 		Ω(lab.config.Stop).Should(Equal(0))
 		Ω(lab.config.Workload).Should(Equal("push"))
@@ -134,7 +136,12 @@ var _ = Describe("Server", func() {
 
 	It("Supports a 'concurrency' parameter", func() {
 		post("/experiments/?concurrency=3")
-		Ω(lab.config.Concurrency).Should(Equal(3))
+		Ω(lab.config.Concurrency).Should(Equal([]int{3}))
+	})
+
+	It("Supports a 'concurrency:timeBetweenSteps' parameter in seconds", func() {
+		post("/experiments/?concurrency:timeBetweenSteps=3")
+		Ω(lab.config.ConcurrencyStepTime).Should(Equal(3 * time.Second))
 	})
 
 	It("Supports an 'interval' parameter", func() {

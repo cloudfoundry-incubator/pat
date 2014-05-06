@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	"github.com/cloudfoundry-incubator/pat/config"
@@ -110,9 +111,16 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		pushes = 1
 	}
 
-	concurrency, err := strconv.Atoi(r.FormValue("concurrency"))
+	concurrency := make([]int, 1)
+	concurrency[0], err = strconv.Atoi(r.FormValue("concurrency"))
 	if err != nil {
-		concurrency = 1
+		concurrency[0] = 1
+	}
+
+	rawConcurrencyStepTime, err := strconv.Atoi(r.FormValue("concurrency:timeBetweenSteps"))
+	concurrencyStepTime := time.Duration(rawConcurrencyStepTime) * time.Second
+	if err != nil {
+		concurrencyStepTime = 60 * time.Second
 	}
 
 	interval, err := strconv.Atoi(r.FormValue("interval"))
@@ -132,7 +140,7 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
-				pushes, concurrency, interval, stop, ctx.worker, workload)))
+				pushes, concurrency, concurrencyStepTime, interval, stop, ctx.worker, workload)))
 
 	return ctx.router.Get("experiment").URL("name", experiment)
 }
