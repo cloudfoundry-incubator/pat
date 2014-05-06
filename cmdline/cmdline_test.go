@@ -3,6 +3,7 @@ package cmdline_test
 import (
 	"fmt"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/cloudfoundry-incubator/pat/cmdline"
 	"github.com/cloudfoundry-incubator/pat/config"
@@ -173,11 +174,11 @@ func (d *dummyLab) GetData(guid string) ([]*experiment.Sample, error) {
 	return nil, nil
 }
 
-func (d *dummyLab) Run(runnable laboratory.Runnable, workloadCtx map[string]interface{}) (string, error) {
+func (d *dummyLab) Run(runnable laboratory.Runnable, workloadCtx context.WorkloadContext) (string, error) {
 	return "", nil
 }
 
-func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample), workloadCtx map[string]interface{}) (string, error) {
+func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample), workloadCtx context.WorkloadContext) (string, error) {
 	d.lastRunWith = runnable.(*experiment.RunnableExperiment)
 	return "", nil
 }

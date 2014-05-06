@@ -3,6 +3,8 @@ package benchmarker
 import (
 	"sync"
 	"time"
+
+	"github.com/cloudfoundry-incubator/pat/context"
 )
 
 type StepResult struct {
@@ -17,36 +19,36 @@ type IterationResult struct {
 }
 
 func Time(experiment func() error) (result time.Duration, err error) {
-	t0 := time.Now()
+	t0 := time.Now()	
 	err = experiment()
 	t1 := time.Now()
 	return t1.Sub(t0), err
 }
 
-func Counted(out chan<- int, fn func(map[string]interface{})) func(map[string]interface{}) {
-	return func(workloadCtx map[string]interface{}) {
+func Counted(out chan<- int, fn func(context.WorkloadContext)) func(context.WorkloadContext) {
+	return func(workloadCtx context.WorkloadContext) {
 		out <- 1
 		fn(workloadCtx)
 		out <- -1
 	}
 }
 
-func TimedWithWorker(out chan<- IterationResult, worker Worker, experiment string) func(map[string]interface{}) {
-	return func(workloadCtx map[string]interface{}) {
+func TimedWithWorker(out chan<- IterationResult, worker Worker, experiment string) func(context.WorkloadContext) {
+	return func(workloadCtx context.WorkloadContext) {
 		time := worker.Time(experiment, workloadCtx)
 		out <- time
 	}
 }
 
-func Once(fn func(map[string]interface{})) <-chan func(map[string]interface{}) {
+func Once(fn func(context.WorkloadContext)) <-chan func(context.WorkloadContext) {
 	return Repeat(1, fn)
 }
 
-func RepeatEveryUntil(repeatInterval int, runTime int, fn func(map[string]interface{}), quit <-chan bool) <-chan func(map[string]interface{}) {
+func RepeatEveryUntil(repeatInterval int, runTime int, fn func(context.WorkloadContext), quit <-chan bool) <-chan func(context.WorkloadContext) {
 	if repeatInterval == 0 || runTime == 0 {
 		return Once(fn)
 	} else {
-		ch := make(chan func(map[string]interface{}))
+		ch := make(chan func(context.WorkloadContext))
 		var tickerQuit *time.Ticker
 		ticker := time.NewTicker(time.Duration(repeatInterval) * time.Second)
 		if runTime > 0 {
@@ -72,8 +74,8 @@ func RepeatEveryUntil(repeatInterval int, runTime int, fn func(map[string]interf
 	}
 }
 
-func Repeat(n int, fn func(map[string]interface{})) <-chan func(map[string]interface{}) {
-	ch := make(chan func(map[string]interface{}))
+func Repeat(n int, fn func(context.WorkloadContext)) <-chan func(context.WorkloadContext) {
+	ch := make(chan func(context.WorkloadContext))
 	go func() {
 		defer close(ch)
 		for i := 0; i < n; i++ {
@@ -83,31 +85,23 @@ func Repeat(n int, fn func(map[string]interface{})) <-chan func(map[string]inter
 	return ch
 }
 
-func Execute(tasks <-chan func(map[string]interface{}), workloadCtx map[string]interface{}) {
+func Execute(tasks <-chan func(context.WorkloadContext), workloadCtx context.WorkloadContext) {
 	for task := range tasks {		
 		task(workloadCtx)
 	}
 }
 
-func ExecuteConcurrently(workers int, tasks <-chan func(map[string]interface{}), workloadCtx map[string]interface{}) {
+func ExecuteConcurrently(workers int, tasks <-chan func(context.WorkloadContext), workloadCtx context.WorkloadContext) {
 	var wg sync.WaitGroup
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		workloadCtx["workerIndex"] = i
-		go func(t <-chan func(map[string]interface{}), ctx map[string]interface{}) {
+		workloadCtx.PutInt("workerIndex", i)
+		go func(t <-chan func(context.WorkloadContext), ctx context.WorkloadContext) {
 			defer wg.Done()
 			for task := range t {
 				task(ctx)
 			}
-		}(tasks, clone(workloadCtx))
+		}(tasks, workloadCtx.Clone())
 	}
 	wg.Wait()
-}
-
-func clone(src map[string]interface{}) map[string]interface{} {
-	var clone = make(map[string]interface{})
-	for k, v := range src {
-    	clone[k] = v
-	}
-	return clone
 }

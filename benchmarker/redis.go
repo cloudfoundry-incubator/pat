@@ -2,12 +2,9 @@ package benchmarker
 
 import (
 	"encoding/json"
-	"strings"
-	"strconv"
 	"net/url"
-	"reflect"
-	"fmt"
 	
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/logs"
 	"github.com/cloudfoundry-incubator/pat/redis"
 	"github.com/cloudfoundry-incubator/pat/workloads"
@@ -23,7 +20,7 @@ type rw struct {
 type RedisMessage struct { 
 	Reply string
 	Workload string
-	WorkloadCtx map[string]interface{} 
+	WorkloadContent context.WorkloadContent
 }
 
 const DefaultTimeout = 60 * 5
@@ -36,28 +33,20 @@ func NewRedisWorkerWithTimeout(conn redis.Conn, timeoutInSeconds int) Worker {
 	return &rw{defaultWorker{make(map[string]workloads.WorkloadStep)}, conn, timeoutInSeconds}
 }
 
-func (rw rw) Time(workload string, workloadCtx map[string]interface{}) (result IterationResult) {
+func (rw rw) Time(workload string, workloadCtx context.WorkloadContext) (result IterationResult) {
+	
 	guid, _ := uuid.NewV4()	
 	workloadCtx = replaceSpaceWithEscape(workloadCtx)
-	//ctxContentStr, ctxTypeStr, ctxKeyStr := turnContextToRedisStr(workloadCtx)
-
-	// use json, put replies and workload into context
 	
 	redisMsg := RedisMessage{
 		Workload: workload,
 		Reply: "replies-"+guid.String(),
-		WorkloadCtx: workloadCtx,
+		WorkloadContent: workloadCtx.GetContent(),
 	}
-
 	var jsonRedisMsg []byte
 
 	jsonRedisMsg, _ = json.Marshal(redisMsg)
 	
-	fmt.Println("MEssage:" + string(jsonRedisMsg))
-	//end encoding json
-
-	//redisStr := "replies-"+guid.String() + " " + ctxTypeStr + " " + ctxKeyStr + " " + ctxContentStr + " " + workload
-	//rw.conn.Do("RPUSH", "tasks", redisStr)
 	rw.conn.Do("RPUSH", "tasks", string(jsonRedisMsg))
 
 	reply, err := redis.Strings(rw.conn.Do("BLPOP", "replies-"+guid.String(), rw.timeoutInSeconds))
@@ -91,6 +80,7 @@ func (slave slave) Close() error {
 }
 
 func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
+	var tmpContent context.WorkloadContent
 	logger := logs.NewLogger("redis.slave")
 	logger.Info("Started slave")
 
@@ -106,35 +96,21 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 			break
 		}
 
-		if err!= nil {
-			fmt.Println("THere is error, skipping, that is why!!!")
-			fmt.Println(err)
-		}
-
 		if err == nil {
-			//parts := strings.SplitN(reply[1], " ", 5)
-			
-			//workloadCtx := fillContextFromRedisStr(parts[1], parts[2], parts[3])
 			var redisMsg RedisMessage
 			
-fmt.Println(reply[0] + " 0")
-fmt.Println(reply[1] + " 1")
-			var workloadCtx map[string]interface{}
-			
 			_ = json.Unmarshal([]byte(reply[1]), &redisMsg)
-			workloadCtx = redisMsg.WorkloadCtx
+			
+			tmpContent = redisMsg.WorkloadContent
+			var workloadCtx = context.WorkloadContext( tmpContent )
 
-			//workloadCtx = UnescapeString(workloadCtx)
-
-			go func(experiment string, replyTo string, workloadCtx map[string]interface{}) {				
-				fmt.Println("====== go func() 1" )
+			workloadCtx = UnescapeString(workloadCtx)
+			go func(experiment string, replyTo string, workloadCtx context.WorkloadContext) {								
 				result := delegate.Time(experiment, workloadCtx)				
-				fmt.Println("====== go func() 2" )
 				var encoded []byte
 				encoded, err = json.Marshal(result)				
 				logger.Debug("Completed slave task, replying")
 				conn.Do("RPUSH", replyTo, string(encoded))
-			//}(parts[4], parts[0], workloadCtx)
 			}(redisMsg.Workload, redisMsg.Reply, workloadCtx)
 
 		}
@@ -145,75 +121,21 @@ fmt.Println(reply[1] + " 1")
 	}
 }
 
-func turnContextToRedisStr(workloadCtx map[string]interface{})(strValue string, strType string, strKey string){	
-	for k, v := range workloadCtx {
-		if (strValue != "") { strValue = strValue + "," }
-		if (strType != "") { strType = strType + "," }
-		if (strKey != "") { strKey = strKey + "," }
-	
-		strKey = strKey + k
-
-		switch v.(type) {
-			default:
-				logger := logs.NewLogger("redis")
-				logger.Error("Unsupported type in context map")
-			case int:
-				strType = strType + "int"				
-				strValue = strValue + strconv.Itoa(v.(int))
-			case int64:
-				strType = strType + "int64"	
-				strValue = strValue + strconv.FormatInt(v.(int64), 10)
-			case string:
-				strType = strType + "string"
-				strValue = strValue + v.(string)
-			case bool:
-				strType = strType + "bool"
-				strValue = strValue + strconv.FormatBool(v.(bool))
-		}
-	}
-	return strValue, strType, strKey
-}
-
-func fillContextFromRedisStr(ctxType string, ctxKey string, ctxContent string) map[string]interface{} {
-	var intStr int64
-	
-	workloadCtx := make(map[string]interface{})
-	contentList := strings.Split(ctxContent, ",")
-	keyList := strings.Split(ctxKey, ",")
-
-	for i, v := range strings.Split(ctxType,",") {
-		switch {
-		case v == "string":
-			workloadCtx[keyList[i]], _ = url.QueryUnescape(contentList[i])
-			break
-		case v == "int":		
-			intStr, _ = strconv.ParseInt(contentList[i], 0, 0)
-			workloadCtx[keyList[i]] = int(intStr)
-			break
-		case v == "int64":
-			workloadCtx[keyList[i]], _ = strconv.ParseInt(contentList[i], 0, 64)
-			break
-		case v == "bool":			
-			workloadCtx[keyList[i]], _ =  strconv.ParseBool(contentList[i])
-			break
+func replaceSpaceWithEscape(workloadCtx context.WorkloadContext) context.WorkloadContext {
+	for _, k := range workloadCtx.GetKeys() {		
+		if workloadCtx.CheckType(k) == "string" {
+			workloadCtx.PutString( k, url.QueryEscape(workloadCtx.GetString(k)) )
 		}
 	}
 	return workloadCtx
 }
 
-func replaceSpaceWithEscape(workloadCtx map[string]interface{}) map[string]interface{} {
-	for k, _ := range workloadCtx {		
-		if (reflect.TypeOf(workloadCtx[k]).Name() == "string") {
-			workloadCtx[k] = url.QueryEscape(workloadCtx[k].(string))
-		}
-	}
-	return workloadCtx
-}
-
-func UnescapeString(workloadCtx map[string]interface{}) map[string]interface{} {
-	for k, _ := range workloadCtx {
-		if (reflect.TypeOf(workloadCtx[k]).Name() == "string") {
-			workloadCtx[k], _ = url.QueryUnescape(workloadCtx[k].(string))
+func UnescapeString(workloadCtx context.WorkloadContext) context.WorkloadContext {
+	var str string
+	for _, k := range workloadCtx.GetKeys() {
+		if workloadCtx.CheckType(k) == "string" {
+			str, _ =url.QueryUnescape(workloadCtx.GetString(k))
+			workloadCtx.PutString(k, str)
 		}
 	}
 	return workloadCtx

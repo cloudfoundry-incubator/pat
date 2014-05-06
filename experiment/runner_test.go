@@ -3,6 +3,8 @@ package experiment
 import (
 	"errors"
 	"time"
+
+	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,7 +21,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			sample1      *Sample
 			sample2      *Sample
 			worker       Worker
-			workloadCtx  = make(map[string]interface{})
+			workloadCtx  = context.WorkloadContext( context.NewWorkloadContent() )
 		)
 
 		BeforeEach(func() {
@@ -299,6 +301,6 @@ func (s *DummySampler) Sample() {
 	s.sampleFunc(s)
 }
 
-func (e *DummyExecutor) Execute(workloadCtx map[string]interface{}) {
+func (e *DummyExecutor) Execute(workloadCtx context.WorkloadContext) {
 	e.executorFunc(e)
 }

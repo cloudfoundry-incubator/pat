@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/config"
 	"github.com/nu7hatch/gouuid"
 )
@@ -41,41 +42,41 @@ func (r *rest) DescribeParameters(config config.Config) {
 	config.StringVar(&r.space_name, "rest:space", "dev", "space to target for REST api")
 }
 
-func (r *rest) Target(ctx map[string]interface{}) error {
-	if (r.target == "" && ctx["cfTarget"] != nil ) { r.target = ctx["cfTarget"].(string) }
+func (r *rest) Target(ctx context.WorkloadContext) error {
+	if (r.target == "" && ctx.CheckExists("cfTarget") ) { r.target = ctx.GetString("cfTarget") }
 
 	body := &TargetResponse{}
 	return r.GetSuccessfully("", r.target+"/v2/info", nil, body, func(reply Reply) error {
-		ctx["loginEndpoint"] = body.LoginEndpoint
-		ctx["apiEndpoint"] = r.target
+		ctx.PutString("loginEndpoint", body.LoginEndpoint)
+		ctx.PutString("apiEndpoint", r.target)
 		return nil
 	})
 }
 
-func (r *rest) Login(ctx map[string]interface{}) error {
+func (r *rest) Login(ctx context.WorkloadContext) error {
 	body := &LoginResponse{}	
-	workerIndex, _ := ctx["workerIndex"].(int)
+	workerIndex := ctx.GetInt("workerIndex")
 	return checkTargetted(ctx, func(loginEndpoint string, apiEndpoint string) error {
-		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", ctx["loginEndpoint"]), r.oauthInputs(r.credentialsForWorker(workerIndex, ctx)), body, func(reply Reply) error {
-			ctx["token"] = body.Token
+		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", ctx.GetString("loginEndpoint")), r.oauthInputs(r.credentialsForWorker(workerIndex, ctx)), body, func(reply Reply) error {
+			ctx.PutString("token", body.Token)
 			return r.targetSpace(ctx)
 		})
 	})
 }
 
-func (r *rest) targetSpace(ctx map[string]interface{}) error {
+func (r *rest) targetSpace(ctx context.WorkloadContext) error {
 	replyBody := &SpaceResponse{}
 	return checkLoggedIn(ctx, func(token string) error {
-		return r.GetSuccessfully(token, fmt.Sprintf("%s/v2/spaces?q=name:%s", ctx["apiEndpoint"], r.space_name), nil, replyBody, func(reply Reply) error {
+		return r.GetSuccessfully(token, fmt.Sprintf("%s/v2/spaces?q=name:%s", ctx.GetString("apiEndpoint"), r.space_name), nil, replyBody, func(reply Reply) error {
 			return checkSpaceExists(replyBody, func() error {
-				ctx["space_guid"] = replyBody.Resources[0].Metadata.Guid
+				ctx.PutString("space_guid", replyBody.Resources[0].Metadata.Guid)
 				return nil
 			})
 		})
 	})
 }
 
-func (r *rest) Push(ctx map[string]interface{}) error {
+func (r *rest) Push(ctx context.WorkloadContext) error {
 	return checkLoggedIn(ctx, func(token string) error {
 		return r.createAppSuccessfully(ctx, func(appUri string) error {
 			return r.uploadAppBitsSuccessfully(ctx, appUri, func() error {
@@ -87,31 +88,31 @@ func (r *rest) Push(ctx map[string]interface{}) error {
 	})
 }
 
-func (r *rest) uploadAppBitsSuccessfully(ctx map[string]interface{}, appUri string, then func() error) error {
+func (r *rest) uploadAppBitsSuccessfully(ctx context.WorkloadContext, appUri string, then func() error) error {
 	return checkLoggedIn(ctx, func(token string) error {
 		return withGeneratedAppBits(func(b *bytes.Buffer, m *multipart.Writer) error {
-			return r.MultipartPutSuccessfully(token, m, fmt.Sprintf("%s%s/bits", ctx["apiEndpoint"], appUri), b, nil, func(reply Reply) error {
+			return r.MultipartPutSuccessfully(token, m, fmt.Sprintf("%s%s/bits", ctx.GetString("apiEndpoint"), appUri), b, nil, func(reply Reply) error {
 				return then()
 			})
 		})
 	})
 }
 
-func (r *rest) start(ctx map[string]interface{}, appUri string, then func() error) error {
+func (r *rest) start(ctx context.WorkloadContext, appUri string, then func() error) error {
 	input := make(map[string]interface{})
 	input["state"] = "STARTED"
 	return checkLoggedIn(ctx, func(token string) error {
-		return r.PutSuccessfully(token, fmt.Sprintf("%s%s", ctx["apiEndpoint"], appUri), input, nil, func(reply Reply) error {
+		return r.PutSuccessfully(token, fmt.Sprintf("%s%s", ctx.GetString("apiEndpoint"), appUri), input, nil, func(reply Reply) error {
 			return then()
 		})
 	})
 }
 
-func (r *rest) trackAppStart(ctx map[string]interface{}, appUri string) error {
+func (r *rest) trackAppStart(ctx context.WorkloadContext, appUri string) error {
 	return checkLoggedIn(ctx, func(token string) error {
 		for {
 			decoded := make(map[string]interface{})
-			reply := r.client.Get(token, fmt.Sprintf("%s%s/instances", ctx["apiEndpoint"], appUri), nil, &decoded)
+			reply := r.client.Get(token, fmt.Sprintf("%s%s/instances", ctx.GetString("apiEndpoint"), appUri), nil, &decoded)
 
 			if reply.Code < 400 || decoded["error_code"] != "CF-NotStaged" {
 				if decoded["error_code"] != nil {
@@ -146,15 +147,15 @@ func withGeneratedAppBits(fn func(b *bytes.Buffer, m *multipart.Writer) error) e
 	return fn(&b, multi)
 }
 
-func (r *rest) createAppSuccessfully(ctx map[string]interface{}, thenWithLocation func(appUri string) error) error {
+func (r *rest) createAppSuccessfully(ctx context.WorkloadContext, thenWithLocation func(appUri string) error) error {
 	uuid, _ := uuid.NewV4()
 	createApp := struct {
 		Name      string `json:"name"`
 		SpaceGuid string `json:"space_guid"`
-	}{uuid.String(), ctx["space_guid"].(string)}
+	}{uuid.String(), ctx.GetString("space_guid")}
 
 	return checkLoggedIn(ctx, func(token string) error {
-		return r.PostSuccessfully(token, fmt.Sprintf("%s/v2/apps", ctx["apiEndpoint"]), createApp, nil, func(reply Reply) error {
+		return r.PostSuccessfully(token, fmt.Sprintf("%s/v2/apps", ctx.GetString("apiEndpoint")), createApp, nil, func(reply Reply) error {
 			return thenWithLocation(reply.Location)
 		})
 	})
@@ -168,24 +169,24 @@ func checkSpaceExists(s *SpaceResponse, then func() error) error {
 	return then()
 }
 
-func checkLoggedIn(ctx map[string]interface{}, then func(token string) error) error {
-	if ctx["token"] == nil {
+func checkLoggedIn(ctx context.WorkloadContext, then func(token string) error) error {
+	if !ctx.CheckExists("token") {
 		return errors.New("Error: not logged in")
 	}
 
-	return then(ctx["token"].(string))
+	return then(ctx.GetString("token"))
 }
 
-func checkTargetted(ctx map[string]interface{}, then func(loginEndpoint string, apiEndpoint string) error) error {
-	if ctx["loginEndpoint"] == nil {
+func checkTargetted(ctx context.WorkloadContext, then func(loginEndpoint string, apiEndpoint string) error) error {
+	if !ctx.CheckExists("loginEndpoint") {
 		return errors.New("Not targetted")
 	}
 
-	if ctx["apiEndpoint"] == nil {
+	if !ctx.CheckExists("apiEndpoint") {
 		return errors.New("Not targetted")
 	}
 
-	return then(ctx["loginEndpoint"].(string), ctx["apiEndpoint"].(string))
+	return then(ctx.GetString("loginEndpoint"), ctx.GetString("apiEndpoint"))
 }
 
 func checkSuccessfulReply(reply Reply, then func() error) error {
@@ -208,9 +209,9 @@ func (s SpaceResponse) SpaceExists() bool {
 	return len(s.Resources) > 0
 }
 
-func (r *rest) credentialsForWorker(workerIndex int, ctx map[string]interface{})(string, string) {
-	if (r.username == "" && ctx["cfUsername"] != nil ) { r.username = ctx["cfUsername"].(string) }
-	if (r.password == ""  && ctx["cfPassword"] != nil ) { r.password = ctx["cfPassword"].(string) }
+func (r *rest) credentialsForWorker(workerIndex int, ctx context.WorkloadContext)(string, string) {
+	if (r.username == "" && ctx.CheckExists("cfUsername") ) { r.username = ctx.GetString("cfUsername") }
+	if (r.password == ""  && ctx.CheckExists("cfPassword") ) { r.password = ctx.GetString("cfPassword") }
 
 	var userList = strings.Split(r.username, ",")
 	var passList = strings.Split(r.password, ",")

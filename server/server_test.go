@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
 	. "github.com/cloudfoundry-incubator/pat/laboratory"
@@ -19,7 +20,7 @@ import (
 )
 
 var (
-	workloadContext = make(map[string]interface{})
+	workloadContext = context.WorkloadContext( context.NewWorkloadContent() )
 )
 
 var _ = Describe("Server", func() {
@@ -156,9 +157,9 @@ var _ = Describe("Server", func() {
 		Ω(lab.config.Workload).Should(Equal("flibble"))
 	})
 
-	It("removes space in 'workload' parameter", func() {
-		post("/experiments/?workload=rest:target, rest: login")
-		Ω(lab.config.Workload).Should(Equal("rest:target,rest:login"))
+	It("trims space in 'workload' parameter", func() {
+		post("/experiments/?workload= rest:target, rest:login ")
+		Ω(lab.config.Workload).Should(Equal("rest:target, rest:login"))
 	})
 
 	It("Supports a 'cfTarget' parameter", func() {
@@ -166,8 +167,8 @@ var _ = Describe("Server", func() {
 		Ω(workloadCtxStringValue("cfTarget")).Should(Equal("http://api.127.0.0.1"))
 	})
 
-	It("removes space in 'cfTarget' parameter", func() {
-		post("/experiments/?cfTarget=http: // api.127.0.0.1")
+	It("trims space in 'cfTarget' parameter", func() {
+		post("/experiments/?cfTarget=http://api.127.0.0.1   ")
 		Ω(workloadCtxStringValue("cfTarget")).Should(Equal("http://api.127.0.0.1"))
 	})
 
@@ -176,9 +177,9 @@ var _ = Describe("Server", func() {
 		Ω(workloadCtxStringValue("cfUsername")).Should(Equal("user1"))
 	})
 
-	It("removes space in 'cfUsername' parameter", func() {
-		post("/experiments/?cfUsername=user1, user2, user3")
-		Ω(workloadCtxStringValue("cfUsername")).Should(Equal("user1,user2,user3"))
+	It("trims space in 'cfUsername' parameter", func() {
+		post("/experiments/?cfUsername=  user1, user2, user3  ")
+		Ω(workloadCtxStringValue("cfUsername")).Should(Equal("user1, user2, user3"))
 	})
 	It("Supports a 'cfPassword' parameter", func() {
 		post("/experiments/?cfPassword=pass1")
@@ -196,12 +197,12 @@ type DummyExperiment struct {
 	guid string
 }
 
-func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample), workloadCtx map[string]interface {}) (string, error) {
+func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample), workloadCtx context.WorkloadContext) (string, error) {
 	Fail("called unexpected dummy function")
 	return "", nil
 }
 
-func (l *DummyLab) Run(ex Runnable, workloadCtx map[string]interface {}) (string, error) {	
+func (l *DummyLab) Run(ex Runnable, workloadCtx context.WorkloadContext) (string, error) {	
 	l.config = ex.(*RunnableExperiment)
 	workloadContext = workloadCtx
 	return "some-guid", nil
@@ -258,5 +259,5 @@ func req(method string, url string) []byte {
 }
 
 func workloadCtxStringValue(key string) string {
-	return workloadContext[key].(string)
+	return workloadContext.GetString(key)
 }

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"fmt"
 
 	"github.com/cloudfoundry-incubator/pat/logs"
 )
@@ -42,6 +43,7 @@ func (client rest) MultipartPut(token string, m *multipart.Writer, url string, d
 }
 
 func (client rest) Get(token string, url string, data interface{}, body interface{}) Reply {
+	fmt.Println("in rest get")
 	return client.req(token, "GET", url, "", "", "", jsonToString(data), body)
 }
 

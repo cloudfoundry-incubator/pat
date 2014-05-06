@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	"github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
@@ -52,7 +53,7 @@ func RunCommandLine() error {
 					})
 				}
 
-				workloadContext := make(map[string]interface{})				
+				workloadContext := context.WorkloadContext( context.NewWorkloadContent() )
 
 				lab.RunWithHandlers(
 					NewRunnableExperiment(

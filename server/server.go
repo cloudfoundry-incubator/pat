@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	"github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
@@ -26,7 +27,7 @@ type Response struct {
 	Timestamp int64
 }
 
-type context struct {
+type serverContext struct {
 	router *mux.Router
 	lab    Laboratory
 	worker benchmarker.Worker
@@ -56,7 +57,7 @@ func Serve() {
 func ServeWithLab(lab Laboratory) {
 	benchmarker.WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		r := mux.NewRouter()
-		ctx := &context{r, lab, worker}
+		ctx := &serverContext{r, lab, worker}
 
 		r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx.handleListExperiments))
 		r.Methods("GET").Path("/experiments/{name}.csv").HandlerFunc(csvHandler(ctx.handleGetExperiment)).Name("csv")
@@ -89,7 +90,7 @@ type listResponse struct {
 	Items interface{}
 }
 
-func (ctx *context) handleListExperiments(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (ctx *serverContext) handleListExperiments(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	experiments := make([]map[string]string, 0)
 	ctx.lab.Visit(func(e Experiment) {
 		json := make(map[string]string)
@@ -105,7 +106,7 @@ func (ctx *context) handleListExperiments(w http.ResponseWriter, r *http.Request
 	return &listResponse{experiments}, nil
 }
 
-func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (ctx *serverContext) handlePush(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	pushes, err := strconv.Atoi(r.FormValue("iterations"))
 	if err != nil {
 		pushes = 1
@@ -125,19 +126,20 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		stop = 0
 	}
 
-	cfTarget := removeSpaces( r.FormValue("cfTarget") )
-	cfUsername := removeSpaces( r.FormValue("cfUsername") )
-	workload := removeSpaces( r.FormValue("workload") )
-	cfPassword := r.FormValue("cfPassword")
+	cfTarget := trimSpaces( r.FormValue("cfTarget") )
+ 	cfUsername := trimSpaces( r.FormValue("cfUsername") )
+ 	workload := trimSpaces( r.FormValue("workload") )
+ 	cfPassword := trimSpaces( r.FormValue("cfPassword") )
 
 	if workload == "" {
 		workload = "gcf:push"
 	}
 
-	workloadContext := make(map[string]interface{})
-	workloadContext["cfTarget"] = cfTarget
-	workloadContext["cfUsername"] = cfUsername
-	workloadContext["cfPassword"] = cfPassword
+	workloadContext := context.WorkloadContext( context.NewWorkloadContent() )
+
+	workloadContext.PutString("cfTarget", cfTarget)
+	workloadContext.PutString("cfUsername", cfUsername)
+	workloadContext.PutString("cfPassword", cfPassword)
 
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
@@ -145,9 +147,10 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 				pushes, concurrency, interval, stop, ctx.worker, workload)), workloadContext)
 
 	return ctx.router.Get("experiment").URL("name", experiment)
+
 }
 
-func (ctx *context) handleGetExperiment(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (ctx *serverContext) handleGetExperiment(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	name := mux.Vars(r)["name"]
 	data, err := ctx.lab.GetData(name)
 
@@ -200,8 +203,8 @@ func handler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) h
 	}
 }
 
-func removeSpaces(value string) string {
-	return strings.Replace(value, " ", "", -1)
+func trimSpaces(value string) string {
+	return strings.TrimSpace(value)
 }
 
 var ListenAndServe = func(bind string) error {

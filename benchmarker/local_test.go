@@ -2,6 +2,8 @@ package benchmarker
 
 import (
 	"errors"
+
+	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -9,7 +11,7 @@ import (
 )
 
 var _ = Describe("LocalWorker", func() {
-	workloadCtx := make(map[string]interface{})
+	workloadCtx := context.WorkloadContext( context.NewWorkloadContent() )
 
 	Describe("When a single experiment is provided", func() {
 		It("Times a function by name", func() {
@@ -34,12 +36,12 @@ var _ = Describe("LocalWorker", func() {
 		})
 
 		It("Passes context to each step", func() {
-			var context map[string]interface{}
+			var workloadContent context.WorkloadContext
 			worker := NewLocalWorker()
-			worker.AddWorkloadStep(StepWithContext("foo", func(ctx map[string]interface{}) error { context = ctx; ctx["a"] = 1; return nil }, ""))
-			worker.AddWorkloadStep(StepWithContext("bar", func(ctx map[string]interface{}) error { ctx["a"] = ctx["a"].(int) + 2; return nil }, ""))
+			worker.AddWorkloadStep(StepWithContext("foo", func(ctx context.WorkloadContext) error { workloadContent = ctx; ctx.PutInt("a", 1); return nil }, ""))
+			worker.AddWorkloadStep(StepWithContext("bar", func(ctx context.WorkloadContext) error { ctx.PutInt("a", ctx.GetInt("a") + 2); return nil }, ""))
 			worker.Time("foo", workloadCtx)
-			Ω(context).Should(HaveKey("a"))
+			Ω(workloadContent.CheckExists("a")).Should(Equal(true))
 		})
 	})
 

@@ -1,6 +1,7 @@
 package laboratory
 
 import (
+	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,7 +17,7 @@ var _ = Describe("Laboratory", func() {
 			run1            string
 			run2            string
 			handlerRecieved []*Sample
-			workloadCtx     = make(map[string]interface{})
+			workloadCtx     = context.NewWorkloadContent()
 		)
 
 		BeforeEach(func() {
@@ -154,7 +155,7 @@ func (store *dummyStore) LoadAll() ([]Experiment, error) {
 	return store.previous, nil
 }
 
-func (e *dummyExperiment) Run(fn func(samples <-chan *Sample), workloadCtx map[string]interface {}) error {
+func (e *dummyExperiment) Run(fn func(samples <-chan *Sample), workloadCtx context.WorkloadContext) error {
 	ch := make(chan *Sample)
 	done := make(chan bool)
 	go func() {
