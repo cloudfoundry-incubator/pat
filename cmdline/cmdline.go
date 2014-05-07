@@ -46,7 +46,7 @@ func RunCommandLine() error {
 		return validateParameters(worker, func() error {
 			return store.WithStore(func(store Store) error {
 
-				parsedConcurrency := parseConcurrency(params.concurrency)
+				parsedConcurrency, err := parseConcurrency(params.concurrency)
 				parsedConcurrencyStepTime := parseConcurrencyStepTime(params.concurrencyStepTime)
 
 				lab := LaboratoryFactory(store)
@@ -64,19 +64,26 @@ func RunCommandLine() error {
 							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers)
 
 				BlockExit()
-				return nil
+				return err
 			})
 		})
 	})
 }
 
-func parseConcurrency(concurrency string) []int {
+func parseConcurrency(concurrency string) ([]int, error) {
 	rawConcurrency := strings.SplitN(concurrency, "..", 2)
 	parsedConcurrency := make([]int, len(rawConcurrency))
 	for i, v := range rawConcurrency {
-		parsedConcurrency[i], _ = strconv.Atoi(v)
+		intV, err := strconv.Atoi(v)
+		if err != nil {
+			parsedConcurrency = []int{1}
+			return parsedConcurrency, err
+		} else {
+			parsedConcurrency[i] = intV
+		}
+
 	}
-	return parsedConcurrency
+	return parsedConcurrency, nil
 }
 
 func parseConcurrencyStepTime(concurrencyStepTime int) time.Duration {

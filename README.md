@@ -109,6 +109,8 @@ There are three ways to run PAT locally. For all three ways, you must first:
 
     pat -concurrency=5 -iterations=1  # This will only spawn a single concurrent thread instead of the 5 you requested because you are only pushing a single application
 
+    pat -concurrency=1..5 -concurrency:timeBetweenSteps=10  -iterations=5 # This will ramp from 1 to 5 workers, adding a worker every 10 seconds.
+
     pat -silent  # If you don't want all the fancy output to be shown (results can be found in a CSV)
 
     pat -list-workloads  # Lists the available workloads

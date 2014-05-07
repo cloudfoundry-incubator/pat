@@ -19,6 +19,7 @@ var _ = Describe("Cmdline", func() {
 		flags config.Config
 		args  []string
 		lab   *dummyLab
+		err   error
 	)
 
 	BeforeEach(func() {
@@ -43,7 +44,7 @@ var _ = Describe("Cmdline", func() {
 		flags.Parse(args)
 
 		BlockExit = func() {}
-		RunCommandLine()
+		err = RunCommandLine()
 	})
 
 	Describe("When -iterations is supplied", func() {
@@ -73,6 +74,16 @@ var _ = Describe("Cmdline", func() {
 
 		It("configures the experiment with the parameter", func() {
 			Ω(lab).Should(HaveBeenRunWith("concurrency", []int{1, 3}))
+		})
+	})
+
+	Describe("When -concurrency is supplied with an incorrectly formatted input", func() {
+		BeforeEach(func() {
+			args = []string{"-concurrency", "1-3"}
+		})
+
+		It("throws an error", func() {
+			Ω(err).ShouldNot(BeNil())
 		})
 	})
 
