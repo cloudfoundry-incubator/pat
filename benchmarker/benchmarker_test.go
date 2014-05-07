@@ -9,7 +9,7 @@ import (
 )
 
 var _ = Describe("Benchmarker", func() {
-	workloadCtx := context.WorkloadContext( context.NewWorkloadContent() )
+	workloadCtx := context.New()
 
 	Describe("#Time", func() {
 		It("times an arbitrary function", func() {

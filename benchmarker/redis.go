@@ -3,7 +3,7 @@ package benchmarker
 import (
 	"encoding/json"
 	"net/url"
-	
+"fmt"	
 	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/logs"
 	"github.com/cloudfoundry-incubator/pat/redis"
@@ -20,7 +20,7 @@ type rw struct {
 type RedisMessage struct { 
 	Reply string
 	Workload string
-	WorkloadContent context.WorkloadContent
+	WorkloadContext context.WorkloadContext
 }
 
 const DefaultTimeout = 60 * 5
@@ -36,17 +36,24 @@ func NewRedisWorkerWithTimeout(conn redis.Conn, timeoutInSeconds int) Worker {
 func (rw rw) Time(workload string, workloadCtx context.WorkloadContext) (result IterationResult) {
 	
 	guid, _ := uuid.NewV4()	
-	workloadCtx = replaceSpaceWithEscape(workloadCtx)
-	
+	//workloadCtx = replaceSpaceWithEscape(workloadCtx)
+	//jsonContent, jsonErr := workloadCtx.MarshalJSON()
+
+	// if jsonErr != nil {
+	// 	return IterationResult{0, []StepResult{}, encodeError(jsonErr)}
+	// } 
+fmt.Printf("Marshal key: %t\n", workloadCtx.CheckExists("workerIndex"))
+
+//fmt.Println("content:"+string(workloadCtx.GetContentJSON()))
 	redisMsg := RedisMessage{
 		Workload: workload,
 		Reply: "replies-"+guid.String(),
-		WorkloadContent: workloadCtx.GetContent(),
+		WorkloadContext: workloadCtx,		
 	}
 	var jsonRedisMsg []byte
 
 	jsonRedisMsg, _ = json.Marshal(redisMsg)
-	
+fmt.Println(string(jsonRedisMsg))
 	rw.conn.Do("RPUSH", "tasks", string(jsonRedisMsg))
 
 	reply, err := redis.Strings(rw.conn.Do("BLPOP", "replies-"+guid.String(), rw.timeoutInSeconds))
@@ -80,7 +87,7 @@ func (slave slave) Close() error {
 }
 
 func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
-	var tmpContent context.WorkloadContent
+	//var tmpContent context.WorkloadContent
 	logger := logs.NewLogger("redis.slave")
 	logger.Info("Started slave")
 
@@ -98,13 +105,23 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 
 		if err == nil {
 			var redisMsg RedisMessage
+		fmt.Println("before Unmarshal")
+			json.Unmarshal([]byte(reply[1]), &redisMsg)			
 			
-			_ = json.Unmarshal([]byte(reply[1]), &redisMsg)
-			
-			tmpContent = redisMsg.WorkloadContent
-			var workloadCtx = context.WorkloadContext( tmpContent )
+			fmt.Println("1 Unmarshal")
 
-			workloadCtx = UnescapeString(workloadCtx)
+			//json.Unmarshal(redisMsg.WorkloadContext, &tmpContext )
+			//redisMsg.WorkloadContext.Unmarshal(redisMsg.WorkloadContext)
+			fmt.Println("2 Unmarshal")
+			//var workloadCtx = context.NewWithContent( tmpContext )
+			fmt.Println(string(reply[1]))
+			var workloadCtx = redisMsg.WorkloadContext
+			fmt.Printf("got over assigning: \n")
+			fmt.Printf("3 Unmarshal key: %t\n", workloadCtx.CheckExists("workerIndex"))
+			
+
+
+			//workloadCtx = UnescapeString(workloadCtx)
 			go func(experiment string, replyTo string, workloadCtx context.WorkloadContext) {								
 				result := delegate.Time(experiment, workloadCtx)				
 				var encoded []byte

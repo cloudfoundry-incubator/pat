@@ -135,7 +135,7 @@ func (ctx *serverContext) handlePush(w http.ResponseWriter, r *http.Request) (in
 		workload = "gcf:push"
 	}
 
-	workloadContext := context.WorkloadContext( context.NewWorkloadContent() )
+	workloadContext := context.New()
 
 	workloadContext.PutString("cfTarget", cfTarget)
 	workloadContext.PutString("cfUsername", cfUsername)

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
-
+"fmt"
 	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/redis"
 	"github.com/cloudfoundry-incubator/pat/workloads"
@@ -18,10 +18,11 @@ import (
 var _ = Describe("RedisWorker", func() {
 	var (
 		conn redis.Conn		
-		workloadCtx = context.WorkloadContext(context.NewWorkloadContent())
+		workloadCtx = context.New()
 	)
 
 	BeforeEach(func() {	
+		fmt.Println("beforeeach redis test")
 		StartRedis("../redis/redis.conf")
 		var err error
 		conn, err = redis.Connect("", 63798, "p4ssw0rd")
@@ -66,7 +67,7 @@ var _ = Describe("RedisWorker", func() {
 				delegate.AddWorkloadStep(workloads.Step("foo", func() error { time.Sleep(1 * time.Second); return nil }, ""))
 				delegate.AddWorkloadStep(workloads.Step("bar", func() error { time.Sleep(2 * time.Second); return nil }, ""))
 
-				localContext = context.WorkloadContext(context.NewWorkloadContent())
+				localContext = context.New()
 				delegate.AddWorkloadStep(workloads.StepWithContext("fooWithContext", func(ctx context.WorkloadContext) error { localContext = ctx; ctx.PutInt("a", 1); return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("barWithContext", func(ctx context.WorkloadContext) error { ctx.PutInt("a", ctx.GetInt("a") + 2); return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx context.WorkloadContext) error { wasCalledWithWorkerIndex = ctx.GetInt("workerIndex"); return nil }, ""))
@@ -78,7 +79,7 @@ var _ = Describe("RedisWorker", func() {
 
 
 				slave = StartSlave(conn, delegate)
-				workloadCtx = context.WorkloadContext(context.NewWorkloadContent())
+				workloadCtx = context.New()
 				workloadCtx.PutInt("workerIndex" ,0)
 
 			})
@@ -88,10 +89,15 @@ var _ = Describe("RedisWorker", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
-			It("passes workerIndex to delegate.Time()", func() {	
+			It("passes workerIndex to delegate.Time()", func() {
+				fmt.Println("Workloadindex")
 				worker := NewRedisWorkerWithTimeout(conn, 1)
+				fmt.Println("Workloadindex 1")
 				workloadCtx.PutInt("workerIndex", 72)
+				fmt.Println("Workloadindex 2")
 				worker.Time("recordWorkerIndex", workloadCtx);
+				fmt.Println("Workloadindex 3")
+				fmt.Println("Workloadindex done")
 				Ω(wasCalledWithWorkerIndex).Should(Equal(72))
 			})
 
@@ -149,7 +155,8 @@ var _ = Describe("RedisWorker", func() {
 			Describe("Workload context map sending over Redis", func() {
 
 				AfterEach(func() {
-					workloadCtx = context.NewWorkloadContent()
+					//workloadCtx = context.NewWorkloadContent()
+					workloadCtx = context.New()
 				})
 
 				Describe("Contents in the context map", func() {

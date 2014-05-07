@@ -53,7 +53,8 @@ func RunCommandLine() error {
 					})
 				}
 
-				workloadContext := context.WorkloadContext( context.NewWorkloadContent() )
+				//workloadContext := context.WorkloadContext( context.NewWorkloadContent() )
+				workloadContext := context.New()
 
 				lab.RunWithHandlers(
 					NewRunnableExperiment(

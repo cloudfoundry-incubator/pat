@@ -2,6 +2,8 @@ package context
 
 import (
 	"reflect"
+	"encoding/json"
+	"fmt"
 )
 
 type WorkloadContext interface{
@@ -15,6 +17,8 @@ type WorkloadContext interface{
 	GetFloat64(k string) float64
 	PutBool(k string, v bool)
 	GetBool(k string) bool
+	MarshalJSON() ([]byte, error)
+	Unmarshal(data []byte) error
 	CheckExists(k string) bool
 	CheckType(k string) string
 	Clone() WorkloadContent
@@ -24,6 +28,10 @@ type WorkloadContext interface{
 
 type WorkloadContent struct{
 	Content map[string]interface{}
+}
+
+func New() WorkloadContext {
+	return WorkloadContext( WorkloadContent{make(map[string]interface{})} )
 }
 
 func NewWorkloadContent() WorkloadContent {
@@ -76,6 +84,16 @@ func (c WorkloadContent) PutBool(k string, v bool) {
 
 func (c WorkloadContent) GetBool(k string) bool {
 	return c.Content[k].(bool)
+}
+
+func (c WorkloadContent) MarshalJSON() ([]byte, error) {
+	fmt.Println("**** called marshal")
+	return json.Marshal(c.Content)
+}
+
+func (c WorkloadContent) Unmarshal(data []byte) error {
+	fmt.Println("**** called Unmarshal")
+	return json.Unmarshal(data, &c.Content)	
 }
 
 func (c WorkloadContent) CheckExists(k string) bool {

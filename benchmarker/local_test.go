@@ -11,7 +11,7 @@ import (
 )
 
 var _ = Describe("LocalWorker", func() {
-	workloadCtx := context.WorkloadContext( context.NewWorkloadContent() )
+	workloadCtx := context.New()
 
 	Describe("When a single experiment is provided", func() {
 		It("Times a function by name", func() {
