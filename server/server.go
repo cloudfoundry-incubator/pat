@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	"github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
@@ -26,7 +27,7 @@ type Response struct {
 	Timestamp int64
 }
 
-type context struct {
+type serverContext struct {
 	router *mux.Router
 	lab    Laboratory
 	worker benchmarker.Worker
@@ -56,7 +57,7 @@ func Serve() {
 func ServeWithLab(lab Laboratory) {
 	benchmarker.WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		r := mux.NewRouter()
-		ctx := &context{r, lab, worker}
+		ctx := &serverContext{r, lab, worker}
 
 		r.Methods("GET").Path("/experiments/").HandlerFunc(handler(ctx.handleListExperiments))
 		r.Methods("GET").Path("/experiments/{name}.csv").HandlerFunc(csvHandler(ctx.handleGetExperiment)).Name("csv")
@@ -89,7 +90,7 @@ type listResponse struct {
 	Items interface{}
 }
 
-func (ctx *context) handleListExperiments(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (ctx *serverContext) handleListExperiments(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	experiments := make([]map[string]string, 0)
 	ctx.lab.Visit(func(e Experiment) {
 		json := make(map[string]string)
@@ -105,7 +106,7 @@ func (ctx *context) handleListExperiments(w http.ResponseWriter, r *http.Request
 	return &listResponse{experiments}, nil
 }
 
-func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (ctx *serverContext) handlePush(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	pushes, err := strconv.Atoi(r.FormValue("iterations"))
 	if err != nil {
 		pushes = 1
@@ -137,15 +138,17 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 		workload = "push"
 	}
 
+	workloadContext := context.New()
+
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
-				pushes, concurrency, concurrencyStepTime, interval, stop, ctx.worker, workload)))
+				pushes, concurrency, concurrencyStepTime, interval, stop, ctx.worker, workload)), workloadContext)
 
 	return ctx.router.Get("experiment").URL("name", experiment)
 }
 
-func (ctx *context) handleGetExperiment(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (ctx *serverContext) handleGetExperiment(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	name := mux.Vars(r)["name"]
 	data, err := ctx.lab.GetData(name)
 

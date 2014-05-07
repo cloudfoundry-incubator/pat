@@ -1,6 +1,7 @@
 package workloads
 
 import (
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/config"
 )
 
@@ -10,7 +11,7 @@ type WorkloadAdder interface {
 
 type WorkloadStep struct {
 	Name        string
-	Fn          func(context map[string]interface{}) error
+	Fn          func(context context.Context) error
 	Description string
 }
 
@@ -33,10 +34,10 @@ func DefaultWorkloadList() *WorkloadList {
 }
 
 func Step(name string, fn func() error, description string) WorkloadStep {
-	return WorkloadStep{name, func(ctx map[string]interface{}) error { return fn() }, description}
+	return WorkloadStep{name, func(ctx context.Context) error { return fn() }, description}
 }
 
-func StepWithContext(name string, fn func(map[string]interface{}) error, description string) WorkloadStep {
+func StepWithContext(name string, fn func(context.Context) error, description string) WorkloadStep {
 	return WorkloadStep{name, fn, description}
 }
 

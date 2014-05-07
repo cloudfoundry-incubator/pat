@@ -6,6 +6,7 @@ import (
 	"mime/multipart"
 	"net/url"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/cloudfoundry-incubator/pat/workloads"
 	. "github.com/onsi/ginkgo"
@@ -13,9 +14,9 @@ import (
 )
 
 type workloads interface {
-	Target(ctx map[string]interface{}) error
-	Login(ctx map[string]interface{}) error
-	Push(ctx map[string]interface{}) error
+	Target(ctx context.Context) error
+	Login(ctx context.Context) error
+	Push(ctx context.Context) error
 	DescribeParameters(config.Config)
 }
 
@@ -27,7 +28,7 @@ var _ = Describe("Rest", func() {
 			args              []string
 			replies           map[string]interface{}
 			replyWithLocation map[string]string
-			context           map[string]interface{}
+			restContext       context.Context
 		)
 
 		BeforeEach(func() {
@@ -39,7 +40,8 @@ var _ = Describe("Rest", func() {
 			rest.DescribeParameters(config)
 			config.Parse(args)
 			args = []string{"-rest:target", "APISERVER"}
-			context = make(map[string]interface{})
+			restContext = context.New()
+			restContext.PutInt("workerIndex", 0)
 
 			replies["APISERVER/v2/info"] = TargetResponse{"THELOGINSERVER/PATH"}
 		})
@@ -47,7 +49,7 @@ var _ = Describe("Rest", func() {
 		Describe("Pushing an app", func() {
 			Context("When the user has not logged in", func() {
 				It("Returns an error", func() {
-					err := rest.Push(context)
+					err := rest.Push(restContext)
 					Ω(err).Should(HaveOccurred())
 				})
 			})
@@ -63,19 +65,19 @@ var _ = Describe("Rest", func() {
 					replies["APISERVER/THE-APP-URI"] = ""
 					replies["APISERVER/THE-APP-URI/bits"] = ""
 
-					err := rest.Target(context)
+					err := rest.Target(restContext)
 					Ω(err).ShouldNot(HaveOccurred())
-					err = rest.Login(context)
+					err = rest.Login(restContext)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
 				It("Doesn't return an error", func() {
-					err := rest.Push(context)
+					err := rest.Push(restContext)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
 				It("POSTs a (random) name and the chosen space's guid", func() {
-					rest.Push(context)
+					rest.Push(restContext)
 					data := client.ShouldHaveBeenCalledWith("POST", "APISERVER/v2/apps")
 					m := mapOf(data)
 					Ω(m).Should(HaveKey("name"))
@@ -84,13 +86,13 @@ var _ = Describe("Rest", func() {
 				})
 
 				It("Uploads app bits", func() {
-					rest.Push(context)
+					rest.Push(restContext)
 					data := client.ShouldHaveBeenCalledWith("PUT(multipart)", "APISERVER/THE-APP-URI/bits")
 					Ω(data).ShouldNot(BeNil())
 				})
 
 				It("Starts the app", func() {
-					rest.Push(context)
+					rest.Push(restContext)
 					data := mapOf(client.ShouldHaveBeenCalledWith("PUT", "APISERVER/THE-APP-URI"))
 					Ω(data["state"]).Should(Equal("STARTED"))
 				})
@@ -98,7 +100,7 @@ var _ = Describe("Rest", func() {
 				Context("When the app starts immediately", func() {
 					It("Doesn't return any error", func() {
 						replies["APISERVER/THE-APP-URI/instances"] = "foo" // return a 200
-						err := rest.Push(context)
+						err := rest.Push(restContext)
 						Ω(err).ShouldNot(HaveOccurred())
 					})
 				})
@@ -114,11 +116,11 @@ var _ = Describe("Rest", func() {
 
 			Context("When the API has been targetted", func() {
 				JustBeforeEach(func() {
-					rest.Target(context)
+					rest.Target(restContext)
 				})
 
 				It("Can log in to the authorization endpoint", func() {
-					rest.Login(context)
+					rest.Login(restContext)
 					client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 				})
 
@@ -128,7 +130,7 @@ var _ = Describe("Rest", func() {
 					})
 
 					JustBeforeEach(func() {
-						rest.Login(context)
+						rest.Login(restContext)
 					})
 
 					It("sets grant_type password", func() {
@@ -158,7 +160,7 @@ var _ = Describe("Rest", func() {
 						})
 
 						It("Does not return an error", func() {
-							err := rest.Login(context)
+							err := rest.Login(restContext)
 							Ω(err).ShouldNot(HaveOccurred())
 						})
 
@@ -168,7 +170,7 @@ var _ = Describe("Rest", func() {
 							})
 
 							It("Returns an error", func() {
-								err := rest.Login(context)
+								err := rest.Login(restContext)
 								Ω(err).Should(HaveOccurred())
 							})
 						})
@@ -180,7 +182,7 @@ var _ = Describe("Rest", func() {
 						})
 
 						It("Does not return an error", func() {
-							err := rest.Login(context)
+							err := rest.Login(restContext)
 							Ω(err).Should(HaveOccurred())
 						})
 					})
@@ -192,7 +194,7 @@ var _ = Describe("Rest", func() {
 					})
 
 					JustBeforeEach(func() {
-						rest.Login(context)
+						rest.Login(restContext)
 					})
 
 					It("sets grant_type password", func() {
@@ -207,22 +209,22 @@ var _ = Describe("Rest", func() {
 					})
 
 					It("uses different username and password with different workerIndex", func() {
-						context["workerIndex"] = 0
-						rest.Login(context)
+						restContext.PutInt("workerIndex", 0)
+ 						rest.Login(restContext)
 						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
 
-						context["workerIndex"] = 2
-						rest.Login(context)
+						restContext.PutInt("workerIndex", 2)
+ 						rest.Login(restContext)
 						data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user3"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
 					})
 
 					It("recycles the list of username and password when there are more workers than username", func() {
-						context["workerIndex"] = 6
-						rest.Login(context)
+						restContext.PutInt("workerIndex", 6)
+ 						rest.Login(restContext)
 						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
@@ -235,7 +237,7 @@ var _ = Describe("Rest", func() {
 					})
 
 					JustBeforeEach(func() {
-						rest.Login(context)
+						rest.Login(restContext)
 					})
 
 					It("sets grant_type password", func() {
@@ -244,20 +246,20 @@ var _ = Describe("Rest", func() {
 					})
 
 					It("re-uses the only avaiable password", func() {
-						context["workerIndex"] = 0
-						rest.Login(context)
+						restContext.PutInt("workerIndex", 0)
+						rest.Login(restContext)
 						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
 
-						context["workerIndex"] = 1
-						rest.Login(context)
+						restContext.PutInt("workerIndex", 1)
+						rest.Login(restContext)
 						data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user2"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
 
-						context["workerIndex"] = 2
-						rest.Login(context)
+						restContext.PutInt("workerIndex", 2)
+						rest.Login(restContext)
 						data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user3"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
@@ -268,7 +270,7 @@ var _ = Describe("Rest", func() {
 
 			Describe("When the API hasn't been targetted yet", func() {
 				It("Will return an error", func() {
-					err := rest.Login(context)
+					err := rest.Login(restContext)
 					Ω(err).To(HaveOccurred())
 				})
 			})

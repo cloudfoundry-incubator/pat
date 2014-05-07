@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
 	. "github.com/cloudfoundry-incubator/pat/laboratory"
@@ -174,12 +175,12 @@ type DummyExperiment struct {
 	guid string
 }
 
-func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample)) (string, error) {
+func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample), workloadCtx context.Context) (string, error) {
 	Fail("called unexpected dummy function")
 	return "", nil
 }
 
-func (l *DummyLab) Run(ex Runnable) (string, error) {
+func (l *DummyLab) Run(ex Runnable, workloadCtx context.Context) (string, error) {
 	l.config = ex.(*RunnableExperiment)
 	return "some-guid", nil
 }

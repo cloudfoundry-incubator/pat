@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	"github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
@@ -58,10 +59,12 @@ func RunCommandLine() error {
 					})
 				}
 
+				workloadContext := context.New()
+
 				lab.RunWithHandlers(
 					NewRunnableExperiment(
 						NewExperimentConfiguration(
-							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers)
+							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers, workloadContext)
 
 				BlockExit()
 				return err

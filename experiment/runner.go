@@ -3,6 +3,8 @@ package experiment
 import (
 	"math"
 	"time"
+
+	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/benchmarker"
 )
 
@@ -78,7 +80,7 @@ type SamplableExperiment struct {
 }
 
 type Executable interface {
-	Execute()
+	Execute(workloadCtx context.Context)
 }
 
 type Samplable interface {
@@ -107,7 +109,7 @@ func newRunningExperiment(iterations int, iterationResults chan IterationResult,
 	return &SamplableExperiment{iterations, iterationResults, workers, samples, quit}
 }
 
-func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
+func (config *RunnableExperiment) Run(tracker func(<-chan *Sample), workloadCtx context.Context) error {
 	iteration := make(chan IterationResult)
 	errors := make(chan error)
 	workers := make(chan int)
@@ -125,15 +127,15 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
 		d <- true
 	}(done)
 
-	config.executerFactory(iteration, errors, workers, quit).Execute()
+	config.executerFactory(iteration, errors, workers, quit).Execute(workloadCtx)
 	<-done
 	return nil
 }
 
-func (ex *ExecutableExperiment) Execute() {
-	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func(int) {
-		ExecuteConcurrently(ex.schedule.start(), Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))))
-	}, ex.quit))
+func (ex *ExecutableExperiment) Execute(workloadCtx context.Context) {
+	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func(context.Context) {
+		ExecuteConcurrently(ex.schedule.start(), Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))), workloadCtx)
+	}, ex.quit), workloadCtx)
 
 	close(ex.iteration)
 }
