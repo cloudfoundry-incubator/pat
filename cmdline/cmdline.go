@@ -43,6 +43,8 @@ func InitCommandLineFlags(config config.Config) {
 }
 
 func RunCommandLine() error {
+	params.workload = strings.Replace(params.workload, " ", "", -1)
+
 	return WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		return validateParameters(worker, func() error {
 			return store.WithStore(func(store Store) error {

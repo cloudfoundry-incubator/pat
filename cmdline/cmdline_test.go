@@ -89,12 +89,24 @@ var _ = Describe("Cmdline", func() {
 	})
 
 	Describe("When -workload is supplied", func() {
-		BeforeEach(func() {
-			args = []string{"-workload", "login,push"}
+		Describe("When -workload contains no white spaces", func() {
+			BeforeEach(func() {
+				args = []string{"-workload", "login,push"}
+			})
+
+			It("configures the experiment with the parameter", func() {
+				Ω(lab).Should(HaveBeenRunWith("workload", "login,push"))
+			})
 		})
 
-		It("configures the experiment with the parameter", func() {
-			Ω(lab).Should(HaveBeenRunWith("workload", "login,push"))
+		Describe("When -workload contains white spaces", func() {
+			BeforeEach(func() {
+				args = []string{"-workload", "  login ,  push , gcf:push"}
+			})
+
+			It("removes white spaces in the parameter", func() {
+				Ω(lab).Should(HaveBeenRunWith("workload", "login,push,gcf:push"))
+			})
 		})
 	})
 

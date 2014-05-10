@@ -8,7 +8,7 @@ pat.experiment = function(refreshRate) {
   exports.url = ko.observable("")
   exports.csvUrl = ko.observable("")
   exports.data = ko.observableArray()
-  exports.config = { iterations: ko.observable(1), concurrency: ko.observable(1), interval: ko.observable(0), stop: ko.observable(0) }
+  exports.config = { iterations: ko.observable(1), concurrency: ko.observable(1), interval: ko.observable(0), stop: ko.observable(0), cfWorkload: ko.observable(""), cfTarget: ko.observable(""), cfUsername: ko.observable(""), cfPassword: ko.observable("") }
 
   var timer = null
 
@@ -31,7 +31,7 @@ pat.experiment = function(refreshRate) {
   exports.run = function() {
     exports.state("running")
     exports.data([])
-		$.post( "/experiments/", { "iterations": exports.config.iterations(), "concurrency": exports.config.concurrency(), "interval": exports.config.interval(), "stop": exports.config.stop(),  "workload": $("#cmdSelect").val() }, function(data) {
+		$.post( "/experiments/", { "iterations": exports.config.iterations(), "concurrency": exports.config.concurrency(), "interval": exports.config.interval(), "stop": exports.config.stop(),  "workload": exports.config.cfWorkload(), "cfTarget":  exports.config.cfTarget(), "cfUsername":  exports.config.cfUsername(), "cfPassword":  exports.config.cfPassword() }, function(data) {  
 			exports.url(data.Location)
 			exports.csvUrl(data.CsvLocation)
 			exports.refreshNow()
@@ -113,11 +113,18 @@ pat.view = function(experimentList, experiment) {
   this.workloadVisible = ko.observable(true)
   this.throughputVisible = ko.observable(false)
 
+  this.workloadModels = new patWorkload();
+  
   this.redirectTo = function(location) { window.location = location }
 
   this.start = function() { experiment.run() }
   this.stop = function() { alert("Not implemented") }
   this.downloadCsv = function() { self.redirectTo(experiment.csvUrl()) }
+  
+  experiment.config.cfWorkload = this.workloadModels.workloads
+  experiment.config.cfTarget = this.workloadModels.cfTarget
+  experiment.config.cfUsername = this.workloadModels.cfUsername
+  experiment.config.cfPassword = this.workloadModels.cfPassword
 
   this.canStart = ko.computed(function() { return experiment.state() !== "running" })
   this.canStop = ko.computed(function() { return experiment.state() === "running" })
@@ -131,10 +138,10 @@ pat.view = function(experimentList, experiment) {
   this.numIntervalHasError = ko.computed(function() { return experiment.config.interval() < 0 })
   this.numStop = experiment.config.stop
   this.numStopHasError = ko.computed(function() { return experiment.config.stop() < 0 })
-  this.formHasNoErrors = ko.computed(function() { return ! ( this.numIterationsHasError() | this.numConcurrentHasError() | this.numIntervalHasError() | this.numStopHasError() ) }, this)
+  this.formHasNoErrors = ko.computed(function() { return ! ( this.workloadModels.worklistHasError() | this.workloadModels.cfTargetHasErr() | this.workloadModels.cfUserHasErr() | this.workloadModels.cfPassHasErr() | this.numIterationsHasError() | this.numConcurrentHasError() | this.numIntervalHasError() | this.numStopHasError() ) }, this)  
   this.previousExperiments = experimentList.experiments
   this.data = experiment.data
-
+  
   experiment.url.subscribe(function(url) {
     window.location.hash = "#" + url
   })

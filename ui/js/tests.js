@@ -1,3 +1,159 @@
+describe("Workload List", function(){
+  var workloadList = new patWorkload();
+  ko.applyBindings(workloadList, document.getElementById("workloadModelTest"))
+
+  beforeEach(function(){
+    workloadList.selectedModel.removeAll();
+
+    workloadList.argumentModel().forEach(function(d){
+      d.display("none")
+    })
+  })
+
+  it("draws a button for each workload command", function(){
+    var i = 0;
+    for (var key in workloadList.workloadItems) {
+      expect( $("#workloadItems").find("button")[i].textContent.trim() ).toBe(key)
+      i++;
+    }
+  })
+
+  it("removes a selected command when user click on the selected command button", function(){    
+    var cmd = "rest:target"
+
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+    expect( $("#selectedList button:contains(" + cmd + ")").length ).toBe(1)
+    
+    $("#selectedList button:contains(" + cmd + ")").trigger("click") 
+    expect( $("#selectedList button:contains(" + cmd + ")").length ).toBe(0)    
+  })
+
+  it("returns a list of selected commands, separated by commas", function(){
+    $("#workloadItems button:contains('gcf:push')").trigger("click")
+    $("#workloadItems button:contains('dummyWithErrors')").trigger("click")
+    $("#workloadItems button:contains('gcf:push')").trigger("click")
+
+    expect( workloadList.workloads() ).toBe("gcf:push,dummyWithErrors,gcf:push")    
+  })
+
+  it("removes a selected command when selected command is clicked", function(){
+    var cmd = "rest:target"
+
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+    expect( $("#selectedList button:contains(" + cmd + ")").length ).toBe(1)
+
+    $("#selectedList button:contains(" + cmd + ")").trigger("click") 
+    expect( $("#selectedList button:contains(" + cmd + ")").length ).toBe(0)
+  })
+
+  it("displays arguments that is required by the workload command", function(){    
+    var cmd = "rest:login"    
+    var node = workloadList.itemModel()[findWorkloadIndex(cmd)];
+
+    node.args.forEach(function(arg){      
+        expect( workloadList.argumentModel()[findArgumentIndex(arg)].display() ).toBe('none')      
+    })
+
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+
+    node.args.forEach(function(arg){
+        expect( workloadList.argumentModel()[findArgumentIndex(arg)].display() ).toBe('inherit')
+    })
+  })
+
+  it("auto includes required parent commands when the child command is selected", function(){    
+    var i = 0
+    var cmd = "rest:push"
+
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+
+    var node = workloadList.itemModel()[findWorkloadIndex(cmd)];
+    node.requires.forEach(function(parentCmd){      
+      expect( $("#selectedList").find("button")[i].textContent.trim() ).toBe(parentCmd)
+      i++
+    })
+  })
+
+  it("will not remove a selected command when there is a dependency in the selected list, and popup warning in alert box", function(){    
+    var cmd = "rest:push"
+    var alertCalled = false
+
+    //hijack the alert box so it doesn't block
+    var orgAlert = window.alert    
+    window.alert = function () {
+      alertCalled = true
+    };
+    
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+
+    expect( $("#selectedList button:contains('rest:target')").length ).toBe(1)
+    expect( $("#selectedList button:contains('rest:login')").length ).toBe(1)
+
+    $("#selectedList button:contains('rest:target')").trigger("click") 
+    expect(alertCalled).toBe(true)   
+
+    window.alert = orgAlert
+  })
+
+  it("checks for valid 'CF Target' input", function(){
+    var node = workloadList.argumentModel()[findArgumentIndex("rest:target")];
+    node.display("inherit")
+    
+    var target = "invalid_url"
+    node.value(target)
+    expect(workloadList.cfTargetHasErr()).toBe(true)
+
+    target = "http://api.example.com"
+    node.value(target)
+    expect(workloadList.cfTargetHasErr()).toBe(false)
+  });
+
+  it("checks for non-empty 'CF Username' input", function(){
+    var node = workloadList.argumentModel()[findArgumentIndex("rest:username")];
+    node.display("inherit")
+
+    var user = ""
+    node.value(user)
+    expect(workloadList.cfUserHasErr()).toBe(true)
+
+    user = "user1,user2"
+    node.value(user)
+    expect(workloadList.cfUserHasErr()).toBe(false)
+  });
+
+  it("checks for non-empty 'CF Password' input", function(){
+    var node = workloadList.argumentModel()[findArgumentIndex("rest:password")];
+    node.display("inherit")
+
+    var pass = ""
+    node.value(pass)
+    expect(workloadList.cfPassHasErr()).toBe(true)
+
+    pass = "pass1"
+    node.value(pass)
+    expect(workloadList.cfPassHasErr()).toBe(false)
+  });
+
+  function findWorkloadIndex (cmd, start, end) {
+    start = (start >= 0)? start : 0;
+    end = ( end >= 0)? end : workloadList.itemModel().length;
+    for (var i = start; i < end; i++) {
+      if (workloadList.itemModel()[i].name == cmd) return i;
+    }
+    return -1;
+  }
+
+  function findArgumentIndex (cmd, start, end) {
+    start = (start >= 0)? start : 0;
+    end = ( end >= 0)? end : workloadList.argumentModel().length;
+    for (var i = start; i < end; i++) {      
+      if (workloadList.argumentModel()[i].forCmd == cmd) return i;
+    }
+    return -1;
+  }
+
+})
+
 describe("The view", function() {
   var experiment
   var experimentList
@@ -372,7 +528,7 @@ describe("Throughput chart", function() {
 
     setTimeout(function () {
       expect( $(node).find("g.tplegend text")[0].innerHTML ).toEqual("list")
-      expect( $(node).find("g.tplegend text")[1].innerHTML ).toEqual(null)
+      expect( $(node).find("g.tplegend text")[1] ).toEqual(null)
     }, 800);
   })
 
@@ -519,7 +675,7 @@ describe("The experiment list", function() {
   describe("refreshing", function() {
     beforeEach(function() {
       self.experiments = [ { name: "a", "Location": "notthisone" }, { name: "b", "Location": "/experiments/123" } ]
-      spyOn($, "get").andCallFake(function(url, callback) { console.log("ex", self.experiments); callback({ "Items": self.experiments }) })
+      spyOn($, "get").andCallFake(function(url, callback) { callback({ "Items": self.experiments }) })
       list = pat.experimentList()
     })
 
@@ -638,3 +794,4 @@ describe("Running an experiment", function my() {
     })
   })
 })
+

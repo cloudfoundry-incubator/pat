@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/config"
+	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
 	. "github.com/cloudfoundry-incubator/pat/laboratory"
 	. "github.com/cloudfoundry-incubator/pat/server"
@@ -19,6 +19,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+var workloadContext context.Context
 
 var _ = Describe("Server", func() {
 	var (
@@ -30,6 +32,7 @@ var _ = Describe("Server", func() {
 		lab = &DummyLab{}
 		lab.experiments = experiments
 		http.DefaultServeMux = http.NewServeMux()
+		workloadContext = context.New()
 	})
 
 	JustBeforeEach(func() {
@@ -127,7 +130,7 @@ var _ = Describe("Server", func() {
 		Ω(lab.config.ConcurrencyStepTime).Should(Equal(60 * time.Second))
 		Ω(lab.config.Interval).Should(Equal(0))
 		Ω(lab.config.Stop).Should(Equal(0))
-		Ω(lab.config.Workload).Should(Equal("push"))
+		Ω(lab.config.Workload).Should(Equal("gcf:push"))
 	})
 
 	It("Supports an 'iterations' parameter", func() {
@@ -160,10 +163,46 @@ var _ = Describe("Server", func() {
 		Ω(lab.config.Workload).Should(Equal("flibble"))
 	})
 
+	It("trims space in 'workload' parameter", func() {
+		post("/experiments/?workload= rest:target, rest:login ")
+		Ω(lab.config.Workload).Should(Equal("rest:target, rest:login"))
+	})
+
+	It("Supports a 'cfTarget' parameter", func() {
+		post("/experiments/?cfTarget=http://api.127.0.0.1")
+		Ω(workloadCtxStringValue("cfTarget")).Should(Equal("http://api.127.0.0.1"))
+	})
+
+	It("trims space in 'cfTarget' parameter", func() {
+		post("/experiments/?cfTarget=http://api.127.0.0.1   ")
+		Ω(workloadCtxStringValue("cfTarget")).Should(Equal("http://api.127.0.0.1"))
+	})
+
+	It("Supports a 'cfUsername' parameter", func() {
+		post("/experiments/?cfUsername=user1")
+		Ω(workloadCtxStringValue("cfUsername")).Should(Equal("user1"))
+	})
+
+	It("trims space in 'cfUsername' parameter", func() {
+		post("/experiments/?cfUsername=  user1, user2, user3  ")
+		Ω(workloadCtxStringValue("cfUsername")).Should(Equal("user1, user2, user3"))
+	})
+
+	It("Supports a 'cfPassword' parameter", func() {
+		post("/experiments/?cfPassword=pass1")
+		Ω(workloadCtxStringValue("cfPassword")).Should(Equal("pass1"))
+	})
+
+	It("trims space in 'cfPassword' parameter", func() {
+		post("/experiments/?cfPassword=  password  ")
+		Ω(workloadCtxStringValue("cfPassword")).Should(Equal("password"))
+	})
+
 	It("Returns Location based on assigned experiment GUID", func() {
 		json := post("/experiments/")
 		Ω(json["Location"]).Should(Equal("/experiments/some-guid"))
 	})
+
 })
 
 type DummyLab struct {
@@ -182,6 +221,7 @@ func (l *DummyLab) RunWithHandlers(ex Runnable, fns []func(<-chan *Sample), work
 
 func (l *DummyLab) Run(ex Runnable, workloadCtx context.Context) (string, error) {
 	l.config = ex.(*RunnableExperiment)
+	workloadContext = workloadCtx
 	return "some-guid", nil
 }
 
@@ -233,4 +273,9 @@ func req(method string, url string) []byte {
 	} else {
 		return body
 	}
+}
+
+func workloadCtxStringValue(key string) string {
+	str, _ := workloadContext.GetString(key)
+	return str
 }
