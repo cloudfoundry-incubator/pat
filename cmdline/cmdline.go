@@ -67,7 +67,7 @@ func RunCommandLine() error {
 
 				meta, _ := store.MetaStoreFactory("output/meta")
 				if meta != nil {
-					meta.Write(guid, params.concurrency, params.iterations, params.interval, params.stop, params.workload, params.note)
+					meta.Write(guid, parsedConcurrency, params.iterations, params.interval, params.stop, params.workload, params.note)
 				}
 
 				BlockExit()

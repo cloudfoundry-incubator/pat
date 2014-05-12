@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/pat/config"
-	"github.com/cloudfoundry-incubator/pat/ginkgo/redis_helpers"
 	"github.com/cloudfoundry-incubator/pat/redis"
 	. "github.com/cloudfoundry-incubator/pat/store"
+	redisHelpers "github.com/cloudfoundry-incubator/pat/test_helpers/redis"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -115,8 +115,8 @@ var _ = Describe("Meta", func() {
 			)
 
 			BeforeEach(func() {
-				redis_helpers.StartRedis("redis_local.conf")
-				err := redis_helpers.CheckRedisRunning()
+				redisHelpers.StartRedis("redis_local.conf")
+				err := redisHelpers.CheckRedisRunning()
 				Ω(err).Should(BeNil())
 
 				args := []string{"-use-redis-store=true", "-redis-host", "localhost", "-redis-port", "6379"}
@@ -128,7 +128,7 @@ var _ = Describe("Meta", func() {
 			})
 
 			AfterEach(func() {
-				redis_helpers.StopLocalRedis()
+				redisHelpers.StopLocalRedis()
 			})
 
 			It("Should have written the meta file for given experiment name", func() {
