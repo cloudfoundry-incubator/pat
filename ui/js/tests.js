@@ -573,14 +573,14 @@ describe("Bar chart", function() {
   var node = $("div.workloadContainer").get(0);
   var chartArea = $('svg.workload > g > g:eq(1) > g ').get(0);
 
-  it("should draw a bar for each element", function() {
+  it("should draw a bar for each iteration", function() {
     var data = [];
     for (var i = 0; i < 3; i ++) {
         data.push( {"LastResult" : 1 * sec} );
     }
     chart(data);
 
-    var totalBars = $( node ).find("rect.bar").length;
+    var totalBars = $( node ).find("rect.iterations").length;
     expect( totalBars ).toBe(3);
   });
 
@@ -589,7 +589,7 @@ describe("Bar chart", function() {
     var data = [];
     chart(data);
 
-    var totalBars = $( node ).find("rect.bar").length;
+    var totalBars = $( node ).find("rect.iterations").length;
     expect( totalBars ).toBe(0);
   })
 
@@ -622,7 +622,7 @@ describe("Bar chart", function() {
                 {"LastResult" : 1 * sec, "TotalErrors": 1}];
     chart(data);
 
-    var bars = d3.select( node ).selectAll("rect.bar");
+    var bars = d3.select( node ).selectAll("rect.iterations");
 
     bars.each(function(d,i) {
       if (d.TotalErrors == 0) {
@@ -642,7 +642,6 @@ describe("Bar chart", function() {
       data.push( {"LastResult" : 5} );
     }
     chart(data);
-
     waits(500);
     runs(function () {
       expect(parseInt(getTranslateX(d3.select( chartArea )))).toBe(0);
@@ -687,10 +686,82 @@ describe("Bar chart", function() {
 
   });
 
+  it("should draw a block for each commands", function() {
+     var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 3 * sec },
+                  "dummy2":{ "LastTime": 2 * sec },
+                  "dummy3":{ "LastTime": 3 * sec }}, 
+                "LastResult" : 8 * sec }];
+    chart(data);
+
+    var totalCommands = $( node ).find("rect.bar").length;
+
+    expect( totalCommands ).toBe(3)
+  })
+
+  it("should stack command blocks for an iterations within the same bar", function() {
+     var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 3 * sec },                  
+                  "dummy2":{ "LastTime": 3 * sec }}, 
+                "LastResult" : 6 * sec }];
+    chart(data);
+    var x1 = $(node).find("rect.bar")[0].getAttribute("x")
+    var x2 = $(node).find("rect.bar")[1].getAttribute("x")
+
+    var y1 = $(node).find("rect.bar")[0].getAttribute("y")
+    var y2 = $(node).find("rect.bar")[1].getAttribute("y")
+
+    expect( x1 ).toEqual( x2 )
+    expect( y1 ).toBeGreaterThan( y2 ) //y1>y2 because y-axis in d3 is inverted
+  })
+
+  it("should shows each command blocks in different colors", function() {
+     var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 3 * sec },                  
+                  "dummy2":{ "LastTime": 3 * sec }, 
+                  "dummy3":{ "LastTime": 3 * sec }}, 
+                "LastResult" : 6 * sec }];
+    chart(data);
+    var color1 = window.getComputedStyle($(node).find("rect.bar")[0]).getPropertyValue("fill")
+    var color2 = window.getComputedStyle($(node).find("rect.bar")[1]).getPropertyValue("fill")
+    var color3 = window.getComputedStyle($(node).find("rect.bar")[2]).getPropertyValue("fill")
+    expect( color1 ).toNotEqual( color2 )
+    expect( color1 ).toNotEqual( color3 )
+    expect( color2 ).toNotEqual( color3 )
+  })
+
+  it("should contains attributes of a jQuery mouse hover tooltip", function() {
+     var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 3 * sec },                  
+                  "dummy2":{ "LastTime": 5 * sec }}, 
+                "LastResult" : 8 * sec }];
+    chart(data);
+
+    expect( $("svg.workload rect.bar")[0].getAttribute('data-toggle') ).toBe("tooltip")
+    expect( $("svg.workload rect.bar")[0].getAttribute('title') ).toBe("dummy1: 3.00 sec")
+
+    expect( $("svg.workload rect.bar")[1].getAttribute('data-toggle') ).toBe("tooltip")
+    expect( $("svg.workload rect.bar")[1].getAttribute('title') ).toBe("dummy2: 5.00 sec")
+  })
+
   function getTranslateX(node) {
     var splitted = node.attr("transform").split(",");
     return parseInt(splitted [0].split("(")[1]);
   };
+
+  it("has a utility function to turn 'data' into array containing commands, start time and duration", function(){
+    var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 1 * sec },                  
+                  "dummy2":{ "LastTime": 3 * sec }, 
+                  "dummy3":{ "LastTime": 2 * sec }}, 
+                "LastResult" : 6 * sec }];
+    
+    var cmdData = d3_workload.toBarGraph(data)
+    
+    expect(cmdData[0]).toEqual({"label" : "dummy1", "y" : 0, "height" : 1 * sec, "iteration" : 0})
+    expect(cmdData[1]).toEqual({"label" : "dummy2", "y" : 1 * sec, "height" : 3 * sec, "iteration" : 0})
+    expect(cmdData[2]).toEqual({"label" : "dummy3", "y" : 4 * sec, "height" : 2 * sec, "iteration" : 0})
+  })
 
 });
 
