@@ -37,7 +37,7 @@ func (r *redisStore) LoadAll() ([]experiment.Experiment, error) {
 	return experiments, nil
 }
 
-func (r *redisStore) Writer(guid string) func(samples <-chan *experiment.Sample) {
+func (r *redisStore) Writer(guid string, ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample) {
 	r.c.Do("RPUSH", "experiments", guid)
 	return func(ch <-chan *experiment.Sample) {
 		for sample := range ch {

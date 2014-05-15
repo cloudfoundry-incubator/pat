@@ -46,12 +46,12 @@ func InitCommandLineFlags(config config.Config) {
 func RunCommandLine() error {
 	return WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		return validateParameters(worker, func() error {
-			return store.WithStore(func(lab_store Store) error {
+			return store.WithStore(func(store Store) error {
 
 				parsedConcurrency, err := parseConcurrency(params.concurrency)
 				parsedConcurrencyStepTime := parseConcurrencyStepTime(params.concurrencyStepTime)
 
-				lab := LaboratoryFactory(lab_store)
+				lab := LaboratoryFactory(store)
 
 				handlers := make([]func(<-chan *Sample), 0)
 				if !params.silent {
@@ -63,12 +63,7 @@ func RunCommandLine() error {
 				guid, _ := lab.RunWithHandlers(
 					NewRunnableExperiment(
 						NewExperimentConfiguration(
-							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers)
-
-				meta, _ := store.MetaStoreFactory("output/meta")
-				if meta != nil {
-					meta.Write(guid, parsedConcurrency, params.iterations, params.interval, params.stop, params.workload, params.note)
-				}
+							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload, params.note)), handlers)
 
 				BlockExit()
 				return err

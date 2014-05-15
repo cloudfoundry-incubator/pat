@@ -5,7 +5,7 @@ import (
 	"github.com/cloudfoundry-incubator/pat/laboratory"
 	"github.com/cloudfoundry-incubator/pat/redis"
 	. "github.com/cloudfoundry-incubator/pat/store"
-	redisHelpers "github.com/cloudfoundry-incubator/pat/test_helpers/redis"
+	//redisHelpers "github.com/cloudfoundry-incubator/pat/test_helpers/redis"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -88,7 +88,7 @@ var _ = Describe("Config", func() {
 		})
 	})
 
-	Describe("#MetaStoreFactory", func() {
+	/*Describe("#MetaStoreFactory", func() {
 		const (
 			dir = "tmp"
 		)
@@ -141,7 +141,7 @@ var _ = Describe("Config", func() {
 				Ω(err).ShouldNot(BeNil())
 			})
 		})
-	})
+	})*/
 })
 
 type dummyConn struct{}

@@ -30,16 +30,18 @@ func NewCsvStore(dir string, list *workloads.WorkloadList) *CsvStore {
 	return &CsvStore{dir, list}
 }
 
-func (store *CsvStore) Writer(guid string) func(samples <-chan *experiment.Sample) {
-	return store.newCsvFile(guid).Write
+func (store *CsvStore) Writer(guid string, ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample) {
+	startTime := time.Now()
+	store.writeMeta(startTime, guid, ex)
+	return store.newCsvFile(startTime, guid).WriteExperiment
 }
 
 func (store *CsvStore) load(filename string, guid string) (experiment.Experiment, error) {
 	return &csvFile{path.Join(store.dir, filename), guid, nil}, nil
 }
 
-func (store *CsvStore) newCsvFile(guid string) *csvFile {
-	file := &csvFile{path.Join(store.dir, strconv.Itoa(int(time.Now().UnixNano()))+"-"+guid+".csv"), guid, nil}
+func (store *CsvStore) newCsvFile(startTime time.Time, guid string) *csvFile {
+	file := &csvFile{path.Join(store.dir, strconv.Itoa(int(startTime.UnixNano()))+"-"+guid+".csv"), guid, nil}
 	store.workloadList.DescribeWorkloads(file)
 	return file
 }
@@ -48,7 +50,61 @@ func (file *csvFile) AddWorkloadStep(workload workloads.WorkloadStep) {
 	file.commands = append(file.commands, workload.Name)
 }
 
-func (self *csvFile) Write(samples <-chan *experiment.Sample) {
+func (self *CsvStore) writeMeta(startTime time.Time, guid string, ex experiment.ExperimentConfiguration) {
+	var logger = logs.NewLogger("store.meta")
+
+	dir := path.Join(self.dir, "csv.meta")
+
+	var writer *csv.Writer
+
+	file, err := os.OpenFile(dir, os.O_RDWR, 0755)
+	if os.IsNotExist(err) {
+		logger.Infof("Creating directory, %s", filepath.Dir(dir))
+
+		os.MkdirAll(filepath.Dir(dir), 0755)
+		file, err = os.Create(dir)
+		if err != nil {
+			logger.Errorf("Can't write Meta: %v", err)
+			return
+		}
+	} else if err != nil {
+		logger.Errorf("Can't open Meta data for csv: %v", err)
+		return
+	}
+	defer file.Close()
+
+	writer = csv.NewWriter(file)
+	reader := csv.NewReader(file)
+	lines, err := reader.ReadAll()
+	if err != nil {
+		logger.Errorf("Can't read Meta file: %V", err)
+		return
+	}
+
+	//only write the header once
+	if len(lines) == 0 {
+		header := []string{"csv guid", "start time", "iterations", "concurrency",
+			"concurrency step time", "stop", "interval", "workload", "note"}
+		writer.Write(header)
+	}
+
+	var concurrency string
+	for iter, value := range ex.Concurrency {
+		if iter >= 1 {
+			concurrency += ".."  + strconv.Itoa(value)
+		} else {
+			concurrency += strconv.Itoa(value)
+		}
+	}
+
+	body := []string{guid, startTime.Format(time.RFC850), strconv.Itoa(ex.Iterations),
+			concurrency, ex.ConcurrencyStepTime.String(), strconv.Itoa(ex.Stop),
+			strconv.Itoa(ex.Interval), ex.Workload, ex.Note}
+	writer.Write(body)
+	writer.Flush()
+}
+
+func (self *csvFile) WriteExperiment(samples <-chan *experiment.Sample) {
 	var logger = logs.NewLogger("store.csv")
 
 	f, err := os.Create(self.outputPath)
@@ -185,12 +241,14 @@ func (store *CsvStore) LoadAll() (samples []experiment.Experiment, err error) {
 
 	samples = make([]experiment.Experiment, 0)
 	for _, f := range files {
-		base := strings.Split(f.Name(), ".")[0]
-		name := strings.SplitN(base, "-", 2)[1]
-		if len(name) > 0 {
-			loaded, err := store.load(f.Name(), name)
-			if err == nil {
-				samples = append(samples, loaded)
+		if filepath.Ext(f.Name()) == ".csv" {
+			base := strings.Split(f.Name(), ".")[0]
+			name := strings.SplitN(base, "-", 2)[1]
+			if len(name) > 0 {
+				loaded, err := store.load(f.Name(), name)
+				if err == nil {
+					samples = append(samples, loaded)
+				}
 			}
 		}
 	}

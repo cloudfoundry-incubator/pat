@@ -21,7 +21,7 @@ type MetaStore struct {
 
 type MetaData struct {
 	StartTime   string `json:"start time"`
-	Concurrency int
+	Concurrency string
 	Iterations  int
 	Interval    int
 	Stop        int
@@ -46,7 +46,7 @@ func newMetaStore(directory string, useRedis bool) (*MetaStore, error) {
 	}
 }
 
-func (self *MetaStore) Write(fileName string, concurrency int, iterations int, interval int, stop int, workload string, note string) error {
+func (self *MetaStore) Write(fileName string, concurrency string, iterations int, interval int, stop int, workload string, note string) error {
 	meta_data := MetaData{time.Now().Format(time.RFC850), concurrency, iterations, interval, stop, workload, note}
 
 	if self.UseRedis {
@@ -77,7 +77,7 @@ func (self *MetaStore) writeLocal(outputPath string, meta_data MetaData) error {
 	writer := csv.NewWriter(file)
 
 	header := []string{"start time", "concurrency", "iterations", "stop", "interval", "workload", "note"}
-	body := []string{meta_data.StartTime, strconv.Itoa(meta_data.Concurrency),
+	body := []string{meta_data.StartTime, meta_data.Concurrency,
 		strconv.Itoa(meta_data.Iterations), strconv.Itoa(meta_data.Stop),
 		strconv.Itoa(meta_data.Interval), meta_data.Workload, meta_data.Note}
 

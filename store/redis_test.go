@@ -13,12 +13,13 @@ import (
 
 type store interface {
 	LoadAll() ([]experiment.Experiment, error)
-	Writer(name string) func(samples <-chan *experiment.Sample)
+	Writer(name string, ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample)
 }
 
 var _ = Describe("Redis Store", func() {
 	var (
 		store store
+		experimentConfiguration experiment.ExperimentConfiguration
 	)
 
 	BeforeEach(func() {
@@ -36,25 +37,25 @@ var _ = Describe("Redis Store", func() {
 			store, err = NewRedisStore(conn)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			writer := store.Writer("experiment-1")
+			writer := store.Writer("experiment-1", experimentConfiguration)
 			write(writer, []*experiment.Sample{
 				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 1, 2, experiment.ResultSample},
 			})
 
-			writer = store.Writer("experiment-2")
+			writer = store.Writer("experiment-2", experimentConfiguration)
 			write(writer, []*experiment.Sample{
 				&experiment.Sample{nil, 2, 2, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 			})
 
-			writer = store.Writer("experiment-3")
+			writer = store.Writer("experiment-3", experimentConfiguration)
 			write(writer, []*experiment.Sample{
 				&experiment.Sample{nil, 1, 3, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 				&experiment.Sample{nil, 2, 3, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 1, 2, experiment.ResultSample},
 			})
 
-			writer = store.Writer("experiment-with-no-data")
+			writer = store.Writer("experiment-with-no-data", experimentConfiguration)
 		})
 
 		It("Round trips experiment list", func() {

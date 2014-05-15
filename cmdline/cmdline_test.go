@@ -48,10 +48,6 @@ var _ = Describe("Cmdline", func() {
 		err = RunCommandLine()
 	})
 
-	AfterEach(func() {
-		os.RemoveAll("output")
-	})
-
 	Describe("When -iterations is supplied", func() {
 		BeforeEach(func() {
 			args = []string{"-iterations", "3"}

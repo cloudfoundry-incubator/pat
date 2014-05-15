@@ -1,7 +1,7 @@
 package store_test
 
 import (
-	"encoding/json"
+	/*"encoding/json"
 	"io/ioutil"
 	"os"
 	"path"
@@ -13,13 +13,14 @@ import (
 	"github.com/cloudfoundry-incubator/pat/redis"
 	. "github.com/cloudfoundry-incubator/pat/store"
 	redisHelpers "github.com/cloudfoundry-incubator/pat/test_helpers/redis"
+	*/
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	//. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Meta", func() {
-	Describe("#Write", func() {
+	/* Describe("#Write", func() {
 		const (
 			directory   = "tmp/meta"
 			name        = "guid-1"
@@ -186,5 +187,5 @@ var _ = Describe("Meta", func() {
 				Ω(meta_data.Note).Should(Equal(note))
 			})
 		})
-	})
+	})*/
 })

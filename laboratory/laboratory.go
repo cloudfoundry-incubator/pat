@@ -19,10 +19,11 @@ type Laboratory interface {
 
 type Runnable interface {
 	Run(handler func(samples <-chan *experiment.Sample)) error
+	GetExperimentConfiguration() experiment.ExperimentConfiguration
 }
 
 type Store interface {
-	Writer(guid string) func(samples <-chan *experiment.Sample)
+	Writer(guid string, ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample)
 	LoadAll() ([]experiment.Experiment, error)
 }
 
@@ -42,8 +43,9 @@ func (self *lab) Run(ex Runnable) (string, error) {
 
 func (self *lab) RunWithHandlers(ex Runnable, additionalHandlers []func(<-chan *experiment.Sample)) (string, error) {
 	guid, _ := uuid.NewV4()
+
 	handlers := make([]func(<-chan *experiment.Sample), 1)
-	handlers[0] = self.store.Writer(guid.String())
+	handlers[0] = self.store.Writer(guid.String(), ex.GetExperimentConfiguration())
 	for _, h := range additionalHandlers {
 		handlers = append(handlers, h)
 	}
