@@ -1,7 +1,8 @@
 package redis_test
 
 import (
-	"github.com/cloudfoundry-incubator/pat/ginkgo/redis_helpers"
+	redisHelpers "github.com/cloudfoundry-incubator/pat/test_helpers/redis"
+
 	. "github.com/cloudfoundry-incubator/pat/redis"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -9,11 +10,11 @@ import (
 
 var _ = Describe("Conn", func() {
 	BeforeEach(func() {
-		redis_helpers.StartRedis("redis.conf")
+		redisHelpers.StartRedis("redis.conf")
 	})
 
 	AfterEach(func() {
-		redis_helpers.StopRedis()
+		redisHelpers.StopRedis()
 	})
 
 	Describe("Connecting", func() {
@@ -48,8 +49,8 @@ var _ = Describe("Conn", func() {
 
 			Context("When the server has no password", func() {
 				It("works", func() {
-					redis_helpers.StopRedis()
-					redis_helpers.StartRedis("redis.nopass.conf")
+					redisHelpers.StopRedis()
+					redisHelpers.StartRedis("redis.nopass.conf")
 					_, err := Connect("localhost", 63798, "")
 					Ω(err).ShouldNot(HaveOccurred())
 				})

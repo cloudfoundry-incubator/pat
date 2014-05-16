@@ -1,6 +1,8 @@
 package store
 
 import (
+	"time"
+	"strconv"
 	"encoding/json"
 
 	"github.com/cloudfoundry-incubator/pat/experiment"
@@ -8,6 +10,18 @@ import (
 )
 
 const MAX_RESULTS = 10000
+
+type MetaData struct {
+	Guid                string
+	StartTime           string `json:"start time"`
+	Concurrency         string
+	ConcurrencyStepTime string `json:"concurrency step time"`
+	Iterations          int
+	Interval            int
+	Stop                int
+	Workload            string
+	Note                string
+}
 
 type redisStore struct {
 	c redis.Conn
@@ -39,10 +53,36 @@ func (r *redisStore) LoadAll() ([]experiment.Experiment, error) {
 
 func (r *redisStore) Writer(guid string, ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample) {
 	r.c.Do("RPUSH", "experiments", guid)
+	r.writeMetaData(guid, ex)
 	return func(ch <-chan *experiment.Sample) {
 		for sample := range ch {
 			push(r.c, guid, sample)
 		}
+	}
+}
+
+func (r *redisStore) writeMetaData(guid string, ex experiment.ExperimentConfiguration) {
+	var concurrency string
+	for iter, value := range ex.Concurrency {
+		if iter >= 1 {
+			concurrency += ".."  + strconv.Itoa(value)
+		} else {
+			concurrency += strconv.Itoa(value)
+		}
+	}
+
+	metaData := MetaData{Guid: guid, StartTime: time.Now().Format(time.RFC850), Concurrency: concurrency,
+			ConcurrencyStepTime: ex.ConcurrencyStepTime.String(), Iterations: ex.Iterations,
+			Interval: ex.Interval, Stop: ex.Stop, Workload: ex.Workload, Note: ex.Note}
+
+	json, err := json.Marshal(metaData)
+	if err != nil {
+		return
+	}
+
+	_, err = r.c.Do("RPUSH", "meta_data", json)
+	if err != nil {
+		return
 	}
 }
 

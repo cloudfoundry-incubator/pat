@@ -3,7 +3,6 @@ package cmdline_test
 import (
 	"fmt"
 	"time"
-	"os"
 
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/cloudfoundry-incubator/pat/cmdline"
@@ -148,6 +147,16 @@ var _ = Describe("Cmdline", func() {
 			Ω(lab).Should(HaveBeenRunWith("concurrencysteptime", 3*time.Second))
 		})
 	})
+
+	Describe("When -note is supplied", func() {
+		BeforeEach(func() {
+			args = []string{"-note", "note"}
+		})
+
+		It("configures the experiment with the parameter", func() {
+			Ω(lab).Should(HaveBeenRunWith("note", "note"))
+		})
+	})
 })
 
 type runWithMatcher struct {
@@ -176,6 +185,8 @@ func (m *runWithMatcher) Match(actualLab interface{}) (bool, error) {
 		actual = runWith.Stop
 	case "concurrencysteptime":
 		actual = runWith.ConcurrencyStepTime
+	case "note":
+		actual = runWith.Note
 	}
 	m.lastMatch = actual
 	return Equal(actual).Match(m.value)

@@ -1,8 +1,8 @@
 package cmdline
 
 import (
-	"fmt"
 	"os"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -60,7 +60,7 @@ func RunCommandLine() error {
 					})
 				}
 
-				guid, _ := lab.RunWithHandlers(
+				lab.RunWithHandlers(
 					NewRunnableExperiment(
 						NewExperimentConfiguration(
 							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload, params.note)), handlers)

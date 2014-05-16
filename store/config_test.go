@@ -5,7 +5,6 @@ import (
 	"github.com/cloudfoundry-incubator/pat/laboratory"
 	"github.com/cloudfoundry-incubator/pat/redis"
 	. "github.com/cloudfoundry-incubator/pat/store"
-	//redisHelpers "github.com/cloudfoundry-incubator/pat/test_helpers/redis"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -87,61 +86,6 @@ var _ = Describe("Config", func() {
 			})
 		})
 	})
-
-	/*Describe("#MetaStoreFactory", func() {
-		const (
-			dir = "tmp"
-		)
-
-		var (
-			meta *MetaStore
-		)
-
-		It("Returns a pointer to a MetaStore struct", func() {
-			meta, _ = MetaStoreFactory(dir)
-			Ω(meta).Should(BeAssignableToTypeOf(&MetaStore{}))
-		})
-
-		Context("When use-redis-store is false", func() {
-			BeforeEach(func() {
-				args = []string{"-use-redis-store=false"}
-			})
-
-			It("sets UseRedis to false", func() {
-				meta, _ = MetaStoreFactory(dir)
-				Ω(meta.UseRedis).Should(Equal(false))
-			})
-
-			It("does not return a redis connection", func() {
-				meta, _ = MetaStoreFactory(dir)
-				Ω(meta.Conn).Should(BeNil())
-			})
-		})
-
-		Context("When use-redis-store is true", func() {
-			BeforeEach(func() {
-				args = []string{"-use-redis-store=true", "-redis-host", "localhost", "-redis-port", "6379"}
-
-				redisHelpers.StartRedis("redis_local.conf")
-				err := redisHelpers.CheckRedisRunning()
-				Ω(err).Should(BeNil())
-			})
-
-			AfterEach(func() {
-				redisHelpers.StopLocalRedis()
-			})
-
-			It("sets UseRedis to true", func() {
-				meta, _ = MetaStoreFactory(dir)
-				Ω(meta.UseRedis).Should(Equal(true))
-			})
-
-			PIt("sets Conn to a redis connection", func() { //(Dan) hard to test for
-				_, err := MetaStoreFactory(dir)
-				Ω(err).ShouldNot(BeNil())
-			})
-		})
-	})*/
 })
 
 type dummyConn struct{}
