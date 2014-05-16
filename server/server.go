@@ -140,7 +140,7 @@ func (ctx *context) handlePush(w http.ResponseWriter, r *http.Request) (interfac
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
 			NewExperimentConfiguration(
-				pushes, concurrency, concurrencyStepTime, interval, stop, ctx.worker, workload)))
+				pushes, concurrency, concurrencyStepTime, interval, stop, ctx.worker, workload, "")))
 
 	return ctx.router.Get("experiment").URL("name", experiment)
 }

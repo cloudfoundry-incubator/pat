@@ -3,12 +3,10 @@ package benchmarker
 import (
 	"errors"
 	"io"
-	"os/exec"
-	"path/filepath"
-	"runtime"
 	"time"
 
 	"github.com/cloudfoundry-incubator/pat/redis"
+	redisHelpers "github.com/cloudfoundry-incubator/pat/test_helpers/redis"
 	"github.com/cloudfoundry-incubator/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,14 +18,14 @@ var _ = Describe("RedisWorker", func() {
 	)
 
 	BeforeEach(func() {
-		StartRedis("../redis/redis.conf")
+		redisHelpers.StartRedis("redis.conf")
 		var err error
 		conn, err = redis.Connect("", 63798, "p4ssw0rd")
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		StopRedis()
+		redisHelpers.StopRedis()
 	})
 
 	Describe("When a single experiment is provided", func() {
@@ -42,14 +40,14 @@ var _ = Describe("RedisWorker", func() {
 				}()
 
 				Eventually(result, 2).Should(Receive())
-			})			
+			})
 		})
 
 		Context("When a slave is running", func() {
 			var (
-				slave    io.Closer
-				delegate *LocalWorker
-				context  map[string]interface{}
+				slave                    io.Closer
+				delegate                 *LocalWorker
+				context                  map[string]interface{}
 				wasCalledWithWorkerIndex int
 			)
 
@@ -62,7 +60,10 @@ var _ = Describe("RedisWorker", func() {
 				context = make(map[string]interface{})
 				delegate.AddWorkloadStep(workloads.StepWithContext("fooWithContext", func(ctx map[string]interface{}) error { context = ctx; ctx["a"] = 1; return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("barWithContext", func(ctx map[string]interface{}) error { ctx["a"] = ctx["a"].(int) + 2; return nil }, ""))
-				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx map[string]interface{}) error { wasCalledWithWorkerIndex = ctx["workerIndex"].(int); return nil }, ""))
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx map[string]interface{}) error {
+					wasCalledWithWorkerIndex = ctx["workerIndex"].(int)
+					return nil
+				}, ""))
 
 				slave = StartSlave(conn, delegate)
 			})
@@ -74,8 +75,8 @@ var _ = Describe("RedisWorker", func() {
 
 			It("passes workerIndex to delegate.Time()", func() {
 				worker := NewRedisWorkerWithTimeout(conn, 1)
-				worker.Time("recordWorkerIndex", 72); 
-				Ω(wasCalledWithWorkerIndex).Should(Equal(72))				
+				worker.Time("recordWorkerIndex", 72)
+				Ω(wasCalledWithWorkerIndex).Should(Equal(72))
 			})
 
 			It("Times a function by name", func() {
@@ -101,7 +102,7 @@ var _ = Describe("RedisWorker", func() {
 				worker := NewRedisWorker(conn)
 				worker.Time("fooWithContext,barWithContext", 0)
 				Ω(context).Should(HaveKey("a"))
-			})			
+			})
 
 			Describe("When multiple steps are provided separated by commas", func() {
 				var result IterationResult
@@ -126,22 +127,9 @@ var _ = Describe("RedisWorker", func() {
 					Ω(result.Steps).Should(HaveLen(2))
 					Ω(result.Steps[0].Duration.Seconds()).Should(BeNumerically("~", 1, 0.1))
 					Ω(result.Steps[1].Duration.Seconds()).Should(BeNumerically("~", 2, 0.1))
-				})				
+				})
 			})
 
 		})
 	})
 })
-
-func StartRedis(config string) {
-	_, filename, _, _ := runtime.Caller(0)
-	dir, _ := filepath.Abs(filepath.Dir(filename))
-	StopRedis()
-	exec.Command("redis-server", dir+"/"+config).Run()
-	time.Sleep(450 * time.Millisecond) // yuck(jz)
-}
-
-func StopRedis() {
-	exec.Command("redis-cli", "-p", "63798", "shutdown").Run()
-	exec.Command("redis-cli", "-p", "63798", "-a", "p4ssw0rd", "shutdown").Run()
-}

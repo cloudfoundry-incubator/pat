@@ -140,7 +140,7 @@ type dummyExperiment struct {
 	data []*Sample
 }
 
-func (store *dummyStore) Writer(guid string) func(samples <-chan *Sample) {
+func (store *dummyStore) Writer(guid string, ex ExperimentConfiguration) func(samples <-chan *Sample) {
 	return func(samples <-chan *Sample) {
 		store.stored[guid] = make([]*Sample, 0)
 		for s := range samples {
@@ -174,4 +174,8 @@ func (e *dummyExperiment) GetData() ([]*Sample, error) {
 
 func (e *dummyExperiment) GetGuid() string {
 	return e.name
+}
+
+func (e *dummyExperiment) GetExperimentConfiguration() ExperimentConfiguration {
+	return ExperimentConfiguration{}
 }

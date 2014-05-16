@@ -44,3 +44,7 @@ var RedisStoreFactory = func(conn redis.Conn) (laboratory.Store, error) {
 var CsvStoreFactory = func(dir string) laboratory.Store {
 	return NewCsvStore(dir, workloads.DefaultWorkloadList())
 }
+
+/*func MetaStoreFactory(directory string) (*MetaStore, error) {
+	return newMetaStore(directory, params.useRedis)
+}*/

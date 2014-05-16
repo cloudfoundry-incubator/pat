@@ -1,8 +1,8 @@
 package cmdline
 
 import (
-	"fmt"
 	"os"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +25,7 @@ var params = struct {
 	workload            string
 	interval            int
 	stop                int
+	note                string
 }{}
 
 func InitCommandLineFlags(config config.Config) {
@@ -37,6 +38,7 @@ func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload at n second interval, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "stop a repeating interval after n second, to be used with -interval")
 	config.BoolVar(&params.listWorkloads, "list-workloads", false, "Lists the available workloads")
+	config.StringVar(&params.note, "note", "", "Description about the experiment")
 	benchmarker.DescribeParameters(config)
 	store.DescribeParameters(config)
 }
@@ -61,7 +63,7 @@ func RunCommandLine() error {
 				lab.RunWithHandlers(
 					NewRunnableExperiment(
 						NewExperimentConfiguration(
-							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers)
+							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload, params.note)), handlers)
 
 				BlockExit()
 				return err

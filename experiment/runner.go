@@ -53,6 +53,7 @@ type ExperimentConfiguration struct {
 	Stop                int
 	Worker              Worker
 	Workload            string
+	Note		    string
 }
 
 type RunnableExperiment struct {
@@ -85,8 +86,8 @@ type Samplable interface {
 	Sample()
 }
 
-func NewExperimentConfiguration(iterations int, concurrency []int, concurrencyStepTime time.Duration, interval int, stop int, worker Worker, workload string) ExperimentConfiguration {
-	return ExperimentConfiguration{iterations, concurrency, concurrencyStepTime, interval, stop, worker, workload}
+func NewExperimentConfiguration(iterations int, concurrency []int, concurrencyStepTime time.Duration, interval int, stop int, worker Worker, workload string, note string) ExperimentConfiguration {
+	return ExperimentConfiguration{iterations, concurrency, concurrencyStepTime, interval, stop, worker, workload, note}
 }
 
 func NewRunnableExperiment(config ExperimentConfiguration) *RunnableExperiment {
@@ -105,6 +106,10 @@ func (c ExperimentConfiguration) newExecutableExperiment(iterationResults chan I
 
 func newRunningExperiment(iterations int, iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
 	return &SamplableExperiment{iterations, iterationResults, workers, samples, quit}
+}
+
+func (config *RunnableExperiment) GetExperimentConfiguration() ExperimentConfiguration {
+	return config.ExperimentConfiguration
 }
 
 func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {

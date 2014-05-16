@@ -35,6 +35,10 @@ var _ = Describe("Server", func() {
 		ServeWithLab(lab)
 	})
 
+	AfterEach(func() {
+		os.RemoveAll("output")
+	})
+
 	Describe("VCAP_APP_PORT", func() {
 		var (
 			listen string
@@ -82,7 +86,7 @@ var _ = Describe("Server", func() {
 		csvs := store.NewCsvStore("/var/tmp/foo/bar/", workloads.DefaultWorkloadList())
 		ch := make(chan *Sample)
 		go func() { ch <- &Sample{}; ch <- &Sample{}; close(ch) }()
-		csvs.Writer("1234")(ch)
+		csvs.Writer("1234", ExperimentConfiguration{})(ch)
 
 		Serve()
 		json := get("/experiments/1234")
