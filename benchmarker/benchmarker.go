@@ -11,9 +11,9 @@ type StepResult struct {
 }
 
 type IterationResult struct {
-	Duration    time.Duration
-	Steps       []StepResult
-	Error       *EncodableError
+	Duration time.Duration
+	Steps    []StepResult
+	Error    *EncodableError
 }
 
 func Time(experiment func() error) (result time.Duration, err error) {
@@ -93,7 +93,7 @@ func ExecuteConcurrently(schedule <-chan int, tasks <-chan func(int)) {
 	var wg sync.WaitGroup
 
 	for increment := range schedule {
-		for i:=0; i<increment; i++ {
+		for i := 0; i < increment; i++ {
 			wg.Add(1)
 			go func(t <-chan func(int), n int) {
 				defer wg.Done()

@@ -7,7 +7,7 @@ import (
 )
 
 type SampleType int
-type schedule chan int
+type concurrencySchedule func() chan int
 
 const (
 	ResultSample SampleType = iota
@@ -66,7 +66,7 @@ type ExecutableExperiment struct {
 	iteration chan IterationResult
 	workers   chan int
 	quit      chan bool
-	schedule  chan int
+	schedule  concurrencySchedule
 }
 
 type SamplableExperiment struct {
@@ -132,7 +132,7 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
 
 func (ex *ExecutableExperiment) Execute() {
 	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func(int) {
-		ExecuteConcurrently(ex.schedule, Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))))
+		ExecuteConcurrently(ex.schedule.start(), Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))))
 	}, ex.quit))
 
 	close(ex.iteration)
@@ -146,26 +146,35 @@ func clone(src map[string]Command) map[string]Command {
 	return clone
 }
 
-func linearSchedule(startingWorkers int, totalWorkers int, concurrencyStepTime time.Duration) chan int {
-	ch := make(chan int)
-	go func() {
-		defer close(ch)
-		for i := 0; i < startingWorkers; i++ {
-			ch <- 1
-		}
-		if concurrencyStepTime > 0 && startingWorkers < totalWorkers {
-			tick := time.NewTicker(concurrencyStepTime)
-			for _ = range tick.C {
+func (schedule concurrencySchedule) start() chan int {
+	return schedule()
+}
+
+func linearSchedule(startingWorkers int, totalWorkers int, concurrencyStepTime time.Duration) concurrencySchedule {
+	return func() chan int {
+		myStartingWorkers := startingWorkers
+		myTotalWorkers := totalWorkers
+		myConcurrencyStepTime := concurrencyStepTime
+		ch := make(chan int)
+		go func() {
+			defer close(ch)
+			for i := 0; i < myStartingWorkers; i++ {
 				ch <- 1
-				startingWorkers++
-				if startingWorkers >= totalWorkers {
-					tick.Stop()
-					break
+			}
+			if myConcurrencyStepTime > 0 && myStartingWorkers < myTotalWorkers {
+				tick := time.NewTicker(myConcurrencyStepTime)
+				for _ = range tick.C {
+					ch <- 1
+					myStartingWorkers++
+					if myStartingWorkers >= myTotalWorkers {
+						tick.Stop()
+						break
+					}
 				}
 			}
-		}
-	}()
-	return ch
+		}()
+		return ch
+	}
 }
 
 func (ex *SamplableExperiment) Sample() {
