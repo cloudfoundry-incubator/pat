@@ -16,6 +16,7 @@
 <script type="text/javascript" src="js/throughput.js"></script>
 <script type="text/javascript" src="js/dom.js"></script>
 <script type="text/javascript" src="js/app.js"></script>
+<script type="text/javascript" src="js/workloadModels.js"></script>
 <title>Cloud Foundry Performance Suite</title>
 
 <style>
@@ -78,60 +79,78 @@ body { padding: 8px; }
     </div>
   </div>
 
-  <div class="modal" id="experimentPopup" tabindex="-1" role="dialog" aria-labelledby="experimentPopupLabel" aria-hidden="true" >
+  <div class="modal" id="experimentPopup" tabindex="-1" role="dialog" data-dismiss="modal" aria-labelledby="experimentPopupLabel" aria-hidden="true" >
     <div class="modal-dialog" style="width: 90%; max-width: 900px;">
       <div class="modal-content" style="background:rgba(255,255,255,0.75);">
         <div class="modal-header">
-          <button id="btnExperimentClose" type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <button id="btnExperimentClose" type="button" class="close" aria-hidden="true">&times;</button>
           <h4 class="modal-title">Experiment Configuration</h4>
         </div>
-        <div class="panel-body">
-          <form class="form-horizontal" role="form">
-            <div class="form-group">
-              <label for="inputExperiment" class="col-sm-2 control-label">Workload</label>
-              <div class="col-sm-6">
-                <select id="cmdSelect" name="inputExperiment" class="form-control">
-                  <option value="gcf:push">Simple Push</option>
-                  <option value="dummy,dummyWithErrors">Dummies (dummy, dummyWithErrors)</option>            
-                  <option value="dummy">Dummy Push</option>
-                  <option value="gcf:push,gcf:push">Multiple Pushes</option>
-                  <option value="dummyWithErrors">Dummy with Errors</option>
-                </select>
-              </div>
+      <div class="panel-body">
+        <form class="form-horizontal" role="form">          
+          <div class="form-group">
+            <label class="col-sm-3 control-label">Workload Items</label>
+            <div class="col-sm-6">
+              <!-- ko foreach: workloadModels.itemModel -->
+                <button type="button" class="btn btn-default" data-bind="html: html, click: click, attr: {id: 'workloadItem-' + name}"></button>
+              <!-- /ko -->​
             </div>
-            <div class="form-group" data-bind="css: { 'has-error': numIterationsHasError }">
-              <label for="inputIterations" class="col-sm-2 control-label">Iterations</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputIterations" name="inputIterations" placeholder="1" data-bind="value: numIterations">
-              </div>
+          </div>
+          <div class="form-group">
+            <label  class="col-sm-3 control-label">Selected Workload</label>
+            <div class="col-sm-6">
+              <!-- ko foreach: workloadModels.selectedModel -->
+                <button type="button" class="btn btn-link" data-bind="html: html, click: click"></button>
+              <!-- /ko -->​
             </div>
-            <div class="form-group" data-bind="css: { 'has-error': numConcurrentHasError }">
-              <label for="inputConcurrency" class="col-sm-2 control-label">Concurrency</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputConcurrency" name="inputConcurrency" placeholder="1" data-bind="value: numConcurrent">
+          </div>          
+          <div id="argumentList" class="form-group">
+            <label class="col-sm-3 control-label">Workload Arguments</label>
+            <div class="col-sm-6">
+              <div class="form-horizontal" role="form" data-bind="foreach: workloadModels.argumentModel">
+                <div class="form-group" data-bind="css: { 'has-error': errCheckFn }, style: {display: display}">
+                  <label class="col-sm-4 control-label" data-bind="text: argName"></label>
+                  <div class="col-sm-6">
+                    <input type="text" class="form-control" data-bind="value: value">
+                  </div>
+                </div>
               </div>
+            </div>            
+          </div>
+
+          <div class="form-group" data-bind="css: { 'has-error': numIterationsHasError }">
+            <label for="inputIterations" class="col-sm-3 control-label">Iterations</label>
+            <div class="col-sm-6">
+              <input type="number" class="form-control" id="inputIterations" name="inputIterations" placeholder="1" data-bind="value: numIterations">
             </div>
-            <div class="form-group" data-bind="css: { 'has-error': numIntervalHasError }">
-              <label for="inputInterval" class="col-sm-2 control-label">Interval</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputInterval" name="inputInterval" placeholder="0" data-bind="value: numInterval">
-              </div>
+          </div>
+          <div class="form-group" data-bind="css: { 'has-error': numConcurrentHasError }">
+            <label for="inputConcurrency" class="col-sm-3 control-label">Concurrency</label>
+            <div class="col-sm-6">
+              <input type="number" class="form-control" id="inputConcurrency" name="inputConcurrency" placeholder="1" data-bind="value: numConcurrent">
             </div>
-            <div class="form-group" data-bind="css: { 'has-error': numStopHasError }">
-              <label for="inputStop" class="col-sm-2 control-label">Stop</label>
-              <div class="col-sm-6">
-                <input type="number" class="form-control" id="inputStop" name="inputStop" placeholder="0" data-bind="value: numStop">
-              </div>
+          </div>
+          <div class="form-group" data-bind="css: { 'has-error': numIntervalHasError }">
+            <label for="inputInterval" class="col-sm-3 control-label">Interval</label>
+            <div class="col-sm-6">
+              <input type="number" class="form-control" id="inputInterval" name="inputInterval" placeholder="0" data-bind="value: numInterval">
             </div>
-            <div class="form-group">
-              <div class="col-sm-offset-2 col-sm-10">
-                <button data-bind="click: start, enable: formHasNoErrors" id="startbtn" type="submit" data-dismiss="modal" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
-              </div>
+          </div>
+          <div class="form-group" data-bind="css: { 'has-error': numStopHasError }">
+            <label for="inputStop" class="col-sm-3 control-label">Stop</label>
+            <div class="col-sm-6">
+              <input type="number" class="form-control" id="inputStop" name="inputStop" placeholder="0" data-bind="value: numStop">
             </div>
-          </form>
-        </div>
-      </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+              <button data-bind="click: start, enable: formHasNoErrors" id="startbtn" type="submit" data-dismiss="modal" class="btn btn-primary navbar-btn"><span class="glyphicon glyphicon-play"></span> Start Experiment</button>
+            </div>
+          </div>
+        </form>
     </div>
+    </div>  
+  </div>
   </div>
 
   <div class="modal fade" id="historyPopup" tabindex="-1" role="dialog" aria-labelledby="historyPopupLabel" aria-hidden="true" >
@@ -139,7 +158,7 @@ body { padding: 8px; }
       <div class="modal-content" style="background:rgba(255,255,255,0.75);">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title" >Previous Experiment</h4>
+          <h4 class="modal-title" >Previous Experiments</h4>
         </div>
         <div class="modal-body">
           <table class="table table-hover">

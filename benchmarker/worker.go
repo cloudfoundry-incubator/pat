@@ -4,11 +4,12 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/workloads"
 )
 
 type Worker interface {
-	Time(experiment string, workerIndex int) IterationResult
+	Time(experiment string, workloadCtx context.Context) IterationResult
 	AddWorkloadStep(workloads workloads.WorkloadStep)
 	Visit(fn func(workloads.WorkloadStep))
 	Validate(name string) (result bool, err error)

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	"github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
@@ -42,6 +43,8 @@ func InitCommandLineFlags(config config.Config) {
 }
 
 func RunCommandLine() error {
+	params.workload = strings.Replace(params.workload, " ", "", -1)
+
 	return WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		return validateParameters(worker, func() error {
 			return store.WithStore(func(store Store) error {
@@ -58,10 +61,12 @@ func RunCommandLine() error {
 					})
 				}
 
+				workloadContext := context.New()
+
 				lab.RunWithHandlers(
 					NewRunnableExperiment(
 						NewExperimentConfiguration(
-							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers)
+							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers, workloadContext)
 
 				BlockExit()
 				return err

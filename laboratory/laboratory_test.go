@@ -1,6 +1,7 @@
 package laboratory
 
 import (
+	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/experiment"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,6 +17,7 @@ var _ = Describe("Laboratory", func() {
 			run1            string
 			run2            string
 			handlerRecieved []*Sample
+			workloadCtx		= context.New()
 		)
 
 		BeforeEach(func() {
@@ -26,14 +28,14 @@ var _ = Describe("Laboratory", func() {
 			lab = NewLaboratory(store)
 			experiment1 = &dummyExperiment{"1", []*Sample{&Sample{}}}
 			experiment2 = &dummyExperiment{"2", []*Sample{&Sample{}, &Sample{}}}
-			run1, _ = lab.Run(experiment1)
+			run1, _ = lab.Run(experiment1, workloadCtx)
 
 			handlerRecieved = nil
 			run2, _ = lab.RunWithHandlers(experiment2, []func(<-chan *Sample){func(samples <-chan *Sample) {
 				for s := range samples {
 					handlerRecieved = append(handlerRecieved, s)
 				}
-			}})
+			}}, workloadCtx)
 
 			// wait for experiments to run
 			Eventually(func() int {
@@ -153,7 +155,7 @@ func (store *dummyStore) LoadAll() ([]Experiment, error) {
 	return store.previous, nil
 }
 
-func (e *dummyExperiment) Run(fn func(samples <-chan *Sample)) error {
+func (e *dummyExperiment) Run(fn func(samples <-chan *Sample), workloadCtx context.Context) error {
 	ch := make(chan *Sample)
 	done := make(chan bool)
 	go func() {

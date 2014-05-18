@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/cloudfoundry-incubator/pat/cmdline"
 	"github.com/cloudfoundry-incubator/pat/config"
@@ -88,12 +89,24 @@ var _ = Describe("Cmdline", func() {
 	})
 
 	Describe("When -workload is supplied", func() {
-		BeforeEach(func() {
-			args = []string{"-workload", "login,push"}
+		Describe("When -workload contains no white spaces", func() {
+			BeforeEach(func() {
+				args = []string{"-workload", "login,push"}
+			})
+
+			It("configures the experiment with the parameter", func() {
+				Ω(lab).Should(HaveBeenRunWith("workload", "login,push"))
+			})
 		})
 
-		It("configures the experiment with the parameter", func() {
-			Ω(lab).Should(HaveBeenRunWith("workload", "login,push"))
+		Describe("When -workload contains white spaces", func() {
+			BeforeEach(func() {
+				args = []string{"-workload", "  login ,  push , gcf:push"}
+			})
+
+			It("removes white spaces in the parameter", func() {
+				Ω(lab).Should(HaveBeenRunWith("workload", "login,push,gcf:push"))
+			})
 		})
 	})
 
@@ -196,11 +209,11 @@ func (d *dummyLab) GetData(guid string) ([]*experiment.Sample, error) {
 	return nil, nil
 }
 
-func (d *dummyLab) Run(runnable laboratory.Runnable) (string, error) {
+func (d *dummyLab) Run(runnable laboratory.Runnable, workloadCtx context.Context) (string, error) {
 	return "", nil
 }
 
-func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample)) (string, error) {
+func (d *dummyLab) RunWithHandlers(runnable laboratory.Runnable, handlers []func(<-chan *experiment.Sample), workloadCtx context.Context) (string, error) {
 	d.lastRunWith = runnable.(*experiment.RunnableExperiment)
 	return "", nil
 }

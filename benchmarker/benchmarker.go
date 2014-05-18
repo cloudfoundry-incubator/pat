@@ -3,6 +3,8 @@ package benchmarker
 import (
 	"sync"
 	"time"
+
+	"github.com/cloudfoundry-incubator/pat/context"
 )
 
 type StepResult struct {
@@ -23,30 +25,30 @@ func Time(experiment func() error) (result time.Duration, err error) {
 	return t1.Sub(t0), err
 }
 
-func Counted(out chan<- int, fn func(int)) func(int) {
-	return func(workerIndex int) {
+func Counted(out chan<- int, fn func(context.Context)) func(context.Context) {
+	return func(workloadCtx context.Context) {
 		out <- 1
-		fn(workerIndex)
+		fn(workloadCtx)
 		out <- -1
 	}
 }
 
-func TimedWithWorker(out chan<- IterationResult, worker Worker, experiment string) func(int) {
-	return func(workerIndex int) {
-		time := worker.Time(experiment, workerIndex)
+func TimedWithWorker(out chan<- IterationResult, worker Worker, experiment string) func(context.Context) {
+	return func(workloadCtx context.Context) {
+		time := worker.Time(experiment, workloadCtx)
 		out <- time
 	}
 }
 
-func Once(fn func(int)) <-chan func(int) {
+func Once(fn func(context.Context)) <-chan func(context.Context) {
 	return Repeat(1, fn)
 }
 
-func RepeatEveryUntil(repeatInterval int, runTime int, fn func(int), quit <-chan bool) <-chan func(int) {
+func RepeatEveryUntil(repeatInterval int, runTime int, fn func(context.Context), quit <-chan bool) <-chan func(context.Context) {
 	if repeatInterval == 0 || runTime == 0 {
 		return Once(fn)
 	} else {
-		ch := make(chan func(int))
+		ch := make(chan func(context.Context))
 		var tickerQuit *time.Ticker
 		ticker := time.NewTicker(time.Duration(repeatInterval) * time.Second)
 		if runTime > 0 {
@@ -72,8 +74,8 @@ func RepeatEveryUntil(repeatInterval int, runTime int, fn func(int), quit <-chan
 	}
 }
 
-func Repeat(n int, fn func(int)) <-chan func(int) {
-	ch := make(chan func(int))
+func Repeat(n int, fn func(context.Context)) <-chan func(context.Context) {
+	ch := make(chan func(context.Context))
 	go func() {
 		defer close(ch)
 		for i := 0; i < n; i++ {
@@ -83,24 +85,24 @@ func Repeat(n int, fn func(int)) <-chan func(int) {
 	return ch
 }
 
-func Execute(tasks <-chan func(int)) {
+func Execute(tasks <-chan func(context.Context), workloadCtx context.Context) {
 	for task := range tasks {
-		task(1)
+		task(workloadCtx)
 	}
 }
 
-func ExecuteConcurrently(schedule <-chan int, tasks <-chan func(int)) {
+func ExecuteConcurrently(schedule <-chan int, tasks <-chan func(context.Context), workloadCtx context.Context) {
 	var wg sync.WaitGroup
 
 	for increment := range schedule {
 		for i := 0; i < increment; i++ {
 			wg.Add(1)
-			go func(t <-chan func(int), n int) {
+			go func(t <-chan func(context.Context), ctx context.Context) {
 				defer wg.Done()
 				for task := range t {
-					task(n)
+					task(ctx)
 				}
-			}(tasks, i)
+			}(tasks, workloadCtx.Clone())
 		}
 	}
 	wg.Wait()

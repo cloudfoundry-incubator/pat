@@ -3,6 +3,8 @@ package experiment
 import (
 	"errors"
 	"time"
+
+	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,6 +21,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			sample1      *Sample
 			sample2      *Sample
 			worker       Worker
+			workloadCtx  = context.New()
 		)
 
 		BeforeEach(func() {
@@ -50,7 +53,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 				for s := range samples {
 					got = append(got, s)
 				}
-			})
+			}, workloadCtx)
 
 			Ω(got).Should(HaveLen(2))
 		})
@@ -59,7 +62,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			executorFunc = func(e *DummyExecutor) {}
 			sampleFunc = func(s *DummySampler) {}
 
-			config.Run(func(samples <-chan *Sample) {})
+			config.Run(func(samples <-chan *Sample) {}, workloadCtx)
 
 			Ω(sampler.maxIterations).Should(Equal(15))
 		})
@@ -83,7 +86,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			config.Run(func(samples <-chan *Sample) {
 				for _ = range samples {
 				}
-			})
+			}, workloadCtx)
 			Ω(got).Should(HaveLen(3))
 		})
 
@@ -105,7 +108,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			config.Run(func(samples <-chan *Sample) {
 				for _ = range samples {
 				}
-			})
+			}, workloadCtx)
 			Ω(got).Should(Equal([]int{2, -1}))
 		})
 
@@ -126,7 +129,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			config.Run(func(samples <-chan *Sample) {
 				for _ = range samples {
 				}
-			})
+			}, workloadCtx)
 			Ω(got).Should(HaveLen(1))
 			Ω(got[0].Error()).Should(Equal("Foo"))
 		})
@@ -355,6 +358,6 @@ func (s *DummySampler) Sample() {
 	s.sampleFunc(s)
 }
 
-func (e *DummyExecutor) Execute() {
+func (e *DummyExecutor) Execute(context.Context) {
 	e.executorFunc(e)
 }
