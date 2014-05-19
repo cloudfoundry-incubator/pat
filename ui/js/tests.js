@@ -18,6 +18,34 @@ describe("Workload List", function(){
     }
   })
 
+  it("returns 'true' for showing selected workload caption if any workload is selected", function(){
+    expect(workloadList.shouldShowSelectedCaption() ).toBe(false)
+
+    var cmd = "dummy"
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+    
+    expect(workloadList.shouldShowSelectedCaption() ).toBe(true)
+    expect(workloadList.shouldShowArgumentCaption() ).toBe(false)
+  })
+
+  it("returns 'false' for showing selected workload caption if all workload is removed", function(){    
+    var cmd = "dummy"
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+    expect(workloadList.shouldShowSelectedCaption() ).toBe(true)
+    
+    $("#selectedList button:contains(" + cmd + ")").trigger("click") 
+    expect(workloadList.shouldShowArgumentCaption() ).toBe(false)    
+  })
+
+  it("returns 'true' for showing argument caption if any argument input is required", function(){
+    expect(workloadList.shouldShowArgumentCaption() ).toBe(false)
+
+    var cmd = "rest:target"
+    $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
+    
+    expect(workloadList.shouldShowArgumentCaption() ).toBe(true)
+  })
+  
   it("removes a selected command when user click on the selected command button", function(){    
     var cmd = "rest:target"
 

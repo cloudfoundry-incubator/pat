@@ -224,10 +224,27 @@ patWorkload = function(){
 	var selectedModel = ko.observableArray([])
 	var argumentModel = ko.observableArray([cfTarget, cfUser, cfPass]);
 
+	var showSelectedCaption = ko.computed(function(){
+		if (selectedModel().length > 0) {
+			return true
+		} else {
+			return false
+		}
+	})
+
+	var showArgumentCaption = ko.computed(function(){			
+		for (var i = 0; i < argumentModel().length; i ++) {
+			if (argumentModel()[i].display() != "none") return true
+		}
+		return false
+	})
+
 	return {
 		workloads: workloadStr,
 		itemModel: itemModel,
 		selectedModel: selectedModel,
+		shouldShowSelectedCaption: showSelectedCaption,
+		shouldShowArgumentCaption: showArgumentCaption,		
 		argumentModel: argumentModel,
 		cfTargetHasErr: cfTarget.errCheckFn,
 		cfUserHasErr: cfUser.errCheckFn,
