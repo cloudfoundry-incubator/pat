@@ -7,8 +7,8 @@ import (
 
 	"github.com/cloudfoundry-incubator/pat/experiment"
 	"github.com/cloudfoundry-incubator/pat/redis"
+	"github.com/cloudfoundry-incubator/pat/test_helpers"
 	. "github.com/cloudfoundry-incubator/pat/store"
-	redisHelpers "github.com/cloudfoundry-incubator/pat/test_helpers/redis"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -25,11 +25,11 @@ var _ = Describe("Redis Store", func() {
 	)
 
 	BeforeEach(func() {
-		redisHelpers.StartRedis("redis.conf")
+		test_helpers.StartRedis("redis.conf")
 	})
 
 	AfterEach(func() {
-		redisHelpers.StopRedis()
+		test_helpers.StopRedis()
 	})
 
 	Describe("Experiments", func() {

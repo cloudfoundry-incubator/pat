@@ -1,4 +1,4 @@
-package redis
+package test_helpers
 
 import (
 	"os/exec"
@@ -12,7 +12,7 @@ func StartRedis(config string) {
 	_, filename, _, _ := runtime.Caller(0)
 	dir, _ := filepath.Abs(filepath.Dir(filename))
 	StopRedis()
-	exec.Command("redis-server", path.Join(dir, config)).Run()
+	exec.Command("redis-server", path.Join(dir, "redis", config)).Run()
 	time.Sleep(450 * time.Millisecond) // yuck(jz)
 }
 

@@ -148,13 +148,13 @@ var _ = Describe("Cmdline", func() {
 		})
 	})
 
-	Describe("When -note is supplied", func() {
+	Describe("When -description is supplied", func() {
 		BeforeEach(func() {
-			args = []string{"-note", "note"}
+			args = []string{"-description", "description"}
 		})
 
 		It("configures the experiment with the parameter", func() {
-			Ω(lab).Should(HaveBeenRunWith("note", "note"))
+			Ω(lab).Should(HaveBeenRunWith("description", "description"))
 		})
 	})
 })
@@ -185,8 +185,8 @@ func (m *runWithMatcher) Match(actualLab interface{}) (bool, error) {
 		actual = runWith.Stop
 	case "concurrencysteptime":
 		actual = runWith.ConcurrencyStepTime
-	case "note":
-		actual = runWith.Note
+	case "description":
+		actual = runWith.Description
 	}
 	m.lastMatch = actual
 	return Equal(actual).Match(m.value)

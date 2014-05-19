@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/pat/redis"
-	redisHelpers "github.com/cloudfoundry-incubator/pat/test_helpers/redis"
+	"github.com/cloudfoundry-incubator/pat/test_helpers"
 	"github.com/cloudfoundry-incubator/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,14 +18,14 @@ var _ = Describe("RedisWorker", func() {
 	)
 
 	BeforeEach(func() {
-		redisHelpers.StartRedis("redis.conf")
+		test_helpers.StartRedis("redis.conf")
 		var err error
 		conn, err = redis.Connect("", 63798, "p4ssw0rd")
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		redisHelpers.StopRedis()
+		test_helpers.StopRedis()
 	})
 
 	Describe("When a single experiment is provided", func() {

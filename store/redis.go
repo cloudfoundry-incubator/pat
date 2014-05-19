@@ -73,7 +73,7 @@ func (r *redisStore) writeMetaData(guid string, ex experiment.ExperimentConfigur
 
 	metaData := MetaData{Guid: guid, StartTime: time.Now().Format(time.RFC850), Concurrency: concurrency,
 			ConcurrencyStepTime: ex.ConcurrencyStepTime.String(), Iterations: ex.Iterations,
-			Interval: ex.Interval, Stop: ex.Stop, Workload: ex.Workload, Note: ex.Note}
+			Interval: ex.Interval, Stop: ex.Stop, Workload: ex.Workload, Note: ex.Description}
 
 	json, err := json.Marshal(metaData)
 	if err != nil {

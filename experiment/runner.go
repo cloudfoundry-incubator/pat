@@ -53,7 +53,7 @@ type ExperimentConfiguration struct {
 	Stop                int
 	Worker              Worker
 	Workload            string
-	Note		    string
+	Description	    string
 }
 
 type RunnableExperiment struct {

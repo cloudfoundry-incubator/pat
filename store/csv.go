@@ -99,7 +99,7 @@ func (self *CsvStore) writeMeta(startTime time.Time, guid string, ex experiment.
 
 	body := []string{guid, startTime.Format(time.RFC850), strconv.Itoa(ex.Iterations),
 			concurrency, ex.ConcurrencyStepTime.String(), strconv.Itoa(ex.Stop),
-			strconv.Itoa(ex.Interval), ex.Workload, ex.Note}
+			strconv.Itoa(ex.Interval), ex.Workload, ex.Description}
 	writer.Write(body)
 	writer.Flush()
 }
