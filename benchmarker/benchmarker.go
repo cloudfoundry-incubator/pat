@@ -49,22 +49,21 @@ func RepeatEveryUntil(repeatInterval int, runTime int, fn func(context.Context),
 		return Once(fn)
 	} else {
 		ch := make(chan func(context.Context))
-		var tickerQuit *time.Ticker
 		ticker := time.NewTicker(time.Duration(repeatInterval) * time.Second)
-		if runTime > 0 {
-			tickerQuit = time.NewTicker(time.Duration(runTime) * time.Second)
-		}
 		go func() {
 			defer close(ch)
 			ch <- fn
+			repeats := 0
 			for {
 				select {
 				case <-ticker.C:
+					repeats++
+					if repeats*repeatInterval > runTime {
+						ticker.Stop()
+						return
+					}
 					ch <- fn
 				case <-quit:
-					ticker.Stop()
-					return
-				case <-tickerQuit.C:
 					ticker.Stop()
 					return
 				}

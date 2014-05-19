@@ -62,47 +62,55 @@ var _ = Describe("Benchmarker", func() {
 	})
 
 	Describe("RepeatEveryUntil", func() {
-		It("repeats a function at n seconds interval", func() {
+		It("repeats a function every interval seconds", func() {
 			start := time.Now()
 			var end time.Time
-			n := 2
-			Execute(RepeatEveryUntil(n, 3, func(context.Context) { end = time.Now() }, nil), workloadCtx)
+			interval := 2
+			Execute(RepeatEveryUntil(interval, 3, func(context.Context) { end = time.Now() }, nil), workloadCtx)
 			elapsed := end.Sub(start)
 			elapsed = (elapsed / time.Second)
-			Ω(int(elapsed)).Should(Equal(n))
+			Ω(int(elapsed)).Should(Equal(interval))
 		})
 
-		It("repeats a function at n seconds interval and stops at s second", func() {
+		It("repeats a function every interval seconds until stop seconds", func() {
 			var total int = 0
-			n := 2
-			s := 11
-			Execute(RepeatEveryUntil(n, s, func(context.Context) { total += 1 }, nil), workloadCtx)
-			Ω(total).Should(Equal((s / n) + 1))
+			interval := 2
+			stop := 11
+			Execute(RepeatEveryUntil(interval, stop, func(context.Context) { total += 1 }, nil), workloadCtx)
+			Ω(total).Should(Equal((stop / interval) + 1))
 		})
 
-		It("repeats a function at n seconds interval and stops when channel quit is set to true", func() {
+		It("repeats a function every interval seconds and stops when channel quit is set to true", func() {
 			quit := make(chan bool)
 			var total int = 0
-			n := 2
-			s := 11
-			stop := 5
-			time.AfterFunc(time.Duration(stop)*time.Second, func() { quit <- true })
-			Execute(RepeatEveryUntil(n, s, func(context.Context) { total += 1 }, quit), workloadCtx)
-			Ω(total).Should(Equal((stop / n) + 1))
+			interval := 2
+			stop := 11
+			quitTime := 5
+			time.AfterFunc(time.Duration(quitTime)*time.Second, func() { quit <- true })
+			Execute(RepeatEveryUntil(interval, stop, func(context.Context) { total += 1 }, quit), workloadCtx)
+			Ω(total).Should(Equal((quitTime / interval) + 1))
 		})
 
-		It("runs a function once if n = 0 or s = 0", func() {
+		It("runs a function once if interval = 0 or stop = 0", func() {
 			var total int = 0
-			n := 0
-			s := 1
-			Execute(RepeatEveryUntil(n, s, func(context.Context) { total += 1 }, nil), workloadCtx)
+			interval := 0
+			stop := 1
+			Execute(RepeatEveryUntil(interval, stop, func(context.Context) { total += 1 }, nil), workloadCtx)
 			Ω(total).Should(Equal(1))
 
 			total = 0
-			n = 3
-			s = 0
-			Execute(RepeatEveryUntil(n, s, func(context.Context) { total += 1 }, nil), workloadCtx)
+			interval = 3
+			stop = 0
+			Execute(RepeatEveryUntil(interval, stop, func(context.Context) { total += 1 }, nil), workloadCtx)
 			Ω(total).Should(Equal(1))
+		})
+
+		It("runs a function stop/interval + 1 times if s is a multiple of n", func() {
+			var total int = 0
+			interval := 2
+			stop := 10
+			Execute(RepeatEveryUntil(interval, stop, func(context.Context) { total += 1 }, nil), workloadCtx)
+			Ω(total).Should(Equal((stop / interval) + 1))
 		})
 	})
 

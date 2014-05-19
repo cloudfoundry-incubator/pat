@@ -3,9 +3,8 @@ package experiment
 import (
 	"math"
 	"time"
-
-	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/benchmarker"
+	"github.com/cloudfoundry-incubator/pat/context"
 )
 
 type SampleType int
@@ -118,7 +117,7 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample), workloadCtx 
 	done := make(chan bool)
 	maxIterations := config.Iterations
 	if config.Stop != 0 && config.Interval != 0 && config.Interval < config.Stop {
-		maxIterations *= config.Stop / config.Interval
+		maxIterations *= int(1 + (float64(config.Stop) / float64(config.Interval)))
 	}
 	sampler := config.samplerFactory(maxIterations, iteration, errors, workers, samples, quit)
 	go sampler.Sample()
@@ -219,7 +218,6 @@ func (ex *SamplableExperiment) Sample() {
 					percentile[i+1] = lastResult
 				}
 			}
-
 			ninetyfifthPercentile = percentile[percentileLength-int(math.Floor(float64(iterations)*.05+0.95))]
 
 			for _, step := range iteration.Steps {
