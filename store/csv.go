@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry-incubator/pat/helpers"
 	"github.com/cloudfoundry-incubator/pat/experiment"
 	"github.com/cloudfoundry-incubator/pat/logs"
 	"github.com/cloudfoundry-incubator/pat/workloads"
@@ -55,23 +56,14 @@ func (self *CsvStore) writeMeta(startTime time.Time, ex experiment.ExperimentCon
 
 	dir := path.Join(self.dir, "csv.meta")
 
-	var writer *csv.Writer
-
-	file, err := os.OpenFile(dir, os.O_RDWR, 0755)
-	if os.IsNotExist(err) {
-		logger.Infof("Creating directory, %s", filepath.Dir(dir))
-
-		os.MkdirAll(filepath.Dir(dir), 0755)
-		file, err = os.Create(dir)
-		if err != nil {
-			logger.Errorf("Can't write Meta: %v", err)
-			return
-		}
-	} else if err != nil {
-		logger.Errorf("Can't open Meta data for csv: %v", err)
+	file, err := helpers.OpenOrCreate(dir)
+	if err != nil {
+		logger.Errorf("Can't open or create Meta data for csv: %v", err)
 		return
 	}
 	defer file.Close()
+
+	var writer *csv.Writer
 
 	writer = csv.NewWriter(file)
 	reader := csv.NewReader(file)
@@ -108,17 +100,9 @@ func (self *CsvStore) writeMeta(startTime time.Time, ex experiment.ExperimentCon
 func (self *csvFile) WriteExperiment(samples <-chan *experiment.Sample) {
 	var logger = logs.NewLogger("store.csv")
 
-	f, err := os.Create(self.outputPath)
+	f, err := helpers.OpenOrCreate(self.outputPath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			logger.Infof("Creating directory, %s", filepath.Dir(self.outputPath))
-			os.MkdirAll(filepath.Dir(self.outputPath), 0755)
-			f, err = os.Create(self.outputPath)
-		}
-
-		if err != nil {
-			logger.Errorf("Can't write CSV: %v", err)
-		}
+		logger.Errorf("Can't write CSV: %v", err)
 	}
 	defer f.Close()
 
