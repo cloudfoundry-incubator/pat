@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
@@ -134,10 +133,11 @@ func (ctx *serverContext) handlePush(w http.ResponseWriter, r *http.Request) (in
 		stop = 0
 	}
 
-	cfTarget := trimSpaces(r.FormValue("cfTarget"))
-	cfUsername := trimSpaces(r.FormValue("cfUsername"))
-	workload := trimSpaces(r.FormValue("workload"))
-	cfPassword := trimSpaces(r.FormValue("cfPassword"))
+	cfTarget := r.FormValue("cfTarget")
+	cfUsername := r.FormValue("cfUsername")
+	workload := r.FormValue("workload")
+	cfPassword := r.FormValue("cfPassword")
+	cfSpace := r.FormValue("cfSpace")
 
 	if workload == "" {
 		workload = "gcf:push"
@@ -145,9 +145,10 @@ func (ctx *serverContext) handlePush(w http.ResponseWriter, r *http.Request) (in
 
 	workloadContext := context.New()
 
-	workloadContext.PutString("cfTarget", cfTarget)
-	workloadContext.PutString("cfUsername", cfUsername)
-	workloadContext.PutString("cfPassword", cfPassword)
+	workloadContext.PutString("rest:target", cfTarget)
+	workloadContext.PutString("rest:username", cfUsername)
+	workloadContext.PutString("rest:password", cfPassword)
+	workloadContext.PutString("rest:space", cfSpace)
 
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(
@@ -207,10 +208,6 @@ func handler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) h
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-}
-
-func trimSpaces(value string) string {
-	return strings.TrimSpace(value)
 }
 
 var ListenAndServe = func(bind string) error {

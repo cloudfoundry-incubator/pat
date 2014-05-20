@@ -3,18 +3,16 @@ describe("Workload List", function(){
   ko.applyBindings(workloadList, document.getElementById("workloadModelTest"))
 
   beforeEach(function(){
-    workloadList.selectedModel.removeAll();
+    workloadList.selectedCmds.removeAll();
 
-    workloadList.argumentModel().forEach(function(d){
+    workloadList.reqArguments().forEach(function(d){
       d.display("none")
     })
   })
 
-  it("draws a button for each workload command", function(){
-    var i = 0;
-    for (var key in workloadList.workloadItems) {
-      expect( $("#workloadItems").find("button")[i].textContent.trim() ).toBe(key)
-      i++;
+  it("draws a button for each workload command", function(){    
+    for (var i=0; i<workloadList.availableCmds().length; i++) {       
+      expect( $("#workloadItems").find("button")[i].textContent.trim() ).toBe(workloadList.availableCmds()[i].name)      
     }
   })
 
@@ -76,16 +74,16 @@ describe("Workload List", function(){
 
   it("displays arguments that is required by the workload command", function(){    
     var cmd = "rest:login"    
-    var node = workloadList.itemModel()[findWorkloadIndex(cmd)];
+    var node = workloadList.availableCmds()[findWorkloadIndex(cmd)];
 
-    node.args.forEach(function(arg){      
-        expect( workloadList.argumentModel()[findArgumentIndex(arg)].display() ).toBe('none')      
+    node.args.forEach(function(arg){             
+        expect( workloadList.reqArguments()[findArgumentIndex(arg)].display() ).toBe('none')      
     })
 
     $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
 
-    node.args.forEach(function(arg){
-        expect( workloadList.argumentModel()[findArgumentIndex(arg)].display() ).toBe('inherit')
+    node.args.forEach(function(arg){      
+        expect( workloadList.reqArguments()[findArgumentIndex(arg)].display() ).toBe('inherit')
     })
   })
 
@@ -95,7 +93,7 @@ describe("Workload List", function(){
 
     $("#workloadItems button:contains(" + cmd + ")").trigger("click") 
 
-    var node = workloadList.itemModel()[findWorkloadIndex(cmd)];
+    var node = workloadList.availableCmds()[findWorkloadIndex(cmd)];
     node.requires.forEach(function(parentCmd){      
       expect( $("#selectedList").find("button")[i].textContent.trim() ).toBe(parentCmd)
       i++
@@ -124,58 +122,71 @@ describe("Workload List", function(){
   })
 
   it("checks for valid 'CF Target' input", function(){
-    var node = workloadList.argumentModel()[findArgumentIndex("rest:target")];
+    var node = workloadList.reqArguments()[findArgumentIndex("rest:target")];
     node.display("inherit")
     
     var target = "invalid_url"
     node.value(target)
-    expect(workloadList.cfTargetHasErr()).toBe(true)
+    expect(workloadList.validation.HasError()).toBe(true)
 
     target = "http://api.example.com"
     node.value(target)
-    expect(workloadList.cfTargetHasErr()).toBe(false)
+    expect(workloadList.validation.HasError()).toBe(false)
   });
 
   it("checks for non-empty 'CF Username' input", function(){
-    var node = workloadList.argumentModel()[findArgumentIndex("rest:username")];
+    var node = workloadList.reqArguments()[findArgumentIndex("rest:username")];
     node.display("inherit")
 
     var user = ""
     node.value(user)
-    expect(workloadList.cfUserHasErr()).toBe(true)
+    expect(workloadList.validation.HasError()).toBe(true)
 
     user = "user1,user2"
     node.value(user)
-    expect(workloadList.cfUserHasErr()).toBe(false)
+    expect(workloadList.validation.HasError()).toBe(false)
   });
 
   it("checks for non-empty 'CF Password' input", function(){
-    var node = workloadList.argumentModel()[findArgumentIndex("rest:password")];
+    var node = workloadList.reqArguments()[findArgumentIndex("rest:password")];
     node.display("inherit")
 
     var pass = ""
     node.value(pass)
-    expect(workloadList.cfPassHasErr()).toBe(true)
+    expect(workloadList.validation.HasError()).toBe(true)
 
     pass = "pass1"
     node.value(pass)
-    expect(workloadList.cfPassHasErr()).toBe(false)
+    expect(workloadList.validation.HasError()).toBe(false)
+  });
+
+  it("checks for non-empty 'CF Space' input", function(){
+    var node = workloadList.reqArguments()[findArgumentIndex("rest:space")];
+    node.display("inherit")
+
+    var space = ""
+    node.value(space)
+    expect(workloadList.validation.HasError()).toBe(true)
+
+    space = "pass1"
+    node.value(space)
+    expect(workloadList.validation.HasError()).toBe(false)
   });
 
   function findWorkloadIndex (cmd, start, end) {
     start = (start >= 0)? start : 0;
-    end = ( end >= 0)? end : workloadList.itemModel().length;
+    end = ( end >= 0)? end : workloadList.availableCmds().length;
     for (var i = start; i < end; i++) {
-      if (workloadList.itemModel()[i].name == cmd) return i;
+      if (workloadList.availableCmds()[i].name == cmd) return i;
     }
     return -1;
   }
 
   function findArgumentIndex (cmd, start, end) {
     start = (start >= 0)? start : 0;
-    end = ( end >= 0)? end : workloadList.argumentModel().length;
+    end = ( end >= 0)? end : workloadList.reqArguments().length;
     for (var i = start; i < end; i++) {      
-      if (workloadList.argumentModel()[i].forCmd == cmd) return i;
+      if (workloadList.reqArguments()[i].forCmd == cmd) return i;
     }
     return -1;
   }

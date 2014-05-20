@@ -32,6 +32,8 @@ var _ = Describe("Rest", func() {
 		)
 
 		BeforeEach(func() {
+			restContext = context.New()
+			restContext.PutInt("iterationIndex", 0)
 			replies = make(map[string]interface{})
 			replyWithLocation = make(map[string]string)
 			client = &dummyClient{replies, replyWithLocation, make(map[call]interface{})}
@@ -40,8 +42,6 @@ var _ = Describe("Rest", func() {
 			rest.DescribeParameters(config)
 			config.Parse(args)
 			args = []string{"-rest:target", "APISERVER"}
-			restContext = context.New()
-			restContext.PutInt("iterationIndex", 0)
 
 			replies["APISERVER/v2/info"] = TargetResponse{"THELOGINSERVER/PATH"}
 		})
@@ -138,6 +138,15 @@ var _ = Describe("Rest", func() {
 						Ω(data.(url.Values)["grant_type"]).Should(Equal([]string{"password"}))
 					})
 
+					It("allows overridding username and password in context map", func() {
+						restContext.PutString("rest:username", "user1")
+						restContext.PutString("rest:password", "pass1")
+						rest.Login(restContext)
+						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
+						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
+						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
+					})
+
 					It("POSTs the username and password", func() {
 						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"foo"}))
@@ -157,11 +166,23 @@ var _ = Describe("Rest", func() {
 
 							spaceReply := SpaceResponse{[]Resource{Resource{Metadata{"blah blah"}}}}
 							replies["APISERVER/v2/spaces?q=name:thespace"] = spaceReply
+							spaceReplyCtx := SpaceResponse{[]Resource{Resource{Metadata{"context_space"}}}}
+							replies["APISERVER/v2/spaces?q=name:ctxSpace"] = spaceReplyCtx
 						})
 
 						It("Does not return an error", func() {
 							err := rest.Login(restContext)
+
 							Ω(err).ShouldNot(HaveOccurred())
+						})
+
+						It("allows overidding 'space' value in context map", func() {
+							restContext.PutString("rest:space", "ctxSpace")
+							err := rest.Login(restContext)
+
+							Ω(err).ShouldNot(HaveOccurred())
+							v, _ := restContext.GetString("space_guid")
+							Ω(v).Should(Equal("context_space"))
 						})
 
 						Context("But when the space does not exist", func() {

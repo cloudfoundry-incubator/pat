@@ -1,8 +1,8 @@
 package workloads
 
 import (
-	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/config"
+	"github.com/cloudfoundry-incubator/pat/context"
 )
 
 type WorkloadAdder interface {

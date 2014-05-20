@@ -25,7 +25,8 @@ var workloadContext context.Context
 
 var _ = Describe("Server", func() {
 	var (
-		lab *DummyLab
+		lab             *DummyLab
+		workloadContext context.Context
 	)
 
 	BeforeEach(func() {
@@ -37,6 +38,7 @@ var _ = Describe("Server", func() {
 	})
 
 	JustBeforeEach(func() {
+		workloadContext = context.New()
 		ServeWithLab(lab)
 	})
 
@@ -175,39 +177,24 @@ var _ = Describe("Server", func() {
 		Ω(lab.config.Workload).Should(Equal("flibble"))
 	})
 
-	It("trims space in 'workload' parameter", func() {
-		post("/experiments/?workload= rest:target, rest:login ")
-		Ω(lab.config.Workload).Should(Equal("rest:target, rest:login"))
-	})
-
 	It("Supports a 'cfTarget' parameter", func() {
 		post("/experiments/?cfTarget=http://api.127.0.0.1")
-		Ω(workloadCtxStringValue("cfTarget")).Should(Equal("http://api.127.0.0.1"))
-	})
-
-	It("trims space in 'cfTarget' parameter", func() {
-		post("/experiments/?cfTarget=http://api.127.0.0.1   ")
-		Ω(workloadCtxStringValue("cfTarget")).Should(Equal("http://api.127.0.0.1"))
+		Ω(workloadCtxStringValue("rest:target")).Should(Equal("http://api.127.0.0.1"))
 	})
 
 	It("Supports a 'cfUsername' parameter", func() {
 		post("/experiments/?cfUsername=user1")
-		Ω(workloadCtxStringValue("cfUsername")).Should(Equal("user1"))
-	})
-
-	It("trims space in 'cfUsername' parameter", func() {
-		post("/experiments/?cfUsername=  user1, user2, user3  ")
-		Ω(workloadCtxStringValue("cfUsername")).Should(Equal("user1, user2, user3"))
+		Ω(workloadCtxStringValue("rest:username")).Should(Equal("user1"))
 	})
 
 	It("Supports a 'cfPassword' parameter", func() {
 		post("/experiments/?cfPassword=pass1")
-		Ω(workloadCtxStringValue("cfPassword")).Should(Equal("pass1"))
+		Ω(workloadCtxStringValue("rest:password")).Should(Equal("pass1"))
 	})
 
-	It("trims space in 'cfPassword' parameter", func() {
-		post("/experiments/?cfPassword=  password  ")
-		Ω(workloadCtxStringValue("cfPassword")).Should(Equal("password"))
+	It("Supports a 'cfSpace' parameter", func() {
+		post("/experiments/?cfSpace=dev123")
+		Ω(workloadCtxStringValue("rest:space")).Should(Equal("dev123"))
 	})
 
 	It("Returns Location based on assigned experiment GUID", func() {

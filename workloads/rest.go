@@ -43,14 +43,17 @@ func (r *rest) DescribeParameters(config config.Config) {
 }
 
 func (r *rest) Target(ctx context.Context) error {
-	if _, exists := ctx.GetString("cfTarget"); r.target == "" && exists {
-		r.target, _ = ctx.GetString("cfTarget")
+	var target string
+	if _, ok := ctx.GetString("rest:target"); ok {
+		target, _ = ctx.GetString("rest:target")
+	} else {
+		target = r.target
 	}
 
 	body := &TargetResponse{}
-	return r.GetSuccessfully("", r.target+"/v2/info", nil, body, func(reply Reply) error {
+	return r.GetSuccessfully("", target+"/v2/info", nil, body, func(reply Reply) error {
 		ctx.PutString("loginEndpoint", body.LoginEndpoint)
-		ctx.PutString("apiEndpoint", r.target)
+		ctx.PutString("apiEndpoint", target)
 		return nil
 	})
 }
@@ -58,9 +61,25 @@ func (r *rest) Target(ctx context.Context) error {
 func (r *rest) Login(ctx context.Context) error {
 	body := &LoginResponse{}
 
-	iterationIndex, _ := ctx.GetInt("iterationIndex")
+	iterationIndex, exist := ctx.GetInt("iterationIndex")
+	if !exist {
+		return errors.New("Iteration Index does not exist in context map")
+	}
+
+	var userList, passList string
+	if _, ok := ctx.GetString("rest:username"); ok {
+		userList, _ = ctx.GetString("rest:username")
+	} else {
+		userList = r.username
+	}
+	if _, ok := ctx.GetString("rest:password"); ok {
+		passList, _ = ctx.GetString("rest:password")
+	} else {
+		passList = r.password
+	}
+
 	return checkTargetted(ctx, func(loginEndpoint string, apiEndpoint string) error {
-		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", loginEndpoint), r.oauthInputs(r.credentialsForWorker(iterationIndex)), body, func(reply Reply) error {
+		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", loginEndpoint), r.oauthInputs(credentialsForWorker(iterationIndex, userList, passList)), body, func(reply Reply) error {
 			ctx.PutString("token", body.Token)
 			return r.targetSpace(ctx)
 		})
@@ -70,9 +89,16 @@ func (r *rest) Login(ctx context.Context) error {
 func (r *rest) targetSpace(ctx context.Context) error {
 	apiEndpoint, _ := ctx.GetString("apiEndpoint")
 
+	var space string
+	if _, ok := ctx.GetString("rest:space"); ok {
+		space, _ = ctx.GetString("rest:space")
+	} else {
+		space = r.space_name
+	}
 	replyBody := &SpaceResponse{}
+
 	return checkLoggedIn(ctx, func(token string) error {
-		return r.GetSuccessfully(token, fmt.Sprintf("%s/v2/spaces?q=name:%s", apiEndpoint, r.space_name), nil, replyBody, func(reply Reply) error {
+		return r.GetSuccessfully(token, fmt.Sprintf("%s/v2/spaces?q=name:%s", apiEndpoint, space), nil, replyBody, func(reply Reply) error {
 			return checkSpaceExists(replyBody, func() error {
 				ctx.PutString("space_guid", replyBody.Resources[0].Metadata.Guid)
 				return nil
@@ -225,9 +251,9 @@ func (s SpaceResponse) SpaceExists() bool {
 	return len(s.Resources) > 0
 }
 
-func (r *rest) credentialsForWorker(iterationIndex int) (string, string) {
-	var userList = strings.Split(r.username, ",")
-	var passList = strings.Split(r.password, ",")
+func credentialsForWorker(iterationIndex int, users string, passwords string) (string, string) {
+	var userList = strings.Split(users, ",")
+	var passList = strings.Split(passwords, ",")
 	return userList[iterationIndex%len(userList)], passList[iterationIndex%len(passList)]
 }
 

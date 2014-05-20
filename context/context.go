@@ -2,11 +2,13 @@ package context
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
 )
 
 type Context interface {
 	PutString(k string, v string)
+	PutStringPtr(k string, v *string)
 	GetString(k string) (string, bool)
 	PutInt(k string, v int)
 	GetInt(k string) (int, bool)
@@ -30,9 +32,15 @@ func (c contextMap) PutString(k string, v string) {
 	c[k] = v
 }
 
+func (c contextMap) PutStringPtr(k string, ptr *string) {
+	c[k] = ptr
+}
+
 func (c contextMap) GetString(k string) (string, bool) {
 	if c[k] == nil {
 		return "", false
+	} else if reflect.TypeOf(c[k]).Kind() == reflect.Ptr {
+		return *c[k].(*string), true
 	} else {
 		return c[k].(string), true
 	}

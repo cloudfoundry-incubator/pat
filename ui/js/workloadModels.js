@@ -15,7 +15,7 @@ patWorkload = function(){
 		html: "<span class='glyphicon glyphicon-plus-sign'></span> rest:login",
 		requires: ["rest:target"],
 		requiredBy: ["rest:push"],
-		args: ["rest:username",	"rest:password"],
+		args: ["rest:username",	"rest:password", "rest:space"],
 		click: workloadClick
 	}
 
@@ -89,18 +89,27 @@ patWorkload = function(){
 		requiredBy: ["rest:login"]
 	}
 
+	var cfSpace = 
+ 	{	argName: "CF Space",
+ 		forCmd: "rest:space",
+ 		value: ko.observable("dev"),			
+ 		display: ko.observable("none"),
+ 		regex: /^[a-zA-Z0-9-_,]+$/,
+ 		requiredBy: ["rest:login"]
+ 	}
+
 	function workloadClick() {
 		var self = this
 		
 		// add command dependencies
 		self.requires.forEach(function(d){
 			if (findSelectedItemIndex(d) == -1) {							
-				selectedModel.push(generateSelectedNode(d));					
-				displayNeededArgument(itemModel()[findWorkloadItemIndex(d)]);
+				selectedCmds.push(generateSelectedNode(d));					
+ 				displayNeededArgument(availableCmds()[findWorkloadItemIndex(d)]);
 			}
 		})
 		
-		selectedModel.push(generateSelectedNode(self.name));
+		selectedCmds.push(generateSelectedNode(self.name));
 		displayNeededArgument(self);
 
 		updateWorkloadStr();
@@ -109,15 +118,15 @@ patWorkload = function(){
 	function selectedClick() {
 		var self = this
 		var warning = ""
-		var duplicatedCmd = (findSelectedItemIndex(this.name, 0, selectedModel.indexOf(self)) == -1)? false : true;
+		var duplicatedCmd = (findSelectedItemIndex(this.name, 0, selectedCmds.indexOf(self)) == -1)? false : true;
 
 		var tmpItem = {}
 
 		if (!duplicatedCmd){
-			tmpItem = JSON.parse(JSON.stringify(itemModel()[findWorkloadItemIndex(self.name)]));			
+			tmpItem = JSON.parse(JSON.stringify(availableCmds()[findWorkloadItemIndex(self.name)]));			
 
 			tmpItem.requiredBy.forEach(function(d) {				
-				if (findSelectedItemIndex(d, selectedModel.indexOf(self)) != -1) {
+				if (findSelectedItemIndex(d, selectedCmds.indexOf(self)) != -1) {
 					warning = (warning == "")? d : warning + ", " + d;							
 				}
 			})
@@ -129,28 +138,28 @@ patWorkload = function(){
 		} 
 
 		if (!duplicatedCmd){								
-			removeUnneededArgument(itemModel()[findSelectedItemIndex(self.name)])			
+			removeUnneededArgument(availableCmds()[findSelectedItemIndex(self.name)])			
 		}
-		selectedModel.remove(self)			
+		selectedCmds.remove(self)			
 
 		updateWorkloadStr();
 	}
 
 	function displayNeededArgument(node) {
 		node.args.forEach(function(cmd) {			
-			argumentModel()[findArgumentIndex(cmd)].display("inherit")		
+			reqArguments()[findArgumentIndex(cmd)].display("inherit")		
 		});
 	}
 
 	function removeUnneededArgument(node) {			
 		node.args.forEach(function(cmd) {			
-			argumentModel()[findArgumentIndex(cmd)].display("none")
+			reqArguments()[findArgumentIndex(cmd)].display("none")
 		});
 	}
 
 	function findArgumentIndex(cmd) {			
-		for (var i = 0; i < argumentModel().length; i++) {
-			if (argumentModel()[i].forCmd == cmd) {
+		for (var i = 0; i < reqArguments().length; i++) {
+			if (reqArguments()[i].forCmd == cmd) {
 				return i;					
 			}
 		}
@@ -166,25 +175,25 @@ patWorkload = function(){
 
 	function findWorkloadItemIndex (cmd, start, end) {
 		start = (start >= 0)? start : 0;
-		end = ( end >= 0)? end : itemModel().length;
+		end = ( end >= 0)? end : availableCmds().length;
 		for (var i = start; i < end; i++) {
-			if (itemModel()[i].name == cmd) return i;
+			if (availableCmds()[i].name == cmd) return i;
 		}
 		return -1;
 	}
 
 	function findSelectedItemIndex (cmd, start, end) {
 		start = (start >= 0)? start : 0;
-		end = ( end >= 0)? end : selectedModel().length;
+		end = ( end >= 0)? end : selectedCmds().length;
 		for (var i = start; i < end; i++) {
-			if (selectedModel()[i].name == cmd) return i;
+			if (selectedCmds()[i].name == cmd) return i;
 		}
 		return -1;
 	}
 
 	function updateWorkloadStr() {
 		var str = ""
-		selectedModel().forEach (function(d) {
+		selectedCmds().forEach (function(d) {
 			str = str + ((str == "")? d.name : "," + d.name)
 		})
 		workloadStr(str)
@@ -209,23 +218,36 @@ patWorkload = function(){
 		return !(cfPass.regex.test(value))
 	}
 
+	function isSpaceError() {
+ 		if (cfSpace.display() == "none") return false;
+ 		var value = cfSpace.value();			
+ 		if (value.trim() == "") return true;
+ 		return !(cfSpace.regex.test(value))
+ 	}
+
 	var workloadStr = ko.observable("");
 	var worklistHasError = ko.computed( function() {
 			return (workloadStr() == "")
 		}
 	);
 
-	cfTarget.errCheckFn = ko.computed(function(){ return isTargetError(); })
-	cfUser.errCheckFn = ko.computed(function(){ return isUsernameError(); })
-	cfPass.errCheckFn = ko.computed(function(){ return isPasswordError(); })
+	cfTarget.errCheckFn = ko.computed( isTargetError )
+ 	cfUser.errCheckFn = ko.computed( isUsernameError )
+ 	cfPass.errCheckFn = ko.computed( isPasswordError )
+ 	cfSpace.errCheckFn = ko.computed( isSpaceError )
+
+ 	var validation = {} 	
+ 	validation.HasError = function() {
+ 		return (cfTarget.errCheckFn() || cfUser.errCheckFn() || cfPass.errCheckFn() || cfSpace.errCheckFn() || worklistHasError())
+ 	}
 
 	// construct models
-	var itemModel = ko.observableArray([restTarget, restLogin, restPush, gcfPush, dummy, dummyWithErrors])
-	var selectedModel = ko.observableArray([])
-	var argumentModel = ko.observableArray([cfTarget, cfUser, cfPass]);
+	var availableCmds = ko.observableArray([restTarget, restLogin, restPush, gcfPush, dummy, dummyWithErrors])
+	var selectedCmds = ko.observableArray([])
+	var reqArguments = ko.observableArray([cfTarget, cfUser, cfPass, cfSpace]);
 
 	var showSelectedCaption = ko.computed(function(){
-		if (selectedModel().length > 0) {
+		if (selectedCmds().length > 0) {
 			return true
 		} else {
 			return false
@@ -233,28 +255,25 @@ patWorkload = function(){
 	})
 
 	var showArgumentCaption = ko.computed(function(){			
-		for (var i = 0; i < argumentModel().length; i ++) {
-			if (argumentModel()[i].display() != "none") return true
+		for (var i = 0; i < reqArguments().length; i ++) {
+			if (reqArguments()[i].display() != "none") return true
 		}
 		return false
 	})
 
 	return {
 		workloads: workloadStr,
-		itemModel: itemModel,
-		selectedModel: selectedModel,
+		availableCmds: availableCmds,
+		selectedCmds: selectedCmds,
 		shouldShowSelectedCaption: showSelectedCaption,
 		shouldShowArgumentCaption: showArgumentCaption,		
-		argumentModel: argumentModel,
-		cfTargetHasErr: cfTarget.errCheckFn,
-		cfUserHasErr: cfUser.errCheckFn,
-		cfPassHasErr: cfPass.errCheckFn,
-		worklistHasError: worklistHasError,
-		cfTarget: argumentModel()[0].value,
-		cfUsername: argumentModel()[1].value,
-		cfPassword: argumentModel()[2].value
+		reqArguments: reqArguments,
+		validation: validation,
+		cfTarget: reqArguments()[0].value,
+		cfUsername: reqArguments()[1].value,
+		cfPassword: reqArguments()[2].value,
+		cfSpace: reqArguments()[3].value
 	}
 	
 }
 
-	
