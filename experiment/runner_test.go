@@ -34,7 +34,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 				sampler = &DummySampler{maxIterations, samples, iterationResults, workers, errors, sampleFunc}
 				return sampler
 			}
-			config = &RunnableExperiment{ExperimentConfiguration{5, []int{2}, 1*time.Second, 1, 3, worker, "push", "note"}, executorFactory, samplerFactory}
+			config = &RunnableExperiment{ExperimentConfiguration{"guid-1", 5, []int{2}, 1*time.Second, 1, 3, worker, "push", "note"}, executorFactory, samplerFactory}
 		})
 
 		It("Sends Samples from Sampler to the passed tracker function", func() {

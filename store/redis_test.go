@@ -15,7 +15,7 @@ import (
 
 type store interface {
 	LoadAll() ([]experiment.Experiment, error)
-	Writer(name string, ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample)
+	Writer(ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample)
 }
 
 var _ = Describe("Redis Store", func() {
@@ -40,25 +40,25 @@ var _ = Describe("Redis Store", func() {
 				store, err = NewRedisStore(conn)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				writer := store.Writer("experiment-1", experimentConfiguration)
+				writer := store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-1"})
 				write(writer, []*experiment.Sample{
 					&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 					&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 1, 2, experiment.ResultSample},
 				})
 
-				writer = store.Writer("experiment-2", experimentConfiguration)
+				writer = store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-2"})
 				write(writer, []*experiment.Sample{
 					&experiment.Sample{nil, 2, 2, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 				})
 
-				writer = store.Writer("experiment-3", experimentConfiguration)
+				writer = store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-3"})
 				write(writer, []*experiment.Sample{
 					&experiment.Sample{nil, 1, 3, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 					&experiment.Sample{nil, 2, 3, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 					&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 1, 2, experiment.ResultSample},
 				})
 
-				writer = store.Writer("experiment-with-no-data", experimentConfiguration)
+				writer = store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-with-no-data"})
 			})
 
 			It("Round trips experiment list", func() {
@@ -105,7 +105,6 @@ var _ = Describe("Redis Store", func() {
 	Describe("Meta data", func() {
 		Context("Saving", func() {
 			const (
-				guid                = "guid-1"
 				iterations          = 2
 				concurrencyStepTime = time.Duration(5)
 				interval            = 10
@@ -131,7 +130,7 @@ var _ = Describe("Redis Store", func() {
 					iterations, concurrency, concurrencyStepTime,
 					interval, stop, nil, workload, note)
 
-				store.Writer(guid, experimentConfiguration)
+				store.Writer(experimentConfiguration)
 			})
 
 			It("Should have created the meta_data key", func() {
@@ -144,7 +143,7 @@ var _ = Describe("Redis Store", func() {
 				data, err := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err = json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Guid).Should(Equal(guid))
+				Ω(meta.Guid).Should(Equal(experimentConfiguration.Guid))
 			})
 
 			It("Should save the concurrency meta data", func() {

@@ -2,7 +2,6 @@ package laboratory
 
 import (
 	"github.com/cloudfoundry-incubator/pat/experiment"
-	"github.com/nu7hatch/gouuid"
 )
 
 type lab struct {
@@ -23,7 +22,7 @@ type Runnable interface {
 }
 
 type Store interface {
-	Writer(guid string, ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample)
+	Writer(ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample)
 	LoadAll() ([]experiment.Experiment, error)
 }
 
@@ -42,15 +41,15 @@ func (self *lab) Run(ex Runnable) (string, error) {
 }
 
 func (self *lab) RunWithHandlers(ex Runnable, additionalHandlers []func(<-chan *experiment.Sample)) (string, error) {
-	guid, _ := uuid.NewV4()
+	config := ex.GetExperimentConfiguration()
 
 	handlers := make([]func(<-chan *experiment.Sample), 1)
-	handlers[0] = self.store.Writer(guid.String(), ex.GetExperimentConfiguration())
+	handlers[0] = self.store.Writer(config)
 	for _, h := range additionalHandlers {
 		handlers = append(handlers, h)
 	}
 	go ex.Run(Multiplexer(handlers).Multiplex)
-	return guid.String(), nil
+	return config.Guid, nil
 }
 
 func (self *lab) Visit(fn func(ex experiment.Experiment)) {

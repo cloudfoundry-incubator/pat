@@ -51,12 +51,12 @@ func (r *redisStore) LoadAll() ([]experiment.Experiment, error) {
 	return experiments, nil
 }
 
-func (r *redisStore) Writer(guid string, ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample) {
-	r.c.Do("RPUSH", "experiments", guid)
-	r.writeMetaData(guid, ex)
+func (r *redisStore) Writer(ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample) {
+	r.c.Do("RPUSH", "experiments", ex.Guid)
+	r.writeMetaData(ex.Guid, ex)
 	return func(ch <-chan *experiment.Sample) {
 		for sample := range ch {
-			push(r.c, guid, sample)
+			push(r.c, ex.Guid, sample)
 		}
 	}
 }

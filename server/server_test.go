@@ -86,7 +86,7 @@ var _ = Describe("Server", func() {
 		csvs := store.NewCsvStore("/var/tmp/foo/bar/", workloads.DefaultWorkloadList())
 		ch := make(chan *Sample)
 		go func() { ch <- &Sample{}; ch <- &Sample{}; close(ch) }()
-		csvs.Writer("1234", ExperimentConfiguration{})(ch)
+		csvs.Writer(ExperimentConfiguration{Guid: "1234"})(ch)
 
 		Serve()
 		json := get("/experiments/1234")

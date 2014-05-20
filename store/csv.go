@@ -30,10 +30,10 @@ func NewCsvStore(dir string, list *workloads.WorkloadList) *CsvStore {
 	return &CsvStore{dir, list}
 }
 
-func (store *CsvStore) Writer(guid string, ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample) {
+func (store *CsvStore) Writer(ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample) {
 	startTime := time.Now()
-	store.writeMeta(startTime, guid, ex)
-	return store.newCsvFile(startTime, guid).WriteExperiment
+	store.writeMeta(startTime, ex)
+	return store.newCsvFile(startTime, ex.Guid).WriteExperiment
 }
 
 func (store *CsvStore) load(filename string, guid string) (experiment.Experiment, error) {
@@ -50,7 +50,7 @@ func (file *csvFile) AddWorkloadStep(workload workloads.WorkloadStep) {
 	file.commands = append(file.commands, workload.Name)
 }
 
-func (self *CsvStore) writeMeta(startTime time.Time, guid string, ex experiment.ExperimentConfiguration) {
+func (self *CsvStore) writeMeta(startTime time.Time, ex experiment.ExperimentConfiguration) {
 	var logger = logs.NewLogger("store.meta")
 
 	dir := path.Join(self.dir, "csv.meta")
@@ -97,9 +97,10 @@ func (self *CsvStore) writeMeta(startTime time.Time, guid string, ex experiment.
 		}
 	}
 
-	body := []string{guid, startTime.Format(time.RFC850), strconv.Itoa(ex.Iterations),
+	body := []string{ex.Guid, startTime.Format(time.RFC850), strconv.Itoa(ex.Iterations),
 			concurrency, ex.ConcurrencyStepTime.String(), strconv.Itoa(ex.Stop),
 			strconv.Itoa(ex.Interval), ex.Workload, ex.Description}
+
 	writer.Write(body)
 	writer.Flush()
 }

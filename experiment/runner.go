@@ -3,6 +3,8 @@ package experiment
 import (
 	"math"
 	"time"
+
+	"github.com/nu7hatch/gouuid"
 	. "github.com/cloudfoundry-incubator/pat/benchmarker"
 )
 
@@ -46,6 +48,7 @@ type Experiment interface {
 }
 
 type ExperimentConfiguration struct {
+	Guid                string
 	Iterations          int
 	Concurrency         []int
 	ConcurrencyStepTime time.Duration
@@ -87,7 +90,8 @@ type Samplable interface {
 }
 
 func NewExperimentConfiguration(iterations int, concurrency []int, concurrencyStepTime time.Duration, interval int, stop int, worker Worker, workload string, note string) ExperimentConfiguration {
-	return ExperimentConfiguration{iterations, concurrency, concurrencyStepTime, interval, stop, worker, workload, note}
+	guid, _ := uuid.NewV4()
+	return ExperimentConfiguration{guid.String(), iterations, concurrency, concurrencyStepTime, interval, stop, worker, workload, note}
 }
 
 func NewRunnableExperiment(config ExperimentConfiguration) *RunnableExperiment {

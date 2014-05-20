@@ -140,11 +140,11 @@ type dummyExperiment struct {
 	data []*Sample
 }
 
-func (store *dummyStore) Writer(guid string, ex ExperimentConfiguration) func(samples <-chan *Sample) {
+func (store *dummyStore) Writer(ex ExperimentConfiguration) func(samples <-chan *Sample) {
 	return func(samples <-chan *Sample) {
-		store.stored[guid] = make([]*Sample, 0)
+		store.stored[ex.Guid] = make([]*Sample, 0)
 		for s := range samples {
-			store.stored[guid] = append(store.stored[guid], s)
+			store.stored[ex.Guid] = append(store.stored[ex.Guid], s)
 		}
 	}
 }
@@ -177,5 +177,5 @@ func (e *dummyExperiment) GetGuid() string {
 }
 
 func (e *dummyExperiment) GetExperimentConfiguration() ExperimentConfiguration {
-	return ExperimentConfiguration{}
+	return NewExperimentConfiguration(0, nil, 0, 0, 0, nil,"", "")
 }

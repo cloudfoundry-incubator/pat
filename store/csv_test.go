@@ -25,6 +25,7 @@ var _ = Describe("Csv Store", func() {
 	var (
 		store            *CsvStore
 		experimentConfig experiment.ExperimentConfiguration
+		output      string
 	)
 
 	Describe("CsvStore", func() {
@@ -33,19 +34,23 @@ var _ = Describe("Csv Store", func() {
 		})
 	})
 
+	AfterEach(func() {
+		os.RemoveAll(dir)
+	})
+
 	Describe("CsvFile", func() {
 		var (
-			output   string
 			commands map[string]experiment.Command
 		)
 
 		JustBeforeEach(func() {
 			os.RemoveAll(dir)
+
 			testList := []workloads.WorkloadStep{
 				workloads.Step("boo", func() error { return nil }, "a"),
 			}
 			store = NewCsvStore(dir, &workloads.WorkloadList{testList})
-			writer := store.Writer("foo", experimentConfig)
+			writer := store.Writer(experiment.ExperimentConfiguration{Guid: "foo"})
 			commands = make(map[string]experiment.Command)
 			cmd := experiment.Command{1, 0.5, 2, 3, 4, 5}
 			commands["boo"] = cmd
@@ -97,13 +102,13 @@ var _ = Describe("Csv Store", func() {
 		})
 
 		It("Loads multiple CSVs from a directory, in order", func() {
-			foo := store.Writer("bar", experimentConfig)
+			foo := store.Writer(experiment.ExperimentConfiguration{Guid: "bar"})
 			write(foo, []*experiment.Sample{
 				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
 				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 7, 2, experiment.ResultSample},
 			})
 
-			bar := store.Writer("baz", experimentConfig)
+			bar := store.Writer(experiment.ExperimentConfiguration{Guid: "baz"})
 			write(bar, []*experiment.Sample{
 				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
 				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
@@ -120,15 +125,14 @@ var _ = Describe("Csv Store", func() {
 			Ω(data(samples[2].GetData())).Should(HaveLen(3))
 		})
 
-		PIt("Throws exception if header is not in correct order", func() {
-		})
+		PIt("Throws exception if header is not in correct order", func() {})
 
 		PIt("Saves a full and partial version with ErrorSample etc.", func() {})
 	})
 
 	Describe("MetaFile", func() {
 		const (
-			guid                = "guid-1"
+			dir                 = "/var/tmp/test-output/csvstore"
 			iterations          = 2
 			concurrencyStepTime = time.Duration(5)
 			interval            = 10
@@ -138,14 +142,8 @@ var _ = Describe("Csv Store", func() {
 		)
 
 		var (
-			output      string
 			concurrency = []int{1, 2, 3}
 		)
-
-		AfterEach(func() {
-			os.RemoveAll(dir)
-		})
-
 
 		Context("Creating a new file", func() {
 			BeforeEach(func() {
@@ -159,7 +157,7 @@ var _ = Describe("Csv Store", func() {
 					workloads.Step("boo", func() error { return nil }, "a"),
 				}
 				store = NewCsvStore(dir, &workloads.WorkloadList{testList})
-				store.Writer(guid, experimentConfig)
+				store.Writer(experimentConfig)
 
 				in, err := ioutil.ReadFile(path.Join(dir, "csv.meta"))
 				Ω(err).ShouldNot(HaveOccurred())
@@ -174,7 +172,7 @@ var _ = Describe("Csv Store", func() {
 			It("saves the guid of the experiment as the first item in the meta data", func() {
 				data := strings.Split(output, "\n")[1]
 				savedGuid := strings.Split(data, ",")[0]
-				Ω(savedGuid).Should(Equal(guid))
+				Ω(savedGuid).Should(Equal(experimentConfig.Guid))
 			})
 
 			It("saves the time of the experiment as the second item in the meta data", func() {
@@ -222,10 +220,6 @@ var _ = Describe("Csv Store", func() {
 		})
 
 		Context("When a meta data file already exists", func() {
-			const (
-				guid2 = "guid-2"
-			)
-
 			BeforeEach(func() {
 				os.RemoveAll(dir)
 
@@ -238,8 +232,8 @@ var _ = Describe("Csv Store", func() {
 				}
 				store = NewCsvStore(dir, &workloads.WorkloadList{testList})
 
-				writer1 := store.Writer(guid, experimentConfig)
-				writer2 := store.Writer(guid2, experimentConfig)
+				writer1 := store.Writer(experimentConfig)
+				writer2 := store.Writer(experimentConfig)
 				write(writer1, nil)
 				write(writer2, nil)
 
@@ -251,7 +245,7 @@ var _ = Describe("Csv Store", func() {
 			It("saves the guid of the experiment as the first item in the meta data", func() {
 				data := strings.Split(output, "\n")[2]
 				savedGuid := strings.Split(data, ",")[0]
-				Ω(savedGuid).Should(Equal(guid2))
+				Ω(savedGuid).Should(Equal(experimentConfig.Guid))
 			})
 		})
 	})
