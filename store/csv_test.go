@@ -25,7 +25,7 @@ var _ = Describe("Csv Store", func() {
 	var (
 		store            *CsvStore
 		experimentConfig experiment.ExperimentConfiguration
-		output      string
+		output           string
 	)
 
 	Describe("CsvStore", func() {
@@ -125,6 +125,14 @@ var _ = Describe("Csv Store", func() {
 			Ω(data(samples[2].GetData())).Should(HaveLen(3))
 		})
 
+		It("Does not load load meta data inforomation", func() {
+			samples, err := store.LoadAll()
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(samples).Should(HaveLen(1))
+
+			Ω(strings.Split(output, "\n")[0]).ShouldNot(ContainSubstring("csv guid"))
+		})
+
 		PIt("Throws exception if header is not in correct order", func() {})
 
 		PIt("Saves a full and partial version with ErrorSample etc.", func() {})
@@ -132,7 +140,6 @@ var _ = Describe("Csv Store", func() {
 
 	Describe("MetaFile", func() {
 		const (
-			dir                 = "/var/tmp/test-output/csvstore"
 			iterations          = 2
 			concurrencyStepTime = time.Duration(5)
 			interval            = 10
