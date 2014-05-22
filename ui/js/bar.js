@@ -208,7 +208,7 @@ d3_workload = function() {
         .attr("y", svgHeight + 3 );
   }
 
-  function hightlightErrors() {
+  function highlightErrors() {
     var errorCount = 0;
     var bars = d3.select(drawArea).selectAll("rect.iterations");
     bars.each(function(d,i) {
@@ -235,7 +235,7 @@ d3_workload = function() {
     bars.each(function(d,i) {
       d3.select(this)
         .attr("data-toggle","tooltip")
-        .attr("title", d.label + ": " + (d.height / second).toFixed(2) + " sec");
+        .attr("data-original-title", d.label + ": " + (d.height / second).toFixed(2) + " sec");
         
       $(this).tooltip({
         "placement": "right",

@@ -455,9 +455,9 @@ describe("Throughput chart", function() {
     d3.select(node).select("path.line").on("mouseover")({cmd:"login", throughput:[0.5, 0.3, 0.6]});
     expect( $(node).find("g.datalogin").length ).toEqual(3);
 
-    expect( $(node).find("g.datalogin text")[0].innerHTML ).toEqual("0.50")
-    expect( $(node).find("g.datalogin text")[1].innerHTML ).toEqual("0.30")
-    expect( $(node).find("g.datalogin text")[2].innerHTML ).toEqual("0.60")
+    expect( $(node).find("g.datalogin text")[0].textContent ).toEqual("0.50")
+    expect( $(node).find("g.datalogin text")[1].textContent ).toEqual("0.30")
+    expect( $(node).find("g.datalogin text")[2].textContent ).toEqual("0.60")
 
     var color = $(node).find("path.line")[0].getAttribute("stroke");
     expect( $(node).find("g.datalogin circle")[0].getAttribute("fill") ).toEqual(color)
@@ -488,9 +488,9 @@ describe("Throughput chart", function() {
     var ticks = $(node).find(".y.axis text");
 
     for (var i =0; i < ticks.length; i++) {
-      if (parseFloat(ticks[i].innerHTML) > tickMax) {
-        tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
-        tickMax = parseFloat(ticks[i].innerHTML);
+      if (parseFloat(ticks[i].textContent) > tickMax) {
+        tickSize = parseFloat(ticks[i].textContent) - tickMax ;
+        tickMax = parseFloat(ticks[i].textContent);
       }
     }
 
@@ -508,9 +508,9 @@ describe("Throughput chart", function() {
     var ticks = $(node).find(".x.axis text");
 
     for (var i =0; i < ticks.length; i++) {
-      if (parseFloat(ticks[i].innerHTML) > tickMax) {
-        tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
-        tickMax = parseFloat(ticks[i].innerHTML);
+      if (parseFloat(ticks[i].textContent) > tickMax) {
+        tickSize = parseFloat(ticks[i].textContent) - tickMax ;
+        tickMax = parseFloat(ticks[i].textContent);
       }
     }
 
@@ -547,15 +547,15 @@ describe("Throughput chart", function() {
 
     chart(workload);
 
-    expect( $(node).find("g.tplegend text")[0].innerHTML ).toEqual("login")
-    expect( $(node).find("g.tplegend text")[1].innerHTML ).toEqual("push")
+    expect( $(node).find("g.tplegend text")[0].textContent ).toEqual("login")
+    expect( $(node).find("g.tplegend text")[1].textContent ).toEqual("push")
 
     workload = [{ Commands: { "list": {"Throughput": 0.2} }}];
 
     chart(workload);
 
     setTimeout(function () {
-      expect( $(node).find("g.tplegend text")[0].innerHTML ).toEqual("list")
+      expect( $(node).find("g.tplegend text")[0].textContent ).toEqual("list")
       expect( $(node).find("g.tplegend text")[1] ).toEqual(null)
     }, 800);
   })
@@ -567,11 +567,17 @@ describe("Bar chart", function() {
   const gap = 1;
   const margin = {top: 50, right: 40, bottom: 30, left: 30};
 
-  var barWidth = 30;
-  $("div.workloadContainer").empty();
-  var chart = d3_workload.init(document.getElementById("target"));
-  var node = $("div.workloadContainer").get(0);
-  var chartArea = $('svg.workload > g > g:eq(1) > g ').get(0);
+   var barWidth = 30;
+  
+  var chart, node, chartArea;
+
+  beforeEach(function(){
+    $("div.workloadContainer").empty();
+    $("#target").empty();
+    chart = d3_workload.init(document.getElementById("target"));
+    node = $("div.workloadContainer").get(0);
+    chartArea = $('svg.workload > g > g:eq(1) > g ').get(0);
+  })
 
   it("should draw a bar for each iteration", function() {
     var data = [];
@@ -600,6 +606,7 @@ describe("Bar chart", function() {
       LastResult = i * sec ;
       data.push( {"LastResult" : LastResult} );
     }
+
     chart(data);
 
     var tickSize = 0;
@@ -607,9 +614,9 @@ describe("Bar chart", function() {
     var ticks = $(node).find(".y.axis text");
 
     for (var i =0; i < ticks.length; i++) {
-      if (parseFloat(ticks[i].innerHTML) > tickMax) {
-        tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
-        tickMax = parseFloat(ticks[i].innerHTML);
+      if (parseFloat(ticks[i].textContent) > tickMax) {
+        tickSize = parseFloat(ticks[i].textContent) - tickMax ;
+        tickMax = parseFloat(ticks[i].textContent);        
       }
     }
 
@@ -718,7 +725,7 @@ describe("Bar chart", function() {
   it("should shows each command blocks in different colors", function() {
      var data = [{"Commands": {
                   "dummy1":{ "LastTime": 3 * sec },                  
-                  "dummy2":{ "LastTime": 3 * sec }, 
+                  "dummy2":{ "LastTime": 5 * sec }, 
                   "dummy3":{ "LastTime": 3 * sec }}, 
                 "LastResult" : 6 * sec }];
     chart(data);
@@ -738,10 +745,10 @@ describe("Bar chart", function() {
     chart(data);
 
     expect( $("svg.workload rect.bar")[0].getAttribute('data-toggle') ).toBe("tooltip")
-    expect( $("svg.workload rect.bar")[0].getAttribute('title') ).toBe("dummy1: 3.00 sec")
+    expect( $("svg.workload rect.bar")[0].getAttribute('data-original-title') ).toBe("dummy1: 3.00 sec")
 
     expect( $("svg.workload rect.bar")[1].getAttribute('data-toggle') ).toBe("tooltip")
-    expect( $("svg.workload rect.bar")[1].getAttribute('title') ).toBe("dummy2: 5.00 sec")
+    expect( $("svg.workload rect.bar")[1].getAttribute('data-original-title') ).toBe("dummy2: 5.00 sec")
   })
 
   function getTranslateX(node) {
