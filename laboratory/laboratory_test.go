@@ -140,11 +140,11 @@ type dummyExperiment struct {
 	data []*Sample
 }
 
-func (store *dummyStore) Writer(ex ExperimentConfiguration) func(samples <-chan *Sample) {
+func (store *dummyStore) Writer(meta map[string]string) func(samples <-chan *Sample) {
 	return func(samples <-chan *Sample) {
-		store.stored[ex.Guid] = make([]*Sample, 0)
+		store.stored[meta["guid"]] = make([]*Sample, 0)
 		for s := range samples {
-			store.stored[ex.Guid] = append(store.stored[ex.Guid], s)
+			store.stored[meta["guid"]] = append(store.stored[meta["guid"]], s)
 		}
 	}
 }
@@ -176,6 +176,9 @@ func (e *dummyExperiment) GetGuid() string {
 	return e.name
 }
 
-func (e *dummyExperiment) GetExperimentConfiguration() ExperimentConfiguration {
-	return NewExperimentConfiguration(0, nil, 0, 0, 0, nil,"", "")
+func (e *dummyExperiment) DescribeMetadata() map[string]string {
+	mMap := NewExperimentConfiguration(0, nil, 0, 0, 0, nil, "", "").DescribeMetadata()
+	//make(map[string]string)
+	//mMap["guid"] = "guid-1"
+	return mMap
 }

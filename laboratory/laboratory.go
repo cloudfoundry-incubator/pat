@@ -1,8 +1,6 @@
 package laboratory
 
-import (
-	"github.com/cloudfoundry-incubator/pat/experiment"
-)
+import "github.com/cloudfoundry-incubator/pat/experiment"
 
 type lab struct {
 	store  Store
@@ -18,11 +16,11 @@ type Laboratory interface {
 
 type Runnable interface {
 	Run(handler func(samples <-chan *experiment.Sample)) error
-	GetExperimentConfiguration() experiment.ExperimentConfiguration
+	DescribeMetadata() map[string]string
 }
 
 type Store interface {
-	Writer(ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample)
+	Writer(meta map[string]string) func(samples <-chan *experiment.Sample)
 	LoadAll() ([]experiment.Experiment, error)
 }
 
@@ -41,15 +39,15 @@ func (self *lab) Run(ex Runnable) (string, error) {
 }
 
 func (self *lab) RunWithHandlers(ex Runnable, additionalHandlers []func(<-chan *experiment.Sample)) (string, error) {
-	config := ex.GetExperimentConfiguration()
+	meta := ex.DescribeMetadata()
 
 	handlers := make([]func(<-chan *experiment.Sample), 1)
-	handlers[0] = self.store.Writer(config)
+	handlers[0] = self.store.Writer(meta)
 	for _, h := range additionalHandlers {
 		handlers = append(handlers, h)
 	}
 	go ex.Run(Multiplexer(handlers).Multiplex)
-	return config.Guid, nil
+	return meta["guid"], nil
 }
 
 func (self *lab) Visit(fn func(ex experiment.Experiment)) {

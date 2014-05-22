@@ -50,7 +50,7 @@ var _ = Describe("Csv Store", func() {
 				workloads.Step("boo", func() error { return nil }, "a"),
 			}
 			store = NewCsvStore(dir, &workloads.WorkloadList{testList})
-			writer := store.Writer(experiment.ExperimentConfiguration{Guid: "foo"})
+			writer := store.Writer(experiment.ExperimentConfiguration{Guid: "foo"}.DescribeMetadata())
 			commands = make(map[string]experiment.Command)
 			cmd := experiment.Command{1, 0.5, 2, 3, 4, 5}
 			commands["boo"] = cmd
@@ -102,13 +102,13 @@ var _ = Describe("Csv Store", func() {
 		})
 
 		It("Loads multiple CSVs from a directory, in order", func() {
-			foo := store.Writer(experiment.ExperimentConfiguration{Guid: "bar"})
+			foo := store.Writer(experiment.ExperimentConfiguration{Guid: "bar"}.DescribeMetadata())
 			write(foo, []*experiment.Sample{
 				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
 				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 7, 2, experiment.ResultSample},
 			})
 
-			bar := store.Writer(experiment.ExperimentConfiguration{Guid: "baz"})
+			bar := store.Writer(experiment.ExperimentConfiguration{Guid: "baz"}.DescribeMetadata())
 			write(bar, []*experiment.Sample{
 				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
 				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
@@ -145,7 +145,7 @@ var _ = Describe("Csv Store", func() {
 			interval            = 10
 			stop                = 100
 			workload            = "gcf:push"
-			note                = "note description"
+			description         = "note description"
 		)
 
 		var (
@@ -158,13 +158,13 @@ var _ = Describe("Csv Store", func() {
 
 				experimentConfig = experiment.NewExperimentConfiguration(
 					iterations, concurrency, concurrencyStepTime,
-					interval, stop, nil, workload, note)
+					interval, stop, nil, workload, description)
 
 				testList := []workloads.WorkloadStep{
 					workloads.Step("boo", func() error { return nil }, "a"),
 				}
 				store = NewCsvStore(dir, &workloads.WorkloadList{testList})
-				store.Writer(experimentConfig)
+				store.Writer(experimentConfig.DescribeMetadata())
 
 				in, err := ioutil.ReadFile(path.Join(dir, "csv.meta"))
 				Ω(err).ShouldNot(HaveOccurred())
@@ -173,7 +173,7 @@ var _ = Describe("Csv Store", func() {
 
 			It("saves the experiment's meta data headers as the first row in the meta file", func() {
 				Ω(strings.Split(output, "\n")[0]).Should(ContainSubstring(
-					"csv guid,start time,iterations,concurrency,concurrency step time,stop,interval,workload,note"))
+					"csv guid,start time,iterations,concurrency,concurrency step time,stop,interval,workload,description"))
 			})
 
 			It("saves the guid of the experiment as the first item in the meta data", func() {
@@ -220,9 +220,9 @@ var _ = Describe("Csv Store", func() {
 				Ω(strings.Split(data, ",")[8]).Should(Equal(workload))
 			})
 
-			It("saves the note meta data after workload", func() {
+			It("saves the description meta data after workload", func() {
 				data := strings.Split(output, "\n")[1]
-				Ω(strings.Split(data, ",")[9]).Should(Equal(note))
+				Ω(strings.Split(data, ",")[9]).Should(Equal(description))
 			})
 		})
 
@@ -232,15 +232,15 @@ var _ = Describe("Csv Store", func() {
 
 				experimentConfig = experiment.NewExperimentConfiguration(
 					iterations, concurrency, concurrencyStepTime,
-					interval, stop, nil, workload, note)
+					interval, stop, nil, workload, description)
 
 				testList := []workloads.WorkloadStep{
 					workloads.Step("boo", func() error { return nil }, "a"),
 				}
 				store = NewCsvStore(dir, &workloads.WorkloadList{testList})
 
-				writer1 := store.Writer(experimentConfig)
-				writer2 := store.Writer(experimentConfig)
+				writer1 := store.Writer(experimentConfig.DescribeMetadata())
+				writer2 := store.Writer(experimentConfig.DescribeMetadata())
 				write(writer1, nil)
 				write(writer2, nil)
 

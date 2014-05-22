@@ -1,9 +1,8 @@
 package store
 
 import (
-	"time"
-	"strconv"
 	"encoding/json"
+	"time"
 
 	"github.com/cloudfoundry-incubator/pat/experiment"
 	"github.com/cloudfoundry-incubator/pat/redis"
@@ -16,11 +15,11 @@ type MetaData struct {
 	StartTime           string `json:"start time"`
 	Concurrency         string
 	ConcurrencyStepTime string `json:"concurrency step time"`
-	Iterations          int
-	Interval            int
-	Stop                int
+	Iterations          string
+	Interval            string
+	Stop                string
 	Workload            string
-	Note                string
+	Description         string
 }
 
 type redisStore struct {
@@ -51,29 +50,21 @@ func (r *redisStore) LoadAll() ([]experiment.Experiment, error) {
 	return experiments, nil
 }
 
-func (r *redisStore) Writer(ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample) {
-	r.c.Do("RPUSH", "experiments", ex.Guid)
-	r.writeMetaData(ex.Guid, ex)
+func (r *redisStore) Writer(meta map[string]string) func(samples <-chan *experiment.Sample) {
+	r.c.Do("RPUSH", "experiments", meta["guid"])
+	r.writeMetaData(meta)
 	return func(ch <-chan *experiment.Sample) {
 		for sample := range ch {
-			push(r.c, ex.Guid, sample)
+			push(r.c, meta["guid"], sample)
 		}
 	}
 }
 
-func (r *redisStore) writeMetaData(guid string, ex experiment.ExperimentConfiguration) {
-	var concurrency string
-	for iter, value := range ex.Concurrency {
-		if iter >= 1 {
-			concurrency += ".."  + strconv.Itoa(value)
-		} else {
-			concurrency += strconv.Itoa(value)
-		}
-	}
-
-	metaData := MetaData{Guid: guid, StartTime: time.Now().Format(time.RFC850), Concurrency: concurrency,
-			ConcurrencyStepTime: ex.ConcurrencyStepTime.String(), Iterations: ex.Iterations,
-			Interval: ex.Interval, Stop: ex.Stop, Workload: ex.Workload, Note: ex.Description}
+func (r *redisStore) writeMetaData(meta map[string]string) {
+	metaData := MetaData{Guid: meta["guid"], StartTime: time.Now().Format(time.RFC850),
+		Concurrency: meta["concurrency"], ConcurrencyStepTime: meta["concurrency step time"],
+		Iterations: meta["iterations"], Interval: meta["interval"], Stop: meta["stop"],
+		Workload: meta["workload"], Description: meta["description"]}
 
 	json, err := json.Marshal(metaData)
 	if err != nil {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry-incubator/pat/helpers"
 	"github.com/cloudfoundry-incubator/pat/experiment"
+	"github.com/cloudfoundry-incubator/pat/helpers"
 	"github.com/cloudfoundry-incubator/pat/logs"
 	"github.com/cloudfoundry-incubator/pat/workloads"
 )
@@ -31,10 +31,10 @@ func NewCsvStore(dir string, list *workloads.WorkloadList) *CsvStore {
 	return &CsvStore{dir, list}
 }
 
-func (store *CsvStore) Writer(ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample) {
+func (store *CsvStore) Writer(data map[string]string) func(samples <-chan *experiment.Sample) {
 	startTime := time.Now()
-	store.writeMeta(startTime, ex)
-	return store.newCsvFile(startTime, ex.Guid).WriteExperiment
+	store.writeMeta(startTime, data)
+	return store.newCsvFile(startTime, data["guid"]).WriteExperiment
 }
 
 func (store *CsvStore) load(filename string, guid string) (experiment.Experiment, error) {
@@ -51,7 +51,7 @@ func (file *csvFile) AddWorkloadStep(workload workloads.WorkloadStep) {
 	file.commands = append(file.commands, workload.Name)
 }
 
-func (self *CsvStore) writeMeta(startTime time.Time, ex experiment.ExperimentConfiguration) {
+func (self *CsvStore) writeMeta(startTime time.Time, meta map[string]string) {
 	var logger = logs.NewLogger("store.meta")
 
 	dir := path.Join(self.dir, "csv.meta")
@@ -76,22 +76,13 @@ func (self *CsvStore) writeMeta(startTime time.Time, ex experiment.ExperimentCon
 	//only write the header once
 	if len(lines) == 0 {
 		header := []string{"csv guid", "start time", "iterations", "concurrency",
-			"concurrency step time", "stop", "interval", "workload", "note"}
+			"concurrency step time", "stop", "interval", "workload", "description"}
 		writer.Write(header)
 	}
 
-	var concurrency string
-	for iter, value := range ex.Concurrency {
-		if iter >= 1 {
-			concurrency += ".."  + strconv.Itoa(value)
-		} else {
-			concurrency += strconv.Itoa(value)
-		}
-	}
-
-	body := []string{ex.Guid, startTime.Format(time.RFC850), strconv.Itoa(ex.Iterations),
-			concurrency, ex.ConcurrencyStepTime.String(), strconv.Itoa(ex.Stop),
-			strconv.Itoa(ex.Interval), ex.Workload, ex.Description}
+	body := []string{meta["guid"], startTime.Format(time.RFC850), meta["iterations"],
+		meta["concurrency"], meta["concurrency step time"], meta["stop"],
+		meta["interval"], meta["workload"], meta["description"]}
 
 	writer.Write(body)
 	writer.Flush()

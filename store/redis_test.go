@@ -2,20 +2,21 @@ package store_test
 
 import (
 	"encoding/json"
-	"time"
 	"errors"
+	"strconv"
+	"time"
 
 	"github.com/cloudfoundry-incubator/pat/experiment"
 	"github.com/cloudfoundry-incubator/pat/redis"
-	"github.com/cloudfoundry-incubator/pat/test_helpers"
 	. "github.com/cloudfoundry-incubator/pat/store"
+	"github.com/cloudfoundry-incubator/pat/test_helpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 type store interface {
 	LoadAll() ([]experiment.Experiment, error)
-	Writer(ex experiment.ExperimentConfiguration) func(samples <-chan *experiment.Sample)
+	Writer(meta map[string]string) func(samples <-chan *experiment.Sample)
 }
 
 var _ = Describe("Redis Store", func() {
@@ -40,25 +41,25 @@ var _ = Describe("Redis Store", func() {
 				store, err = NewRedisStore(conn)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				writer := store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-1"})
+				writer := store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-1"}.DescribeMetadata())
 				write(writer, []*experiment.Sample{
 					&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 					&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 1, 2, experiment.ResultSample},
 				})
 
-				writer = store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-2"})
+				writer = store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-2"}.DescribeMetadata())
 				write(writer, []*experiment.Sample{
 					&experiment.Sample{nil, 2, 2, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 				})
 
-				writer = store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-3"})
+				writer = store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-3"}.DescribeMetadata())
 				write(writer, []*experiment.Sample{
 					&experiment.Sample{nil, 1, 3, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 					&experiment.Sample{nil, 2, 3, 3, 4, 5, 6, nil, 7, 9, 8, experiment.ResultSample},
 					&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 1, 2, experiment.ResultSample},
 				})
 
-				writer = store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-with-no-data"})
+				writer = store.Writer(experiment.ExperimentConfiguration{Guid: "experiment-with-no-data"}.DescribeMetadata())
 			})
 
 			It("Round trips experiment list", func() {
@@ -110,13 +111,13 @@ var _ = Describe("Redis Store", func() {
 				interval            = 10
 				stop                = 100
 				workload            = "gcf:push"
-				note                = "note description"
+				description         = "note description"
 			)
 
 			var (
-				meta	MetaData
-				conn	redis.Conn
-				err	error
+				meta        MetaData
+				conn        redis.Conn
+				err         error
 				concurrency = []int{1, 2, 3}
 			)
 
@@ -128,9 +129,9 @@ var _ = Describe("Redis Store", func() {
 
 				experimentConfiguration = experiment.NewExperimentConfiguration(
 					iterations, concurrency, concurrencyStepTime,
-					interval, stop, nil, workload, note)
+					interval, stop, nil, workload, description)
 
-				store.Writer(experimentConfiguration)
+				store.Writer(experimentConfiguration.DescribeMetadata())
 			})
 
 			It("Should have created the meta_data key", func() {
@@ -157,21 +158,21 @@ var _ = Describe("Redis Store", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Iterations).Should(Equal(iterations))
+				Ω(meta.Iterations).Should(Equal(strconv.Itoa(iterations)))
 			})
 
 			It("Should save the stop meta data", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Stop).Should(Equal(stop))
+				Ω(meta.Stop).Should(Equal(strconv.Itoa(stop)))
 			})
 
 			It("Should save the interval meta data", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Interval).Should(Equal(interval))
+				Ω(meta.Interval).Should(Equal(strconv.Itoa(interval)))
 			})
 
 			It("Should save the workload meta data", func() {
@@ -185,7 +186,7 @@ var _ = Describe("Redis Store", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Note).Should(Equal(note))
+				Ω(meta.Description).Should(Equal(description))
 			})
 		})
 	})

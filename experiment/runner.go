@@ -2,10 +2,11 @@ package experiment
 
 import (
 	"math"
+	"strconv"
 	"time"
 
-	"github.com/nu7hatch/gouuid"
 	. "github.com/cloudfoundry-incubator/pat/benchmarker"
+	"github.com/nu7hatch/gouuid"
 )
 
 type SampleType int
@@ -56,7 +57,7 @@ type ExperimentConfiguration struct {
 	Stop                int
 	Worker              Worker
 	Workload            string
-	Description	    string
+	Description         string
 }
 
 type RunnableExperiment struct {
@@ -112,8 +113,28 @@ func newRunningExperiment(iterations int, iterationResults chan IterationResult,
 	return &SamplableExperiment{iterations, iterationResults, workers, samples, quit}
 }
 
-func (config *RunnableExperiment) GetExperimentConfiguration() ExperimentConfiguration {
-	return config.ExperimentConfiguration
+func (e ExperimentConfiguration) DescribeMetadata() map[string]string {
+	mMap := make(map[string]string)
+	mMap["guid"] = e.Guid
+	mMap["description"] = e.Description
+	mMap["iterations"] = strconv.Itoa(e.Iterations)
+	mMap["concurrency step time"] = e.ConcurrencyStepTime.String()
+	mMap["interval"] = strconv.Itoa(e.Interval)
+	mMap["stop"] = strconv.Itoa(e.Stop)
+	mMap["workload"] = e.Workload
+
+	var concurrency string
+	for iter, value := range e.Concurrency {
+		if iter >= 1 {
+			concurrency += ".." + strconv.Itoa(value)
+		} else {
+			concurrency += strconv.Itoa(value)
+		}
+	}
+
+	mMap["concurrency"] = concurrency
+
+	return mMap
 }
 
 func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {

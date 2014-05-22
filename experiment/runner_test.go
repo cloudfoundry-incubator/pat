@@ -2,6 +2,7 @@ package experiment
 
 import (
 	"errors"
+	"strconv"
 	"time"
 	. "github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/onsi/ginkgo"
@@ -34,7 +35,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 				sampler = &DummySampler{maxIterations, samples, iterationResults, workers, errors, sampleFunc}
 				return sampler
 			}
-			config = &RunnableExperiment{ExperimentConfiguration{"guid-1", 5, []int{2}, 1*time.Second, 1, 3, worker, "push", "note"}, executorFactory, samplerFactory}
+			config = &RunnableExperiment{ExperimentConfiguration{"guid-1", 5, []int{2}, 1 * time.Second, 1, 3, worker, "push", "note"}, executorFactory, samplerFactory}
 		})
 
 		It("Sends Samples from Sampler to the passed tracker function", func() {
@@ -129,7 +130,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			})
 			Ω(got).Should(HaveLen(1))
 			Ω(got[0].Error()).Should(Equal("Foo"))
-		})		
+		})
 	})
 
 	Describe("Executing", func() {
@@ -138,7 +139,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		PIt("Uses the passed worker", func() {})
 	})
 
-	Describe("SamplableExperiment.samples", func(){
+	Describe("SamplableExperiment.samples", func() {
 		var (
 			maxIterations int
 			iteration     chan IterationResult
@@ -156,7 +157,7 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			go (&SamplableExperiment{maxIterations, iteration, workers, samples, quit}).Sample()
 		})
 
-		It("saves command in a immutable map", func(){			
+		It("saves command in a immutable map", func() {
 			go func() {
 				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
 				iteration <- IterationResult{0, []StepResult{StepResult{Command: "push", Duration: 1 * time.Second}}, nil}
@@ -280,13 +281,15 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		Context("#linearSchedule", func() {
 			It("Creates a prepopulated channel containing the starting amount of events", func() {
 				schedule := linearSchedule(3, 0, 0*time.Second)
-				for i:=0; i<3; i++ { Ω(<-schedule).ShouldNot(BeNil()) }
+				for i := 0; i < 3; i++ {
+					Ω(<-schedule).ShouldNot(BeNil())
+				}
 				Ω(schedule).Should(BeClosed())
 			})
 
 			It("Pushes events at the provided interval", func() {
 				schedule := linearSchedule(0, 3, 3*time.Second)
-				for i:=0; i< 3; i++ {
+				for i := 0; i < 3; i++ {
 					delay, _ := Time(func() error {
 						<-schedule
 						return nil
@@ -298,8 +301,69 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 			It("Only pushes the starting workers when supplied with a concurrencyStepTime of 0", func() {
 				schedule := linearSchedule(3, 6, 0*time.Second)
-				for i:=0; i<3; i++ { Ω(<-schedule).ShouldNot(BeNil()) }
+				for i := 0; i < 3; i++ {
+					Ω(<-schedule).ShouldNot(BeNil())
+				}
 				Ω(schedule).Should(BeClosed())
+			})
+		})
+	})
+
+	Describe("Metadata", func() {
+		const (
+			iterations          = 2
+			concurrencyStepTime = time.Duration(5)
+			interval            = 10
+			stop                = 100
+			workload            = "gcf:push"
+			note                = "note description"
+		)
+
+		var (
+			meta        map[string]string
+			config      ExperimentConfiguration
+			concurrency = []int{1, 2, 3}
+		)
+
+		Context("#DescribeMetadata", func() {
+			BeforeEach(func() {
+				config = NewExperimentConfiguration(
+					iterations, concurrency, concurrencyStepTime,
+					interval, stop, nil, workload, note)
+
+				meta = config.DescribeMetadata()
+			})
+
+			It("returns a mapped value for the ExperimentConfiguration guid", func() {
+				Ω(meta["guid"]).Should(Equal(config.Guid))
+			})
+
+			It("returns a mapped value for the ExperimentConfiguration description", func() {
+				Ω(meta["description"]).Should(Equal(config.Description))
+			})
+
+			It("returns a mapped value for the ExperimentConfiguration workload", func() {
+				Ω(meta["workload"]).Should(Equal(config.Workload))
+			})
+
+			It("returns a mapped value for the ExperimentConfiguration Iterations", func() {
+				Ω(meta["iterations"]).Should(Equal(strconv.Itoa(config.Iterations)))
+			})
+
+			It("returns a mapped value for the ExperimentConfiguration Interval", func() {
+				Ω(meta["interval"]).Should(Equal(strconv.Itoa(config.Interval)))
+			})
+
+			It("returns a mapped value for the ExperimentConfiguration Stop", func() {
+				Ω(meta["stop"]).Should(Equal(strconv.Itoa(config.Stop)))
+			})
+
+			It("returns a mapped value for the ExperimentConfiguration concurrency step time", func() {
+				Ω(meta["concurrency step time"]).Should(Equal(config.ConcurrencyStepTime.String()))
+			})
+
+			It("returns a mapped value for the Initial concurrency a user provided", func() {
+				Ω(meta["concurrency"]).Should(Equal("1..2..3"))
 			})
 		})
 	})
