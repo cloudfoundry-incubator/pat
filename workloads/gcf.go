@@ -83,6 +83,6 @@ func GenerateAndPush() error {
 		return err
 	}
 
-	err = Cf("push", "pats-"+guid.String(), "-m", "64M", "-p", dstDir).ExpectOutput("App started")
+	err = Cf("push", "pats-"+guid.String(), "-m", "128M", "-p", dstDir).ExpectOutput("App started")
 	return err
 }
