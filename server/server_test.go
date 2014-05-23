@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -81,16 +82,17 @@ var _ = Describe("Server", func() {
 	It("Uses config to get CSV output directory", func() {
 		http.DefaultServeMux = http.NewServeMux()
 		c := config.NewConfig()
+		tempDir := filepath.Join(os.TempDir(), "foo")
 		InitCommandLineFlags(c)
-		c.Parse([]string{"-csv-dir", "/var/tmp/foo/bar/"})
-		csvs := store.NewCsvStore("/var/tmp/foo/bar/", workloads.DefaultWorkloadList())
+		c.Parse([]string{"-csv-dir", tempDir})
+		csvs := store.NewCsvStore(tempDir, workloads.DefaultWorkloadList())
 		ch := make(chan *Sample)
 		go func() { ch <- &Sample{}; ch <- &Sample{}; close(ch) }()
 		csvs.Writer("1234")(ch)
-
 		Serve()
 		json := get("/experiments/1234")
 		Ω(json["Items"]).Should(HaveLen(2))
+		os.RemoveAll(tempDir)
 	})
 
 	It("Returns empty experiments as [] not null", func() {
@@ -105,6 +107,16 @@ var _ = Describe("Server", func() {
 		Ω(items[0].(map[string]interface{})["Location"]).Should(Equal("/experiments/a"))
 		Ω(items[1].(map[string]interface{})["Location"]).Should(Equal("/experiments/b"))
 		Ω(items[2].(map[string]interface{})["Location"]).Should(Equal("/experiments/c"))
+	})
+
+	It("populates an experiment", func() {
+		json := get("/experiments/a")
+		Ω(json).Should(HaveLen(1))
+		experimentA := json["Items"].([]interface{})[0]
+		keys := []string{"Average", "Commands", "LastError", "NinetyfifthPercentile", "Total", "TotalTime", "TotalWorkers", "WallTime", "WorstResult", "LastResult", "TotalErrors", "Type"}
+		for _, key := range keys {
+			Ω(experimentA).Should(HaveKey(key))
+		}
 	})
 
 	It("lists experiments with a Csv Url link", func() {

@@ -69,7 +69,7 @@ func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 	var body []string
 	w := csv.NewWriter(f)
 
-	header = []string{"Average", "TotalTime", "Total", "TotalErrors", "TotalWorkers", "LastResult", "WorstResult", "NinetyfifthPercentile", "WallTime", "Type"}
+	header = []string{"Average", "TotalTime", "Total", "TotalErrors", "LastError", "TotalWorkers", "LastResult", "WorstResult", "NinetyfifthPercentile", "WallTime", "Type"}
 	for _, k := range self.commands {
 		header = append(header, "Commands|"+k+"|Count",
 			"Commands|"+k+"|Throughput",
@@ -82,11 +82,11 @@ func (self *csvFile) Write(samples <-chan *experiment.Sample) {
 
 	for s := range samples {
 		if s.Type == experiment.ResultSample {
-
 			body = []string{strconv.Itoa(int(s.Average.Nanoseconds())),
 				strconv.Itoa(int(s.TotalTime.Nanoseconds())),
 				strconv.Itoa(int(s.Total)),
 				strconv.Itoa(int(s.TotalErrors)),
+				s.LastError,
 				strconv.Itoa(int(s.TotalWorkers)),
 				strconv.Itoa(int(s.LastResult.Nanoseconds())),
 				strconv.Itoa(int(s.WorstResult.Nanoseconds())),
@@ -141,11 +141,12 @@ func (self *csvFile) GetData() (samples []*experiment.Sample, err error) {
 			sample.TotalTime, err = duration(d[1])
 			sample.Total, err = i64(d[2])
 			sample.TotalErrors, err = strconv.Atoi(d[3])
-			sample.TotalWorkers, err = strconv.Atoi(d[4])
-			sample.LastResult, err = duration(d[5])
-			sample.WorstResult, err = duration(d[6])
-			sample.NinetyfifthPercentile, err = duration(d[7])
-			sample.WallTime, err = duration(d[8])
+			sample.LastError = d[4]
+			sample.TotalWorkers, err = strconv.Atoi(d[5])
+			sample.LastResult, err = duration(d[6])
+			sample.WorstResult, err = duration(d[7])
+			sample.NinetyfifthPercentile, err = duration(d[8])
+			sample.WallTime, err = duration(d[9])
 			sample.Type = experiment.ResultSample // this is the only type we currently persist
 
 			var cmdName string

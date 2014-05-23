@@ -3,6 +3,7 @@ package experiment
 import (
 	"math"
 	"time"
+
 	. "github.com/cloudfoundry-incubator/pat/benchmarker"
 	"github.com/cloudfoundry-incubator/pat/context"
 )
@@ -34,7 +35,7 @@ type Sample struct {
 	TotalErrors           int
 	TotalWorkers          int
 	LastResult            time.Duration
-	LastError             error
+	LastError             string
 	WorstResult           time.Duration
 	NinetyfifthPercentile time.Duration
 	WallTime              time.Duration
@@ -183,7 +184,7 @@ func (ex *SamplableExperiment) Sample() {
 	var iterations int64
 	var totalTime time.Duration
 	var avg time.Duration
-	var lastError error
+	var lastError string
 	var lastResult time.Duration
 	var totalErrors int
 	var workers int
@@ -235,7 +236,7 @@ func (ex *SamplableExperiment) Sample() {
 			}
 
 			if iteration.Error != nil {
-				lastError = iteration.Error
+				lastError = iteration.Error.Error()
 				totalErrors = totalErrors + 1
 			}
 		case w := <-ex.workers:

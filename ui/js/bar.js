@@ -7,7 +7,7 @@ d3_workload = function() {
   var x, y, xAxis, yAxis, svg, outerBody, barCon;
 
   var d3Graph = document.createElement('div');
-  d3Graph.className = "workloadContainer";  
+  d3Graph.className = "workloadContainer";
   d3Graph.width = "100%";
   d3Graph.height = "100%";
 
@@ -39,7 +39,7 @@ d3_workload = function() {
     el.appendChild(d3Graph);
 
     svg = d3.select(d3Graph)
-      .append("svg")      
+      .append("svg")
         .attr("width", jqObj.width())
         .attr("height", jqObj.height())
         .attr("class", "workload")
@@ -47,7 +47,7 @@ d3_workload = function() {
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     outerBody = svg.append("g");
-    
+
     svg.append("defs").append("clipPath")
       .attr("id", "workloadclip")
     .append("rect")
@@ -72,7 +72,7 @@ d3_workload = function() {
       .attr("class", "y axis")
       .attr("transform", "translate(" + (svgWidth - 0) + ", 0)");
 
-    barCon = chartBody.append("g")    
+    barCon = chartBody.append("g")
       .attr("transform", "translate(0,0)");
 
     drawArea = barCon.node();
@@ -91,7 +91,7 @@ d3_workload = function() {
       .attr("x", svgWidth / 2)
       .attr("y", -10)
       .text("Experiment Duration (seconds)")
-      .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");  
+      .attr("style", "text-anchor: middle; font-size: 15pt; fill: #888;");
 
   } //end initDOM
 
@@ -148,8 +148,8 @@ d3_workload = function() {
     outerBody.select(".x.axis").call(xAxis);
     outerBody.select(".y.axis").call(yAxis);
 
-    hightlightErrors();
-   
+    highlightErrors();
+
     bars.exit().remove();
     labels.exit().remove();
 
@@ -168,16 +168,16 @@ d3_workload = function() {
     }
   }
 
-  function hightlightErrors() {
+  function highlightErrors() {
     var errorCount = 0;
     var bars = d3.select(drawArea).selectAll("rect.bar");
     bars.each(function(d,i) {
       if (d.TotalErrors > errorCount) {
-        var bar = d3.select(this);     
+        var bar = d3.select(this);
         bar.classed("error", true)
           .attr("data-toggle","tooltip")
           .attr("title", "Error: " + d.LastError);
-          
+
         errorCount += 1;
         $(this).tooltip({
           "placement": "top",

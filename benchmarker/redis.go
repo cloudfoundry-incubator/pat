@@ -39,7 +39,7 @@ func (rw rw) Time(workload string, workloadCtx context.Context) (result Iteratio
 		Reply:           "replies-" + guid.String(),
 		WorkloadContext: workloadCtx,
 	}
-	
+
 	var jsonRedisMsg []byte
 	var err error
 	jsonRedisMsg, err = json.Marshal(redisMsg)
@@ -101,7 +101,7 @@ func slaveLoop(conn redis.Conn, delegate Worker, handle string) {
 
 		if err == nil {
 
-			redisMsg.WorkloadContext = context.New()			
+			redisMsg.WorkloadContext = context.New()
 
 			json.Unmarshal([]byte(reply[1]), &redisMsg)
 

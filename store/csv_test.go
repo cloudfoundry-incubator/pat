@@ -1,7 +1,6 @@
 package store_test
 
 import (
-	"errors"
 	"io/ioutil"
 	"os"
 	"path"
@@ -42,8 +41,8 @@ var _ = Describe("Csv Store", func() {
 			cmd := experiment.Command{1, 0.5, 2, 3, 4, 5}
 			commands["boo"] = cmd
 			write(writer, []*experiment.Sample{
-				&experiment.Sample{commands, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
-				&experiment.Sample{commands, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 7, 2, experiment.ResultSample},
+				&experiment.Sample{commands, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
+				&experiment.Sample{commands, 9, 8, 7, 6, 5, 4, "foo", 3, 7, 2, experiment.ResultSample},
 			})
 			files, err := ioutil.ReadDir(dir)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -59,13 +58,9 @@ var _ = Describe("Csv Store", func() {
 			Ω(strings.Split(output, "\n")[2]).Should(ContainSubstring("9,8,7,6"))
 		})
 
-		It("Includes all fields, except LastError", func() {
+		It("Includes all fields", func() {
 			meta := reflect.ValueOf(experiment.Sample{}).Type()
 			for i := 0; i < meta.NumField(); i++ {
-				if meta.Field(i).Name == "LastError" {
-					continue
-				}
-
 				Ω(strings.Split(output, "\n")[0]).Should(ContainSubstring(meta.Field(i).Name))
 			}
 		})
@@ -76,30 +71,21 @@ var _ = Describe("Csv Store", func() {
 			samples, err := ex[0].GetData()
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(samples[0]).Should(Equal(&experiment.Sample{commands, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample}))
-		})
-
-		It("Does not save error text, to avoid huge files", func() {
-			ex, err := store.LoadAll()
-			Ω(err).ShouldNot(HaveOccurred())
-			samples, err := ex[0].GetData()
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(samples[0].LastError).Should(BeNil())
+			Ω(samples[0]).Should(Equal(&experiment.Sample{commands, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample}))
 		})
 
 		It("Loads multiple CSVs from a directory, in order", func() {
 			foo := store.Writer("bar")
 			write(foo, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 7, 2, experiment.ResultSample},
+				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, "foo", 3, 7, 2, experiment.ResultSample},
 			})
 
 			bar := store.Writer("baz")
 			write(bar, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, nil, 7, 3, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, errors.New("foo"), 3, 7, 2, experiment.ResultSample},
+				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, "foo", 3, 7, 2, experiment.ResultSample},
 			})
 
 			samples, err := store.LoadAll()

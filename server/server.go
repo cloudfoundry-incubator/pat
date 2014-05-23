@@ -160,14 +160,13 @@ func (ctx *serverContext) handlePush(w http.ResponseWriter, r *http.Request) (in
 func (ctx *serverContext) handleGetExperiment(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	name := mux.Vars(r)["name"]
 	data, err := ctx.lab.GetData(name)
-
 	if len(data) == 0 {
 		// Ensure empty array is encoded as [] rather than null
 		/// see https://groups.google.com/forum/#!topic/golang-nuts/gOHbOk8DsFw
 		data = []*Sample{}
 	}
-
 	return &listResponse{data}, err
+
 }
 
 func csvHandler(fn func(http.ResponseWriter, *http.Request) (interface{}, error)) http.HandlerFunc {
