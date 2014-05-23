@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/benchmarker"
+	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -13,15 +13,17 @@ import (
 var _ = Describe("ExperimentConfiguration and Sampler", func() {
 	Describe("Running an Experiment and Sampling", func() {
 		var (
-			sampler      *DummySampler
-			executor     *DummyExecutor
-			config       *RunnableExperiment
-			sampleFunc   func(*DummySampler)
-			executorFunc func(*DummyExecutor)
-			sample1      *Sample
-			sample2      *Sample
-			worker       Worker
-			workloadCtx  = context.New()
+			sampler         *DummySampler
+			executor        *DummyExecutor
+			config          *RunnableExperiment
+			sampleFunc      func(*DummySampler)
+			executorFunc    func(*DummyExecutor)
+			executorFactory func(chan IterationResult, chan error, chan int, chan bool) Executable
+			samplerFactory  func(int, chan IterationResult, chan error, chan int, chan *Sample, chan bool) Samplable
+			sample1         *Sample
+			sample2         *Sample
+			worker          Worker
+			workloadCtx     = context.New()
 		)
 
 		BeforeEach(func() {
@@ -29,11 +31,11 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			sample2 = &Sample{}
 			worker = NewLocalWorker()
 
-			executorFactory := func(iterationResults chan IterationResult, errors chan error, workers chan int, quit chan bool) Executable {
+			executorFactory = func(iterationResults chan IterationResult, errors chan error, workers chan int, quit chan bool) Executable {
 				executor = &DummyExecutor{iterationResults, workers, errors, executorFunc}
 				return executor
 			}
-			samplerFactory := func(maxIterations int, iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
+			samplerFactory = func(maxIterations int, iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
 				sampler = &DummySampler{maxIterations, samples, iterationResults, workers, errors, sampleFunc}
 				return sampler
 			}
@@ -61,7 +63,15 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		It("Calculates the maximum iterations based on interval and stop", func() {
 			executorFunc = func(e *DummyExecutor) {}
 			sampleFunc = func(s *DummySampler) {}
+			config.Run(func(samples <-chan *Sample) {}, workloadCtx)
 
+			Ω(sampler.maxIterations).Should(Equal(20))
+		})
+
+		It("Calculates the maximum iterations correctly when stop is not divisible by interval", func() {
+			config = &RunnableExperiment{ExperimentConfiguration{5, []int{2}, 1 * time.Second, 2, 5, worker, "push"}, executorFactory, samplerFactory}
+			executorFunc = func(e *DummyExecutor) {}
+			sampleFunc = func(s *DummySampler) {}
 			config.Run(func(samples <-chan *Sample) {}, workloadCtx)
 
 			Ω(sampler.maxIterations).Should(Equal(15))
