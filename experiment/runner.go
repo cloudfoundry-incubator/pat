@@ -90,9 +90,9 @@ type Samplable interface {
 	Sample()
 }
 
-func NewExperimentConfiguration(iterations int, concurrency []int, concurrencyStepTime time.Duration, interval int, stop int, worker Worker, workload string, note string) ExperimentConfiguration {
+func NewExperimentConfiguration(iterations int, concurrency []int, concurrencyStepTime time.Duration, interval int, stop int, worker Worker, workload string, description string) ExperimentConfiguration {
 	guid, _ := uuid.NewV4()
-	return ExperimentConfiguration{guid.String(), iterations, concurrency, concurrencyStepTime, interval, stop, worker, workload, note}
+	return ExperimentConfiguration{guid.String(), iterations, concurrency, concurrencyStepTime, interval, stop, worker, workload, description}
 }
 
 func NewRunnableExperiment(config ExperimentConfiguration) *RunnableExperiment {
@@ -123,16 +123,13 @@ func (e ExperimentConfiguration) DescribeMetadata() map[string]string {
 	mMap["stop"] = strconv.Itoa(e.Stop)
 	mMap["workload"] = e.Workload
 
-	var concurrency string
-	for iter, value := range e.Concurrency {
-		if iter >= 1 {
-			concurrency += ".." + strconv.Itoa(value)
-		} else {
-			concurrency += strconv.Itoa(value)
+	if e.Concurrency != nil {
+		mMap["concurrency start"] = strconv.Itoa(e.Concurrency[0])
+
+		if len(e.Concurrency) >= 2 {
+			mMap["concurrency end"] = strconv.Itoa(e.Concurrency[1])
 		}
 	}
-
-	mMap["concurrency"] = concurrency
 
 	return mMap
 }

@@ -316,20 +316,20 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 			interval            = 10
 			stop                = 100
 			workload            = "gcf:push"
-			note                = "note description"
+			description         = "note description"
 		)
 
 		var (
 			meta        map[string]string
 			config      ExperimentConfiguration
-			concurrency = []int{1, 2, 3}
+			concurrency = []int{1, 2}
 		)
 
 		Context("#DescribeMetadata", func() {
 			BeforeEach(func() {
 				config = NewExperimentConfiguration(
 					iterations, concurrency, concurrencyStepTime,
-					interval, stop, nil, workload, note)
+					interval, stop, nil, workload, description)
 
 				meta = config.DescribeMetadata()
 			})
@@ -362,8 +362,23 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 				Ω(meta["concurrency step time"]).Should(Equal(config.ConcurrencyStepTime.String()))
 			})
 
-			It("returns a mapped value for the Initial concurrency a user provided", func() {
-				Ω(meta["concurrency"]).Should(Equal("1..2..3"))
+			Context("conccureency", func() {
+				It("returns a mapped value for the Initial concurrency a user provided", func() {
+					Ω(meta["concurrency start"]).Should(Equal("1"))
+				})
+
+				It("returns a mapped value for the Final concurrency a user provided if it exists", func() {
+					Ω(meta["concurrency end"]).Should(Equal("2"))
+				})
+
+				It("Does not set the Final concurrency if nothing is provided", func() {
+					config = NewExperimentConfiguration(
+						iterations, []int{1}, concurrencyStepTime,
+						interval, stop, nil, workload, description)
+					meta = config.DescribeMetadata()
+
+					Ω(meta["concurrency end"]).Should(Equal(""))
+				})
 			})
 		})
 	})

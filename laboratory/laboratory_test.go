@@ -178,7 +178,5 @@ func (e *dummyExperiment) GetGuid() string {
 
 func (e *dummyExperiment) DescribeMetadata() map[string]string {
 	mMap := NewExperimentConfiguration(0, nil, 0, 0, 0, nil, "", "").DescribeMetadata()
-	//make(map[string]string)
-	//mMap["guid"] = "guid-1"
 	return mMap
 }

@@ -115,10 +115,10 @@ var _ = Describe("Redis Store", func() {
 			)
 
 			var (
-				meta        MetaData
+				meta        map[string]string
 				conn        redis.Conn
 				err         error
-				concurrency = []int{1, 2, 3}
+				concurrency = []int{1, 2}
 			)
 
 			BeforeEach(func() {
@@ -144,49 +144,56 @@ var _ = Describe("Redis Store", func() {
 				data, err := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err = json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Guid).Should(Equal(experimentConfiguration.Guid))
+				Ω(meta["guid"]).Should(Equal(experimentConfiguration.Guid))
 			})
 
-			It("Should save the concurrency meta data", func() {
+			It("Should save the concurrency start meta data", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Concurrency).Should(Equal("1..2..3"))
+				Ω(meta["concurrency start"]).Should(Equal("1"))
+			})
+
+			It("Should save the concurrency end meta data", func() {
+				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
+				err := json.Unmarshal([]byte(data[0]), &meta)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(meta["concurrency end"]).Should(Equal("2"))
 			})
 
 			It("Should save the iteration meta data", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Iterations).Should(Equal(strconv.Itoa(iterations)))
+				Ω(meta["iterations"]).Should(Equal(strconv.Itoa(iterations)))
 			})
 
 			It("Should save the stop meta data", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Stop).Should(Equal(strconv.Itoa(stop)))
+				Ω(meta["stop"]).Should(Equal(strconv.Itoa(stop)))
 			})
 
 			It("Should save the interval meta data", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Interval).Should(Equal(strconv.Itoa(interval)))
+				Ω(meta["interval"]).Should(Equal(strconv.Itoa(interval)))
 			})
 
 			It("Should save the workload meta data", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Workload).Should(Equal(workload))
+				Ω(meta["workload"]).Should(Equal(workload))
 			})
 
 			It("Should save the note meta data", func() {
 				data, _ := redis.Strings(conn.Do("LRANGE", "meta_data", 0, 0))
 				err := json.Unmarshal([]byte(data[0]), &meta)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(meta.Description).Should(Equal(description))
+				Ω(meta["description"]).Should(Equal(description))
 			})
 		})
 	})

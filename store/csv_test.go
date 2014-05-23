@@ -149,7 +149,7 @@ var _ = Describe("Csv Store", func() {
 		)
 
 		var (
-			concurrency = []int{1, 2, 3}
+			concurrency = []int{1, 2}
 		)
 
 		Context("Creating a new file", func() {
@@ -172,8 +172,9 @@ var _ = Describe("Csv Store", func() {
 			})
 
 			It("saves the experiment's meta data headers as the first row in the meta file", func() {
-				Ω(strings.Split(output, "\n")[0]).Should(ContainSubstring(
-					"csv guid,start time,iterations,concurrency,concurrency step time,stop,interval,workload,description"))
+				Ω(strings.Split(output, "\n")[0]).Should(ContainSubstring("csv guid," +
+					"start time,iterations,concurrency start,concurrency end," +
+					"concurrency step time,stop,interval,workload,description"))
 			})
 
 			It("saves the guid of the experiment as the first item in the meta data", func() {
@@ -195,34 +196,39 @@ var _ = Describe("Csv Store", func() {
 				Ω(strings.Split(data, ",")[3]).Should(Equal(strconv.Itoa(iterations)))
 			})
 
-			It("saves the concurrency meta data after iterations", func() {
+			It("saves the concurrency start meta data after iterations", func() {
 				data := strings.Split(output, "\n")[1]
-				Ω(strings.Split(data, ",")[4]).Should(Equal("1..2..3"))
+				Ω(strings.Split(data, ",")[4]).Should(Equal("1"))
 			})
 
-			It("saves the concurrency stop time meta data after concurrency", func() {
+			It("saves the concurrency end meta data after concurrency start", func() {
 				data := strings.Split(output, "\n")[1]
-				Ω(strings.Split(data, ",")[5]).Should(Equal(concurrencyStepTime.String()))
+				Ω(strings.Split(data, ",")[5]).Should(Equal("2"))
+			})
+
+			It("saves the concurrency stop time meta data after concurrency end", func() {
+				data := strings.Split(output, "\n")[1]
+				Ω(strings.Split(data, ",")[6]).Should(Equal(concurrencyStepTime.String()))
 			})
 
 			It("saves the stop meta data after concurency step time", func() {
 				data := strings.Split(output, "\n")[1]
-				Ω(strings.Split(data, ",")[6]).Should(Equal(strconv.Itoa(stop)))
+				Ω(strings.Split(data, ",")[7]).Should(Equal(strconv.Itoa(stop)))
 			})
 
 			It("saves the interval meta data after stop", func() {
 				data := strings.Split(output, "\n")[1]
-				Ω(strings.Split(data, ",")[7]).Should(Equal(strconv.Itoa(interval)))
+				Ω(strings.Split(data, ",")[8]).Should(Equal(strconv.Itoa(interval)))
 			})
 
 			It("saves the workload meta data after interval", func() {
 				data := strings.Split(output, "\n")[1]
-				Ω(strings.Split(data, ",")[8]).Should(Equal(workload))
+				Ω(strings.Split(data, ",")[9]).Should(Equal(workload))
 			})
 
 			It("saves the description meta data after workload", func() {
 				data := strings.Split(output, "\n")[1]
-				Ω(strings.Split(data, ",")[9]).Should(Equal(description))
+				Ω(strings.Split(data, ",")[10]).Should(Equal(description))
 			})
 		})
 

@@ -2,25 +2,12 @@ package store
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/cloudfoundry-incubator/pat/experiment"
 	"github.com/cloudfoundry-incubator/pat/redis"
 )
 
 const MAX_RESULTS = 10000
-
-type MetaData struct {
-	Guid                string
-	StartTime           string `json:"start time"`
-	Concurrency         string
-	ConcurrencyStepTime string `json:"concurrency step time"`
-	Iterations          string
-	Interval            string
-	Stop                string
-	Workload            string
-	Description         string
-}
 
 type redisStore struct {
 	c redis.Conn
@@ -61,12 +48,7 @@ func (r *redisStore) Writer(meta map[string]string) func(samples <-chan *experim
 }
 
 func (r *redisStore) writeMetaData(meta map[string]string) {
-	metaData := MetaData{Guid: meta["guid"], StartTime: time.Now().Format(time.RFC850),
-		Concurrency: meta["concurrency"], ConcurrencyStepTime: meta["concurrency step time"],
-		Iterations: meta["iterations"], Interval: meta["interval"], Stop: meta["stop"],
-		Workload: meta["workload"], Description: meta["description"]}
-
-	json, err := json.Marshal(metaData)
+	json, err := json.Marshal(meta)
 	if err != nil {
 		return
 	}

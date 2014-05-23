@@ -75,14 +75,14 @@ func (self *CsvStore) writeMeta(startTime time.Time, meta map[string]string) {
 
 	//only write the header once
 	if len(lines) == 0 {
-		header := []string{"csv guid", "start time", "iterations", "concurrency",
-			"concurrency step time", "stop", "interval", "workload", "description"}
+		header := []string{"csv guid", "start time", "iterations", "concurrency start",
+			"concurrency end", "concurrency step time", "stop", "interval", "workload", "description"}
 		writer.Write(header)
 	}
 
 	body := []string{meta["guid"], startTime.Format(time.RFC850), meta["iterations"],
-		meta["concurrency"], meta["concurrency step time"], meta["stop"],
-		meta["interval"], meta["workload"], meta["description"]}
+		meta["concurrency start"], meta["concurrency end"], meta["concurrency step time"],
+		meta["stop"], meta["interval"], meta["workload"], meta["description"]}
 
 	writer.Write(body)
 	writer.Flush()
