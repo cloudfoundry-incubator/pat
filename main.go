@@ -18,15 +18,20 @@ func main() {
 	logs.InitCommandLineFlags(flags)
 	cmdline.InitCommandLineFlags(flags)
 	server.InitCommandLineFlags(flags)
-	flags.Parse(os.Args[1:])
+	err := flags.Parse(os.Args[1:])
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(10)
+	}
 
 	if useServer == true {
 		logs.NewLogger("main").Info("Starting in server mode")
 		server.Serve()
 	} else {
-		err := cmdline.RunCommandLine()
+		err = cmdline.RunCommandLine()
 		if err != nil {
 			fmt.Println(err)
+			os.Exit(20)
 		}
 	}
 }

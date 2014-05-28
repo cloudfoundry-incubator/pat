@@ -170,6 +170,13 @@ Example:
 
     pat -config=config-template.yml -iterations=2 # set iterations to 2 overriding whatever the config file says
 
+Error Codes
+=====================================
+In the event of an error during execution, the text of the error along with an error code will be returned to the user. Codes are as follows:
+
+    10: Error parsing input
+    20: Error in executing the workload
+
 Contributing
 ===================================
 To contribute to this project, you will first need to go through the "Setting up PAT to run locally" section. This
