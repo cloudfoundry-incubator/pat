@@ -37,7 +37,7 @@ var _ = Describe("RedisWorker", func() {
 		Context("When no slaves are running", func() {
 			It("Times out after a specified time", func() {
 				worker := NewRedisWorkerWithTimeout(conn, 1)
-				workloadCtx.PutInt("workerIndex", 0)
+				workloadCtx.PutInt("iterationIndex", 0)
 				worker.AddWorkloadStep(workloads.Step("timesout", func() error { time.Sleep(10 * time.Second); return nil }, ""))
 				result := make(chan error)
 				go func() {
@@ -65,15 +65,18 @@ var _ = Describe("RedisWorker", func() {
 
 				delegate.AddWorkloadStep(workloads.StepWithContext("fooWithContext", func(ctx context.Context) error { workloadCtx = ctx; ctx.PutInt("a", 1); return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("barWithContext", func(ctx context.Context) error { a, _ := ctx.GetInt("a"); ctx.PutInt("a", a+2); return nil }, ""))
-				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx context.Context) error { wasCalledWithWorkerIndex, _ = ctx.GetInt("workerIndex"); return nil }, ""))				
+				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerIndex", func(ctx context.Context) error {
+					wasCalledWithWorkerIndex, _ = ctx.GetInt("iterationIndex")
+					return nil
+				}, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerBool", func(ctx context.Context) error { wasCalledWithBoolTypeKey, _ = ctx.GetBool("boolTypeKey"); return nil }, ""))
 				delegate.AddWorkloadStep(workloads.StepWithContext("recordWorkerInfo", func(ctx context.Context) error {
 					wasCalledWithRandomKey, _ = ctx.GetString("RandomKey")
 					wasCalledWithWorkerUsername, _ = ctx.GetString("cfUsername")
 					return nil
-				}, ""))				
-				
-				slave = StartSlave(conn, delegate)				
+				}, ""))
+
+				slave = StartSlave(conn, delegate)
 			})
 
 			AfterEach(func() {
@@ -81,9 +84,9 @@ var _ = Describe("RedisWorker", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
-			It("passes workerIndex to delegate.Time()", func() {
+			It("passes iterationIndex to delegate.Time()", func() {
 				worker := NewRedisWorkerWithTimeout(conn, 1)
-				workloadCtx.PutInt("workerIndex", 72)
+				workloadCtx.PutInt("iterationIndex", 72)
 				worker.Time("recordWorkerIndex", workloadCtx)
 				Ω(wasCalledWithWorkerIndex).Should(Equal(72))
 			})
@@ -110,7 +113,7 @@ var _ = Describe("RedisWorker", func() {
 			It("Passes workload to each step", func() {
 				worker := NewRedisWorker(conn)
 				worker.Time("fooWithContext,barWithContext", workloadCtx)
-				
+
 				result, exists := workloadCtx.GetInt("a")
 				Ω(exists).Should(Equal(true))
 				Ω(result).Should(Equal(3))
@@ -160,7 +163,7 @@ var _ = Describe("RedisWorker", func() {
 
 					It("should retain 'int' type content when sending over redis", func() {
 						worker := NewRedisWorker(conn)
-						workloadCtx.PutInt("workerIndex", 100)
+						workloadCtx.PutInt("iterationIndex", 100)
 						_ = worker.Time("recordWorkerIndex", workloadCtx)
 						Ω(wasCalledWithWorkerIndex).Should(Equal(100))
 					})
@@ -184,7 +187,7 @@ var _ = Describe("RedisWorker", func() {
 
 					It("should retain all the spaces in content while passing over redis", func() {
 						worker := NewRedisWorker(conn)
-						
+
 						workloadCtx.PutString("cfUsername", " user1, user2, user3 ")
 						workloadCtx.PutString("RandomKey", "some info  !")
 						_ = worker.Time("recordWorkerInfo", workloadCtx)
