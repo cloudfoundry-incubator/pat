@@ -3,6 +3,7 @@ package config_test
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	. "github.com/cloudfoundry-incubator/pat/config"
 	. "github.com/onsi/ginkgo"
@@ -207,6 +208,44 @@ var _ = Describe("ConfigAndFlags", func() {
 			It("uses the default value", func() {
 				Ω(value).Should(Equal("the value"))
 			})
+		})
+	})
+
+	Describe("#Parse", func() {
+		var (
+			config Config
+			flags  []string
+		)
+
+		BeforeEach(func() {
+			config = NewConfig()
+			flags = []string{}
+		})
+
+		It("Returns a useful error message when passed a non-extant config file", func() {
+			flags = []string{"-config", "invisiblepinkunicorn.yml"}
+			err := config.Parse(flags)
+
+			Ω(err.Error()).Should(ContainSubstring("no such file"))
+		})
+
+		It("Returns a useful error when passed an improperly formatted config file", func() {
+			tempfile := filepath.Join(os.TempDir(), "test.yml")
+			configFile, err := os.Create(tempfile)
+			if err != nil {
+				Ω(err).ShouldNot(HaveOccurred())
+			}
+
+			configFile.WriteString("server false\n")
+			configFile.WriteString("iterations - 5\n")
+			configFile.WriteString("concurrency: 1\n")
+			configFile.Sync()
+			configFile.Close()
+			flags = []string{"-config", tempfile}
+
+			err = config.Parse(flags)
+			Ω(err.Error()).Should(ContainSubstring("YAML error"))
+			os.RemoveAll(tempfile)
 		})
 	})
 })

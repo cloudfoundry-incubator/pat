@@ -76,7 +76,7 @@ func (f *f) Parse(args []string) error {
 	f.flagSet.Parse(args)
 	if len(*config) > 0 {
 		if err := f.ParseConfig(*config); err != nil {
-			panic("Failed Parsing Config File")
+			return err
 		}
 	}
 
