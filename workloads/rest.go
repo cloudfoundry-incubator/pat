@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/config"
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/nu7hatch/gouuid"
 )
 
@@ -43,7 +43,7 @@ func (r *rest) DescribeParameters(config config.Config) {
 }
 
 func (r *rest) Target(ctx context.Context) error {
-	if _, exists := ctx.GetString("cfTarget"); r.target == "" && exists { 
+	if _, exists := ctx.GetString("cfTarget"); r.target == "" && exists {
 		r.target, _ = ctx.GetString("cfTarget")
 	}
 
@@ -57,9 +57,10 @@ func (r *rest) Target(ctx context.Context) error {
 
 func (r *rest) Login(ctx context.Context) error {
 	body := &LoginResponse{}
-	workerIndex, _ := ctx.GetInt("workerIndex")
-	return checkTargetted(ctx, func(loginEndpoint string, apiEndpoint string) error {		
-		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", loginEndpoint), r.oauthInputs(r.credentialsForWorker(workerIndex)), body, func(reply Reply) error {
+
+	iterationIndex, _ := ctx.GetInt("iterationIndex")
+	return checkTargetted(ctx, func(loginEndpoint string, apiEndpoint string) error {
+		return r.PostToUaaSuccessfully(fmt.Sprintf("%s/oauth/token", loginEndpoint), r.oauthInputs(r.credentialsForWorker(iterationIndex)), body, func(reply Reply) error {
 			ctx.PutString("token", body.Token)
 			return r.targetSpace(ctx)
 		})
@@ -224,10 +225,10 @@ func (s SpaceResponse) SpaceExists() bool {
 	return len(s.Resources) > 0
 }
 
-func (r *rest) credentialsForWorker(workerIndex int) (string, string) {
+func (r *rest) credentialsForWorker(iterationIndex int) (string, string) {
 	var userList = strings.Split(r.username, ",")
 	var passList = strings.Split(r.password, ",")
-	return userList[workerIndex % len(userList)], passList[workerIndex % len(passList)]
+	return userList[iterationIndex%len(userList)], passList[iterationIndex%len(passList)]
 }
 
 func (r *rest) oauthInputs(username string, password string) url.Values {

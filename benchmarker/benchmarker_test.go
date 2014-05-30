@@ -116,9 +116,16 @@ var _ = Describe("Benchmarker", func() {
 
 	Describe("#ExecuteConcurrently", func() {
 		Context("When a single one is pushed", func() {
+			var (
+				schedule chan int
+				tasks    chan func(context.Context)
+			)
+
+			BeforeEach(func() {
+				schedule = make(chan int)
+				tasks = make(chan func(context.Context))
+			})
 			It("Creates a new goroutine that executes the tasks serially", func() {
-				schedule := make(chan int)
-				tasks := make(chan func(context.Context))
 				orderWasExecuted := 0
 				go func() {
 					orderWasQueued := make(chan int, 1)
@@ -129,6 +136,27 @@ var _ = Describe("Benchmarker", func() {
 							defer GinkgoRecover()
 							Ω(orderWasExecuted).Should(Equal(<-orderWasQueued))
 							orderWasExecuted++
+						}
+					}
+				}()
+				go func() {
+					defer close(schedule)
+					schedule <- 1
+				}()
+				ExecuteConcurrently(schedule, tasks, workloadCtx)
+			})
+
+			It("Pushes an iterationIndex into the context map", func() {
+				go func() {
+					defer close(tasks)
+					for n := 0; n < 2; n++ {
+						tasks <- func(ctx context.Context) {
+							var tmp = n
+							defer GinkgoRecover()
+							index, exists := ctx.GetInt("iterationIndex")
+							Ω(exists).ShouldNot(BeFalse())
+							Ω(index).Should(Equal(tmp))
+							time.Sleep(1 * time.Second)
 						}
 					}
 				}()

@@ -11,7 +11,7 @@ func display(concurrency string, iterations int, interval int, stop int, concurr
 	for s := range samples {
 		fmt.Print("\033[2J\033[;H")
 		fmt.Println("\x1b[32;1mCloud Foundry Performance Acceptance Tests\x1b[0m")
-		fmt.Printf("Test underway. Concurrency: \x1b[36m%v\x1b[0m  Concurrency:TimeBetwenSteps: \x1b[36m%v\x1b[0m Workload iterations: \x1b[36m%v\x1b[0m  Interval: \x1b[36m%v\x1b[0m  Stop: \x1b[36m%v\x1b[0m\n", 
+		fmt.Printf("Test underway. Concurrency: \x1b[36m%v\x1b[0m  Concurrency:TimeBetwenSteps: \x1b[36m%v\x1b[0m Workload iterations: \x1b[36m%v\x1b[0m  Interval: \x1b[36m%v\x1b[0m  Stop: \x1b[36m%v\x1b[0m\n",
 			concurrency, concurrencyStepTime, iterations, interval, stop)
 		fmt.Println("┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n")
 

@@ -92,13 +92,17 @@ func Execute(tasks <-chan func(context.Context), workloadCtx context.Context) {
 
 func ExecuteConcurrently(schedule <-chan int, tasks <-chan func(context.Context), workloadCtx context.Context) {
 	var wg sync.WaitGroup
+	indexCounter := 0
 
 	for increment := range schedule {
+
 		for i := 0; i < increment; i++ {
 			wg.Add(1)
 			go func(t <-chan func(context.Context), ctx context.Context) {
 				defer wg.Done()
 				for task := range t {
+					ctx.PutInt("iterationIndex", indexCounter)
+					indexCounter++
 					task(ctx)
 				}
 			}(tasks, workloadCtx.Clone())

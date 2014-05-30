@@ -6,8 +6,8 @@ import (
 	"mime/multipart"
 	"net/url"
 
-	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/config"
+	"github.com/cloudfoundry-incubator/pat/context"
 	. "github.com/cloudfoundry-incubator/pat/workloads"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -41,7 +41,7 @@ var _ = Describe("Rest", func() {
 			config.Parse(args)
 			args = []string{"-rest:target", "APISERVER"}
 			restContext = context.New()
-			restContext.PutInt("workerIndex", 0)
+			restContext.PutInt("iterationIndex", 0)
 
 			replies["APISERVER/v2/info"] = TargetResponse{"THELOGINSERVER/PATH"}
 		})
@@ -208,23 +208,23 @@ var _ = Describe("Rest", func() {
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
 					})
 
-					It("uses different username and password with different workerIndex", func() {
-						restContext.PutInt("workerIndex", 0)
- 						rest.Login(restContext)
+					It("uses different username and password with different iterationIndex", func() {
+						restContext.PutInt("iterationIndex", 0)
+						rest.Login(restContext)
 						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
 
-						restContext.PutInt("workerIndex", 2)
- 						rest.Login(restContext)
+						restContext.PutInt("iterationIndex", 2)
+						rest.Login(restContext)
 						data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user3"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
 					})
 
 					It("recycles the list of username and password when there are more workers than username", func() {
-						restContext.PutInt("workerIndex", 6)
- 						rest.Login(restContext)
+						restContext.PutInt("iterationIndex", 6)
+						rest.Login(restContext)
 						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
@@ -246,19 +246,19 @@ var _ = Describe("Rest", func() {
 					})
 
 					It("re-uses the only avaiable password", func() {
-						restContext.PutInt("workerIndex", 0)
+						restContext.PutInt("iterationIndex", 0)
 						rest.Login(restContext)
 						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
 
-						restContext.PutInt("workerIndex", 1)
+						restContext.PutInt("iterationIndex", 1)
 						rest.Login(restContext)
 						data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user2"}))
 						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
 
-						restContext.PutInt("workerIndex", 2)
+						restContext.PutInt("iterationIndex", 2)
 						rest.Login(restContext)
 						data = client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user3"}))

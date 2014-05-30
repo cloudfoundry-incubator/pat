@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/benchmarker"
 	. "github.com/cloudfoundry-incubator/pat/cmdline"
 	"github.com/cloudfoundry-incubator/pat/config"
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/cloudfoundry-incubator/pat/experiment"
 	"github.com/cloudfoundry-incubator/pat/laboratory"
 	"github.com/cloudfoundry-incubator/pat/workloads"
