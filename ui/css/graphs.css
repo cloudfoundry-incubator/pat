@@ -5,12 +5,15 @@
 /*   Workload Bar chart   */
 #graph .workload {
   fill: steelblue;
+  stroke: none;
 }
 #graph .workload .bar:hover {
     fill: #FFFF66;
 }
 #graph .workload .error {
 	fill: brown;
+  stroke-width: 5px;
+  stroke: brown;
 }
 #graph .workload text {
   fill: brown;

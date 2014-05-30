@@ -455,9 +455,9 @@ describe("Throughput chart", function() {
     d3.select(node).select("path.line").on("mouseover")({cmd:"login", throughput:[0.5, 0.3, 0.6]});
     expect( $(node).find("g.datalogin").length ).toEqual(3);
 
-    expect( $(node).find("g.datalogin text")[0].innerHTML ).toEqual("0.50")
-    expect( $(node).find("g.datalogin text")[1].innerHTML ).toEqual("0.30")
-    expect( $(node).find("g.datalogin text")[2].innerHTML ).toEqual("0.60")
+    expect( $(node).find("g.datalogin text")[0].textContent ).toEqual("0.50")
+    expect( $(node).find("g.datalogin text")[1].textContent ).toEqual("0.30")
+    expect( $(node).find("g.datalogin text")[2].textContent ).toEqual("0.60")
 
     var color = $(node).find("path.line")[0].getAttribute("stroke");
     expect( $(node).find("g.datalogin circle")[0].getAttribute("fill") ).toEqual(color)
@@ -488,9 +488,9 @@ describe("Throughput chart", function() {
     var ticks = $(node).find(".y.axis text");
 
     for (var i =0; i < ticks.length; i++) {
-      if (parseFloat(ticks[i].innerHTML) > tickMax) {
-        tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
-        tickMax = parseFloat(ticks[i].innerHTML);
+      if (parseFloat(ticks[i].textContent) > tickMax) {
+        tickSize = parseFloat(ticks[i].textContent) - tickMax ;
+        tickMax = parseFloat(ticks[i].textContent);
       }
     }
 
@@ -508,9 +508,9 @@ describe("Throughput chart", function() {
     var ticks = $(node).find(".x.axis text");
 
     for (var i =0; i < ticks.length; i++) {
-      if (parseFloat(ticks[i].innerHTML) > tickMax) {
-        tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
-        tickMax = parseFloat(ticks[i].innerHTML);
+      if (parseFloat(ticks[i].textContent) > tickMax) {
+        tickSize = parseFloat(ticks[i].textContent) - tickMax ;
+        tickMax = parseFloat(ticks[i].textContent);
       }
     }
 
@@ -547,15 +547,15 @@ describe("Throughput chart", function() {
 
     chart(workload);
 
-    expect( $(node).find("g.tplegend text")[0].innerHTML ).toEqual("login")
-    expect( $(node).find("g.tplegend text")[1].innerHTML ).toEqual("push")
+    expect( $(node).find("g.tplegend text")[0].textContent ).toEqual("login")
+    expect( $(node).find("g.tplegend text")[1].textContent ).toEqual("push")
 
     workload = [{ Commands: { "list": {"Throughput": 0.2} }}];
 
     chart(workload);
 
     setTimeout(function () {
-      expect( $(node).find("g.tplegend text")[0].innerHTML ).toEqual("list")
+      expect( $(node).find("g.tplegend text")[0].textContent ).toEqual("list")
       expect( $(node).find("g.tplegend text")[1] ).toEqual(null)
     }, 800);
   })
@@ -567,20 +567,26 @@ describe("Bar chart", function() {
   const gap = 1;
   const margin = {top: 50, right: 40, bottom: 30, left: 30};
 
-  var barWidth = 30;
-  $("div.workloadContainer").empty();
-  var chart = d3_workload.init(document.getElementById("target"));
-  var node = $("div.workloadContainer").get(0);
-  var chartArea = $('svg.workload > g > g:eq(1) > g ').get(0);
+   var barWidth = 30;
+  
+  var chart, node, chartArea;
 
-  it("should draw a bar for each element", function() {
+  beforeEach(function(){
+    $("div.workloadContainer").empty();
+    $("#target").empty();
+    chart = d3_workload.init(document.getElementById("target"));
+    node = $("div.workloadContainer").get(0);
+    chartArea = $('svg.workload > g > g:eq(1) > g ').get(0);
+  })
+
+  it("should draw a bar for each iteration", function() {
     var data = [];
     for (var i = 0; i < 3; i ++) {
         data.push( {"LastResult" : 1 * sec} );
     }
     chart(data);
 
-    var totalBars = $( node ).find("rect.bar").length;
+    var totalBars = $( node ).find("rect.iterations").length;
     expect( totalBars ).toBe(3);
   });
 
@@ -589,7 +595,7 @@ describe("Bar chart", function() {
     var data = [];
     chart(data);
 
-    var totalBars = $( node ).find("rect.bar").length;
+    var totalBars = $( node ).find("rect.iterations").length;
     expect( totalBars ).toBe(0);
   })
 
@@ -600,6 +606,7 @@ describe("Bar chart", function() {
       LastResult = i * sec ;
       data.push( {"LastResult" : LastResult} );
     }
+
     chart(data);
 
     var tickSize = 0;
@@ -607,9 +614,9 @@ describe("Bar chart", function() {
     var ticks = $(node).find(".y.axis text");
 
     for (var i =0; i < ticks.length; i++) {
-      if (parseFloat(ticks[i].innerHTML) > tickMax) {
-        tickSize = parseFloat(ticks[i].innerHTML) - tickMax ;
-        tickMax = parseFloat(ticks[i].innerHTML);
+      if (parseFloat(ticks[i].textContent) > tickMax) {
+        tickSize = parseFloat(ticks[i].textContent) - tickMax ;
+        tickMax = parseFloat(ticks[i].textContent);        
       }
     }
 
@@ -622,7 +629,7 @@ describe("Bar chart", function() {
                 {"LastResult" : 1 * sec, "TotalErrors": 1}];
     chart(data);
 
-    var bars = d3.select( node ).selectAll("rect.bar");
+    var bars = d3.select( node ).selectAll("rect.iterations");
 
     bars.each(function(d,i) {
       if (d.TotalErrors == 0) {
@@ -642,7 +649,6 @@ describe("Bar chart", function() {
       data.push( {"LastResult" : 5} );
     }
     chart(data);
-
     waits(500);
     runs(function () {
       expect(parseInt(getTranslateX(d3.select( chartArea )))).toBe(0);
@@ -687,10 +693,82 @@ describe("Bar chart", function() {
 
   });
 
+  it("should draw a block for each commands", function() {
+     var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 3 * sec },
+                  "dummy2":{ "LastTime": 2 * sec },
+                  "dummy3":{ "LastTime": 3 * sec }}, 
+                "LastResult" : 8 * sec }];
+    chart(data);
+
+    var totalCommands = $( node ).find("rect.bar").length;
+
+    expect( totalCommands ).toBe(3)
+  })
+
+  it("should stack command blocks for an iterations within the same bar", function() {
+     var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 3 * sec },                  
+                  "dummy2":{ "LastTime": 3 * sec }}, 
+                "LastResult" : 6 * sec }];
+    chart(data);
+    var x1 = $(node).find("rect.bar")[0].getAttribute("x")
+    var x2 = $(node).find("rect.bar")[1].getAttribute("x")
+
+    var y1 = $(node).find("rect.bar")[0].getAttribute("y")
+    var y2 = $(node).find("rect.bar")[1].getAttribute("y")
+
+    expect( x1 ).toEqual( x2 )
+    expect( y1 ).toBeGreaterThan( y2 ) //y1>y2 because y-axis in d3 is inverted
+  })
+
+  it("should shows each command blocks in different colors", function() {
+     var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 3 * sec },                  
+                  "dummy2":{ "LastTime": 5 * sec }, 
+                  "dummy3":{ "LastTime": 3 * sec }}, 
+                "LastResult" : 6 * sec }];
+    chart(data);
+    var color1 = window.getComputedStyle($(node).find("rect.bar")[0]).getPropertyValue("fill")
+    var color2 = window.getComputedStyle($(node).find("rect.bar")[1]).getPropertyValue("fill")
+    var color3 = window.getComputedStyle($(node).find("rect.bar")[2]).getPropertyValue("fill")
+    expect( color1 ).toNotEqual( color2 )
+    expect( color1 ).toNotEqual( color3 )
+    expect( color2 ).toNotEqual( color3 )
+  })
+
+  it("should contains attributes of a jQuery mouse hover tooltip", function() {
+     var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 3 * sec },                  
+                  "dummy2":{ "LastTime": 5 * sec }}, 
+                "LastResult" : 8 * sec }];
+    chart(data);
+
+    expect( $("svg.workload rect.bar")[0].getAttribute('data-toggle') ).toBe("tooltip")
+    expect( $("svg.workload rect.bar")[0].getAttribute('data-original-title') ).toBe("dummy1: 3.00 sec")
+
+    expect( $("svg.workload rect.bar")[1].getAttribute('data-toggle') ).toBe("tooltip")
+    expect( $("svg.workload rect.bar")[1].getAttribute('data-original-title') ).toBe("dummy2: 5.00 sec")
+  })
+
   function getTranslateX(node) {
     var splitted = node.attr("transform").split(",");
     return parseInt(splitted [0].split("(")[1]);
   };
+
+  it("has a utility function to turn 'data' into array containing commands, start time and duration", function(){
+    var data = [{"Commands": {
+                  "dummy1":{ "LastTime": 1 * sec },                  
+                  "dummy2":{ "LastTime": 3 * sec }, 
+                  "dummy3":{ "LastTime": 2 * sec }}, 
+                "LastResult" : 6 * sec }];
+    
+    var cmdData = d3_workload.toBarGraph(data)
+    
+    expect(cmdData[0]).toEqual({"label" : "dummy1", "y" : 0, "height" : 1 * sec, "iteration" : 0})
+    expect(cmdData[1]).toEqual({"label" : "dummy2", "y" : 1 * sec, "height" : 3 * sec, "iteration" : 0})
+    expect(cmdData[2]).toEqual({"label" : "dummy3", "y" : 4 * sec, "height" : 2 * sec, "iteration" : 0})
+  })
 
 });
 

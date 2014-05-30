@@ -22,4 +22,8 @@ before_script:
   - npm install -g casperjs
   - phantomjs --version; casperjs --version
 
-script: ginkgo -r && casperjs test ./features/basic_flow.coffee
+
+script:
+  - wget https://raw.github.com/mark-rushakoff/OpenPhantomScripts/master/phantom-jasmine.js
+  - ginkgo -r && casperjs test ./features/basic_flow.coffee
+  - phantomjs phantom-jasmine.js ui/test.html
