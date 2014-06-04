@@ -26,6 +26,10 @@ var params = struct {
 	workload            string
 	interval            int
 	stop                int
+	restUser            string
+	restPass            string
+	restTarget          string
+	restSpace           string
 }{}
 
 func InitCommandLineFlags(config config.Config) {
@@ -38,12 +42,19 @@ func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload every n seconds, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "repeat a repeating interval until n seconds, to be used with -interval")
 	config.BoolVar(&params.listWorkloads, "list-workloads", false, "Lists the available workloads")
+	config.StringVar(&params.restTarget, "rest:target", "", "the target for the REST api")
+	config.StringVar(&params.restUser, "rest:username", "", "username for REST api")
+	config.StringVar(&params.restPass, "rest:password", "", "password for REST api")
+	config.StringVar(&params.restSpace, "rest:space", "dev", "space to target for REST api")
 	benchmarker.DescribeParameters(config)
 	store.DescribeParameters(config)
 }
 
 func RunCommandLine() error {
 	params.workload = strings.Replace(params.workload, " ", "", -1)
+
+	workloadContext := context.New()
+	workloads.PopulateRestContext(params.restTarget, params.restUser, params.restPass, params.restSpace, workloadContext)
 
 	return WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		return validateParameters(worker, func() error {
@@ -60,8 +71,6 @@ func RunCommandLine() error {
 						display(params.concurrency, params.iterations, params.interval, params.stop, params.concurrencyStepTime, s)
 					})
 				}
-
-				workloadContext := context.New()
 
 				lab.RunWithHandlers(
 					NewRunnableExperiment(

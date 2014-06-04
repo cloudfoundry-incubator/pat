@@ -37,14 +37,6 @@ var _ = Describe("Context map", func() {
 			Ω(result).Should(Equal("This is a long string \n"))
 		})
 
-		It("can store a string value from provided string pointer", func() {
-			strPtr := "This is a long string \n"
-			localContext.PutStringPtr("str", &strPtr)
-
-			result, _ := localContext.GetString("str")
-			Ω(result).Should(Equal("This is a long string \n"))
-		})
-
 		It("can store int value as provided", func() {
 			localContext.PutInt("int", 123)
 

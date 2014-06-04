@@ -18,7 +18,6 @@ func main() {
 	logs.InitCommandLineFlags(flags)
 	cmdline.InitCommandLineFlags(flags)
 	server.InitCommandLineFlags(flags)
-
 	err := flags.Parse(os.Args[1:])
 	if err != nil {
 		fmt.Println(err)

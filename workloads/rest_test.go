@@ -17,8 +17,14 @@ type workloads interface {
 	Target(ctx context.Context) error
 	Login(ctx context.Context) error
 	Push(ctx context.Context) error
-	DescribeParameters(config.Config)
 }
+
+var restArgs = struct {
+	username string
+	password string
+	target   string
+	space    string
+}{}
 
 var _ = Describe("Rest", func() {
 	Describe("Workloads", func() {
@@ -39,8 +45,9 @@ var _ = Describe("Rest", func() {
 			client = &dummyClient{replies, replyWithLocation, make(map[call]interface{})}
 			rest = NewRestWorkloadWithClient(client)
 			config := config.NewConfig()
-			rest.DescribeParameters(config)
+			initArgumentFlags(config)
 			config.Parse(args)
+			PopulateRestContext(restArgs.target, restArgs.username, restArgs.password, restArgs.space, restContext)
 			args = []string{"-rest:target", "APISERVER"}
 
 			replies["APISERVER/v2/info"] = TargetResponse{"THELOGINSERVER/PATH"}
@@ -138,15 +145,6 @@ var _ = Describe("Rest", func() {
 						Ω(data.(url.Values)["grant_type"]).Should(Equal([]string{"password"}))
 					})
 
-					It("allows overridding username and password in context map", func() {
-						restContext.PutString("rest:username", "user1")
-						restContext.PutString("rest:password", "pass1")
-						rest.Login(restContext)
-						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
-						Ω(data.(url.Values)["username"]).Should(Equal([]string{"user1"}))
-						Ω(data.(url.Values)["password"]).Should(Equal([]string{"pass1"}))
-					})
-
 					It("POSTs the username and password", func() {
 						data := client.ShouldHaveBeenCalledWith("POST(uaa)", "THELOGINSERVER/PATH/oauth/token")
 						Ω(data.(url.Values)["username"]).Should(Equal([]string{"foo"}))
@@ -166,23 +164,12 @@ var _ = Describe("Rest", func() {
 
 							spaceReply := SpaceResponse{[]Resource{Resource{Metadata{"blah blah"}}}}
 							replies["APISERVER/v2/spaces?q=name:thespace"] = spaceReply
-							spaceReplyCtx := SpaceResponse{[]Resource{Resource{Metadata{"context_space"}}}}
-							replies["APISERVER/v2/spaces?q=name:ctxSpace"] = spaceReplyCtx
 						})
 
 						It("Does not return an error", func() {
 							err := rest.Login(restContext)
 
 							Ω(err).ShouldNot(HaveOccurred())
-						})
-
-						It("allows overidding 'space' value in context map", func() {
-							restContext.PutString("rest:space", "ctxSpace")
-							err := rest.Login(restContext)
-
-							Ω(err).ShouldNot(HaveOccurred())
-							v, _ := restContext.GetString("space_guid")
-							Ω(v).Should(Equal("context_space"))
 						})
 
 						Context("But when the space does not exist", func() {
@@ -391,4 +378,11 @@ func mapOf(data interface{}) map[string]interface{} {
 	m := make(map[string]interface{})
 	json.Unmarshal(d, &m)
 	return m
+}
+
+func initArgumentFlags(config config.Config) {
+	config.StringVar(&restArgs.target, "rest:target", "", "the target for the REST api")
+	config.StringVar(&restArgs.username, "rest:username", "", "username for REST api")
+	config.StringVar(&restArgs.password, "rest:password", "", "password for REST api")
+	config.StringVar(&restArgs.space, "rest:space", "dev", "space to target for REST api")
 }

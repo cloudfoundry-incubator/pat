@@ -10,17 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry-incubator/pat/config"
 	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/nu7hatch/gouuid"
 )
 
 type rest struct {
-	username   string
-	password   string
-	target     string
-	space_name string
-	client     httpclient
+	client httpclient
 }
 
 func NewRestWorkload() *rest {
@@ -35,11 +30,11 @@ func NewRestWorkloadWithClient(client httpclient) *rest {
 	return ctx
 }
 
-func (r *rest) DescribeParameters(config config.Config) {
-	config.StringVar(&r.target, "rest:target", "", "the target for the REST api")
-	config.StringVar(&r.username, "rest:username", "", "username for REST api")
-	config.StringVar(&r.password, "rest:password", "", "password for REST api")
-	config.StringVar(&r.space_name, "rest:space", "dev", "space to target for REST api")
+func PopulateRestContext(target string, username string, password string, space string, ctx context.Context) {
+	ctx.PutString("rest:target", target)
+	ctx.PutString("rest:username", username)
+	ctx.PutString("rest:password", password)
+	ctx.PutString("rest:space", space)
 }
 
 func (r *rest) Target(ctx context.Context) error {
@@ -47,7 +42,7 @@ func (r *rest) Target(ctx context.Context) error {
 	if _, ok := ctx.GetString("rest:target"); ok {
 		target, _ = ctx.GetString("rest:target")
 	} else {
-		target = r.target
+		return errors.New("argument rest:target does not exist")
 	}
 
 	body := &TargetResponse{}
@@ -70,12 +65,12 @@ func (r *rest) Login(ctx context.Context) error {
 	if _, ok := ctx.GetString("rest:username"); ok {
 		userList, _ = ctx.GetString("rest:username")
 	} else {
-		userList = r.username
+		return errors.New("argument rest:username does not exist")
 	}
 	if _, ok := ctx.GetString("rest:password"); ok {
 		passList, _ = ctx.GetString("rest:password")
 	} else {
-		passList = r.password
+		return errors.New("argument rest:password does not exist")
 	}
 
 	return checkTargetted(ctx, func(loginEndpoint string, apiEndpoint string) error {
@@ -93,7 +88,7 @@ func (r *rest) targetSpace(ctx context.Context) error {
 	if _, ok := ctx.GetString("rest:space"); ok {
 		space, _ = ctx.GetString("rest:space")
 	} else {
-		space = r.space_name
+		return errors.New("argument rest:space does not exist")
 	}
 	replyBody := &SpaceResponse{}
 

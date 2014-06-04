@@ -14,7 +14,6 @@ var params = struct {
 
 func DescribeParameters(config config.Config) {
 	config.BoolVar(&params.startMasterAndSlave, "use-redis-worker", false, "Runs in master mode, sending work to perform to a redis queue")
-	WorkloadListFactory().DescribeParameters(config)
 }
 
 func WithConfiguredWorkerAndSlaves(fn func(worker Worker) error) error {
@@ -37,7 +36,6 @@ func configure(worker Worker) Worker {
 
 type WorkloadDescriber interface {
 	DescribeWorkloads(worker workloads.WorkloadAdder)
-	DescribeParameters(config config.Config)
 }
 
 var WithRedisConnection = func(fn func(conn redis.Conn) error) error {

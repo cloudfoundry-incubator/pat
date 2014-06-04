@@ -76,7 +76,7 @@ patWorkload = function(){
 		forCmd: "rest:username",
 		value: ko.observable("cfUser"),			
 		display: ko.observable("none"),
-		regex: /^[a-zA-Z0-9-_,]+$/,
+		regex: /^[a-zA-Z0-9-_,@.]+$/,
 		requiredBy: ["rest:login"]			
 	}
 

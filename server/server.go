@@ -15,6 +15,7 @@ import (
 	. "github.com/cloudfoundry-incubator/pat/laboratory"
 	"github.com/cloudfoundry-incubator/pat/logs"
 	"github.com/cloudfoundry-incubator/pat/store"
+	"github.com/cloudfoundry-incubator/pat/workloads"
 	"github.com/gorilla/mux"
 )
 
@@ -133,22 +134,13 @@ func (ctx *serverContext) handlePush(w http.ResponseWriter, r *http.Request) (in
 		stop = 0
 	}
 
-	cfTarget := r.FormValue("cfTarget")
-	cfUsername := r.FormValue("cfUsername")
 	workload := r.FormValue("workload")
-	cfPassword := r.FormValue("cfPassword")
-	cfSpace := r.FormValue("cfSpace")
-
 	if workload == "" {
 		workload = "gcf:push"
 	}
 
 	workloadContext := context.New()
-
-	workloadContext.PutString("rest:target", cfTarget)
-	workloadContext.PutString("rest:username", cfUsername)
-	workloadContext.PutString("rest:password", cfPassword)
-	workloadContext.PutString("rest:space", cfSpace)
+	workloads.PopulateRestContext(r.FormValue("cfTarget"), r.FormValue("cfUsername"), r.FormValue("cfPassword"), r.FormValue("cfSpace"), workloadContext)
 
 	experiment, _ := ctx.lab.Run(
 		NewRunnableExperiment(

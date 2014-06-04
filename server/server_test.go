@@ -38,7 +38,6 @@ var _ = Describe("Server", func() {
 	})
 
 	JustBeforeEach(func() {
-		workloadContext = context.New()
 		ServeWithLab(lab)
 	})
 
