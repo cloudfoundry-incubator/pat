@@ -2,7 +2,6 @@ package workloads
 
 import (
 	"github.com/cloudfoundry-incubator/pat/context"
-	"github.com/cloudfoundry-incubator/pat/config"
 )
 
 type WorkloadAdder interface {
@@ -45,8 +44,4 @@ func (self *WorkloadList) DescribeWorkloads(to WorkloadAdder) {
 	for _, workload := range self.Workloads {
 		to.AddWorkloadStep(workload)
 	}
-}
-
-func (self *WorkloadList) DescribeParameters(config config.Config) {
-	restContext.DescribeParameters(config)
 }

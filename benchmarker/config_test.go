@@ -64,13 +64,6 @@ var _ = Describe("Config", func() {
 		flags.Parse(args)
 	})
 
-	Describe("DescribeParameters", func() {
-		It("asks the workload list to describe parameters", func() {
-			DescribeParameters(flags)
-			Ω(workloadList.wasAskedToDescribeParameters).Should(Equal(flags))
-		})
-	})
-
 	Context("When -use-redis-worker is not set", func() {
 		It("Calls with a local worker", func() {
 			var worker Worker

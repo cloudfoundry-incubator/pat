@@ -17,8 +17,14 @@ type workloads interface {
 	Target(ctx context.Context) error
 	Login(ctx context.Context) error
 	Push(ctx context.Context) error
-	DescribeParameters(config.Config)
 }
+
+var restArgs = struct {
+	username string
+	password string
+	target   string
+	space    string
+}{}
 
 var _ = Describe("Rest", func() {
 	Describe("Workloads", func() {
@@ -32,16 +38,17 @@ var _ = Describe("Rest", func() {
 		)
 
 		BeforeEach(func() {
+			restContext = context.New()
+			restContext.PutInt("iterationIndex", 0)
 			replies = make(map[string]interface{})
 			replyWithLocation = make(map[string]string)
 			client = &dummyClient{replies, replyWithLocation, make(map[call]interface{})}
 			rest = NewRestWorkloadWithClient(client)
 			config := config.NewConfig()
-			rest.DescribeParameters(config)
+			initArgumentFlags(config)
 			config.Parse(args)
+			PopulateRestContext(restArgs.target, restArgs.username, restArgs.password, restArgs.space, restContext)
 			args = []string{"-rest:target", "APISERVER"}
-			restContext = context.New()
-			restContext.PutInt("iterationIndex", 0)
 
 			replies["APISERVER/v2/info"] = TargetResponse{"THELOGINSERVER/PATH"}
 		})
@@ -161,6 +168,7 @@ var _ = Describe("Rest", func() {
 
 						It("Does not return an error", func() {
 							err := rest.Login(restContext)
+
 							Ω(err).ShouldNot(HaveOccurred())
 						})
 
@@ -370,4 +378,11 @@ func mapOf(data interface{}) map[string]interface{} {
 	m := make(map[string]interface{})
 	json.Unmarshal(d, &m)
 	return m
+}
+
+func initArgumentFlags(config config.Config) {
+	config.StringVar(&restArgs.target, "rest:target", "", "the target for the REST api")
+	config.StringVar(&restArgs.username, "rest:username", "", "username for REST api")
+	config.StringVar(&restArgs.password, "rest:password", "", "password for REST api")
+	config.StringVar(&restArgs.space, "rest:space", "dev", "space to target for REST api")
 }

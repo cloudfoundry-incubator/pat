@@ -93,7 +93,7 @@ body { padding: 8px; }
             <div class="form-group">
               <label class="control-label inputCaption">Workload Items</label>
               <div>
-                <!-- ko foreach: workloadModels.itemModel -->
+                <!-- ko foreach: workloadModels.availableCmds -->
                   <button type="button" class="btn btn-default" style="margin:3px" data-bind="html: html, click: click, attr: {id: 'workloadItem-' + name}"></button>
                 <!-- /ko -->​
               </div>
@@ -102,7 +102,7 @@ body { padding: 8px; }
             <div class="form-group">
               <label class="control-label inputCaption" data-bind="style: {display: workloadModels.shouldShowSelectedCaption()? 'block':'none'}">Selected Workload</label>
               <div>
-                <!-- ko foreach: workloadModels.selectedModel -->
+                <!-- ko foreach: workloadModels.selectedCmds -->
                   <button type="button" class="btn btn-link" data-bind="html: html, click: click"></button>
                 <!-- /ko -->​
               </div>
@@ -110,7 +110,7 @@ body { padding: 8px; }
 
             <div id="argumentList" class="form-group">
               <label class="control-label inputCaption" data-bind="style: {display: workloadModels.shouldShowArgumentCaption()? 'block':'none'}">Workload Arguments</label>            
-              <div role="form" data-bind="foreach: workloadModels.argumentModel">
+              <div role="form" data-bind="foreach: workloadModels.reqArguments">
                 <div class="form-group" data-bind="css: { 'has-error': errCheckFn }, style: {display: display}">
                   <label class="col-sm-4 control-label" data-bind="text: argName"></label>
                   <div class="col-sm-6">

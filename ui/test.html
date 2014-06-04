@@ -15,9 +15,9 @@
     
     <!-- testing html for workloadModels.js -->
     <div style="width: 800px; height: 400px; position: absolute; top: -1500px" id="workloadModelTest">
-      <div id="workloadItems"><!-- ko foreach: itemModel --><button type="button" class="btn btn-default" data-bind="html: html, click: click, attr: {id: 'workloadItem-' + name}"></button><!-- /ko -->​</div>
-      <div id="selectedList"><!-- ko foreach: selectedModel --><button type="button" class="btn btn-link" data-bind="html: html, click: click"></button><!-- /ko -->​</div>
-      <div id="argumentList"><div class="form-horizontal" role="form" data-bind="foreach: argumentModel"><div data-bind="css: { 'has-error': errCheckFn }, style: {display: display}"><label data-bind="text: argName"></label><input type="text" data-bind="value: value"></div></div></div>
+      <div id="workloadItems"><!-- ko foreach: availableCmds --><button type="button" class="btn btn-default" data-bind="html: html, click: click, attr: {id: 'workloadItem-' + name}"></button><!-- /ko -->​</div>
+      <div id="selectedList"><!-- ko foreach: selectedCmds --><button type="button" class="btn btn-link" data-bind="html: html, click: click"></button><!-- /ko -->​</div>
+      <div id="argumentList"><div class="form-horizontal" role="form" data-bind="foreach: reqArguments"><div data-bind="css: { 'has-error': errCheckFn }, style: {display: display}"><label data-bind="text: argName"></label><input type="text" data-bind="value: value"></div></div></div>
     </div>
   
 

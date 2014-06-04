@@ -42,7 +42,7 @@ var _ = Describe("Context map", func() {
 
 			result, _ := localContext.GetInt("int")
 			Ω(result).Should(Equal(123))
-		})		
+		})
 
 		It("can store bool value as provided", func() {
 			localContext.PutBool("key", true)
