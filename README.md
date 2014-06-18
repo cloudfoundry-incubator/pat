@@ -26,36 +26,21 @@ application, see the instructions on "Running PAT as a Cloud Foundry App" below.
 4) Download PAT and install the necessary dependencies
 
     go get github.com/cloudfoundry-incubator/pat
+      *(Ignore any warnings about "no buildable Go source files")
+      *(Ignore errors in src/github.com/cloudfoundry-incubator/pat/workloads/gcf.go")
     cd $GOPATH/src/github.com/cloudfoundry-incubator/pat
     gocart
 
 5) See [CF CLI] (https://github.com/cloudfoundry/cli) for instructions on installing `cf`
 
-Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been renamed to `gcf` or
-symlinked to `gcf`.
+Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been symlinked to `gcf` or renamed to `gcf`.
 
 Running PAT
 =================================
 
-## As a Cloud Foundry App (In the works)
+## Running Locally
 
-Ensure your Cloud Foundry version is current and running
-
-1) Clone the project if you have not followed the "Setting up PAT to run locally" section
-
-    git clone https://github.com/cloudfoundry-incubator/pat
-
-2) Change into the PAT directory
-
-3) Push the project to Cloud Foundry with our 'go' buildpack that adds gocart support
-
-    cf push -b https://github.com/jberkhahn/cloudfoundry-buildpack-go pat
-
-4) Open the browser and go to the provided URL
-
-## Locally
-
-If you wish to run PAT as a Cloud Foundry app, please refer to the section above.
+If you wish to run PAT as a Cloud Foundry app(work in progress), please refer to the section at the bottom of this page.
 
 There are three ways to run PAT locally. For all three ways, you must first:
 
@@ -176,6 +161,23 @@ In the event of an error during execution, the text of the error along with an e
 
     10: Error parsing input
     20: Error in executing the workload
+
+Running PATs as a Cloud Foundry App (In the works, some features might not work)
+===================================
+
+Ensure your Cloud Foundry version is current and running
+
+1) Clone the project if you have not followed the "Setting up PAT to run locally" section
+
+    git clone https://github.com/cloudfoundry-incubator/pat
+
+2) Change into the PAT directory
+
+3) Push the project to Cloud Foundry with our 'go' buildpack that adds gocart support
+
+    cf push -b https://github.com/jberkhahn/cloudfoundry-buildpack-go pat
+
+4) Open the browser and go to the provided URL
 
 Contributing
 ===================================
