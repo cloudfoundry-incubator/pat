@@ -1,6 +1,10 @@
 package workloads
 
 import (
+	"os/user"
+	"path/filepath"
+	"strings"
+
 	"github.com/cloudfoundry-incubator/pat/context"
 )
 
@@ -25,8 +29,8 @@ func DefaultWorkloadList() *WorkloadList {
 		StepWithContext("rest:target", restContext.Target, "Sets the CF target"),
 		StepWithContext("rest:login", restContext.Login, "Performs a login to the REST api. This option requires rest:target to be included in the list of workloads"),
 		StepWithContext("rest:push", restContext.Push, "Pushes a simple Ruby application using the REST api. This option requires both rest:target and rest:login to be included in the list of workloads"),
-		Step("cf:push", Push, "Pushes a simple Ruby application using the CF command-line"),
-		Step("cf:generateAndPush", GenerateAndPush, "Generates and pushes a unique simple Ruby application using the CF command-line"),
+		StepWithContext("cf:push", Push, "Pushes a simple Ruby application using the CF command-line"),
+		StepWithContext("cf:generateAndPush", GenerateAndPush, "Generates and pushes a unique simple Ruby application using the CF command-line"),
 		Step("dummy", Dummy, "An empty workload that can be used when a CF environment is not available"),
 		Step("dummyWithErrors", DummyWithErrors, "An empty workload that generates errors. This can be used when a CF environment is not available"),
 	}}
@@ -44,4 +48,32 @@ func (self *WorkloadList) DescribeWorkloads(to WorkloadAdder) {
 	for _, workload := range self.Workloads {
 		to.AddWorkloadStep(workload)
 	}
+}
+
+func PopulateAppContext(appDir string, ctx context.Context) error {
+	normalizedAppDir, err := normalizeAppDir(appDir)
+	if err != nil {
+		return err
+	}
+	ctx.PutString("app", normalizedAppDir)
+	return nil
+}
+
+func normalizeAppDir(appDir string) (string, error) {
+	appPath := filepath.Clean(appDir)
+	appPath = filepath.ToSlash(appPath)
+	dirs := strings.Split(appPath, "/")
+
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	for i, dir := range dirs {
+		if dir == "~" {
+			dirs[i] = usr.HomeDir
+		}
+	}
+
+	return filepath.Join(strings.Join(dirs, "/")), nil
 }
