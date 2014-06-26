@@ -6,7 +6,21 @@ The goal of this project is to create a super-simple load generation/performance
 and easily running load against Cloud Foundry. The tool has both a command line UI, for running quickly during
 a build and a web UI for tracking longer-running tests.
 
-Setting up PAT to run locally
+To run PATs, you could download the binary executable we provide, or you could clone and run the repository if you want the latest version of PATs
+
+Download PATs Binary
+==================================
+If you just want to run PATs, you could download our PATs binary file.
+Available Binary:
+- Mac OSx 64bit
+- Linux 64bit
+- Windows 64bit
+
+Goto https://github.com/cloudfoundry-incubator/pat/releases to download
+
+
+
+Clone and Setting up to run locally
 ==================================
 These steps are to setup this project and have it run locally on your system. This includes a number of
 requirements for Go and the dependent libraries. If you wish to only run this project as a Cloud Foundry
