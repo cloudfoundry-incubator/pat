@@ -11,6 +11,9 @@ To run PATs, you could download the binary executable we provide, or you could c
 Download PATs Binary
 ==================================
 If you just want to run PATs, you could download our PATs binary file.
+
+Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been symlinked to `gcf` or renamed to `gcf`.
+
 Available Binary:
 - Mac OSx 64bit
 - Linux 64bit
