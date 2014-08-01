@@ -179,6 +179,7 @@ In the event of an error during execution, the text of the error along with an e
     10: Error parsing input
     20: Error in executing the workload
 
+<!---
 Running PATs as a Cloud Foundry App (In the works, some features might not work)
 ===================================
 
@@ -195,6 +196,7 @@ Ensure your Cloud Foundry version is current and running
     cf push -b https://github.com/jberkhahn/cloudfoundry-buildpack-go pat
 
 4) Open the browser and go to the provided URL
+--->
 
 Contributing
 ===================================
