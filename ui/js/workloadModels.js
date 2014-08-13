@@ -28,9 +28,9 @@ patWorkload = function(){
 		click: workloadClick
 	}
 
-	var gcfPush = {
-		name: "gcf:push",
-		html: "<span class='glyphicon glyphicon-plus-sign'></span> gcf:push",
+	var cfPush = {
+		name: "cf:push",
+		html: "<span class='glyphicon glyphicon-plus-sign'></span> cf:push",
 		requires: [],
 		requiredBy: [],
 		args: [],
@@ -242,7 +242,7 @@ patWorkload = function(){
  	}
 
 	// construct models
-	var availableCmds = ko.observableArray([restTarget, restLogin, restPush, gcfPush, dummy, dummyWithErrors])
+	var availableCmds = ko.observableArray([restTarget, restLogin, restPush, cfPush, dummy, dummyWithErrors])
 	var selectedCmds = ko.observableArray([])
 	var reqArguments = ko.observableArray([cfTarget, cfUser, cfPass, cfSpace]);
 

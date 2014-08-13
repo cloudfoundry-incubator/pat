@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("GCF Workloads", func() {
+var _ = Describe("cf Workloads", func() {
 	var (
 		srcDir string
 		dstDir string

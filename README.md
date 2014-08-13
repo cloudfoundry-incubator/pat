@@ -12,7 +12,7 @@ Download PATs Binary
 ==================================
 If you just want to run PATs, you could download our PATs binary file.
 
-Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been symlinked to `gcf` or renamed to `gcf`.
+Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been symlinked to `cf` or renamed to `cf`.
 
 Available Binary:
 - Mac OSx 64bit
@@ -44,13 +44,13 @@ application, see the instructions on "Running PAT as a Cloud Foundry App" below.
 
     go get github.com/cloudfoundry-incubator/pat
       *(Ignore any warnings about "no buildable Go source files")
-      *(Ignore errors in src/github.com/cloudfoundry-incubator/pat/workloads/gcf.go")
+      *(Ignore errors in src/github.com/cloudfoundry-incubator/pat/workloads/cf.go")
     cd $GOPATH/src/github.com/cloudfoundry-incubator/pat
     gocart
 
 5) See [CF CLI] (https://github.com/cloudfoundry/cli) for instructions on installing `cf`
 
-Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been symlinked to `gcf` or renamed to `gcf`.
+Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been symlinked to `cf` or renamed to `cf`.
 
 Running PAT
 =================================
@@ -63,9 +63,9 @@ There are three ways to run PAT locally. For all three ways, you must first:
 
 1) Go through the "Setting up PAT to run locally" section
 
-2) Make sure that you have targeted a Cloud Foundry environment using the gcf tool
+2) Make sure that you have targeted a Cloud Foundry environment using the cf tool
 
-    gcf login
+    cf login
 
 ### Option 1. Run the source code directly
 1) Change into the top level of this project
@@ -74,7 +74,7 @@ There are three ways to run PAT locally. For all three ways, you must first:
 
 2) Execute the command line
 
-    go run main.go -workload=gcf:push
+    go run main.go -workload=cf:push
 
 ### Option 2. Run the source code through a web interface
 
@@ -97,7 +97,7 @@ There are three ways to run PAT locally. For all three ways, you must first:
 
 2a) Run the PAT executable in command line mode
 
-    pat -workload=gcf:push
+    pat -workload=cf:push
 
 2b) Run the PAT executable in web interface mode
 
@@ -117,7 +117,7 @@ There are three ways to run PAT locally. For all three ways, you must first:
 
     pat -list-workloads  # Lists the available workloads
 
-    pat -workload=gcf:push,gcf:push,..  # Select the workload operations you want to run (See "Workload options" below)
+    pat -workload=cf:push,cf:push,..  # Select the workload operations you want to run (See "Workload options" below)
 
     pat -workload=dummy  # Run the tool with a dummy operation (not against a CF environment)
 
@@ -128,7 +128,7 @@ There are three ways to run PAT locally. For all three ways, you must first:
         -rest:password=PASSWORD \
         -rest:space=xyz_space  \
         -workload=rest:target,rest:login,rest:push,rest:push \
-        -concurrency=5 -iterations=20 -interval=10 # Use the REST API to make operation requests instead of gcf
+        -concurrency=5 -iterations=20 -interval=10 # Use the REST API to make operation requests instead of cf
 
 ### Workload options
 The `workload` option specified a comma-separated list of workloads to be used in the test.
@@ -137,7 +137,7 @@ The following options are available:
 - `rest:target` - sets the CF target. Mandatory to include before any other rest operations are listed.
 - `rest:login` - performs a login to the REST api. This option requires `rest:target` to be included in the list of workloads.
 - `rest:push` - pushes a simple Ruby application using the REST api. This option requires both `rest:target` and `rest:login` to be included in the list of workloads.
-- `gcf:push` - pushes a simple Ruby application using the CF command-line
+- `cf:push` - pushes a simple Ruby application using the CF command-line
 - `dummy` - an empty workload that can be used when a CF environment is not available.
 - `dummyWithErrors` - an empty workload that generates errors. This can be used when a CF environment is not available.
 
@@ -228,7 +228,7 @@ Known Limitations / TODOs etc.
  - Current feature set is a first-pass to get to something useful, contributions very welcome
  - Lots of stuff kept in memory and not flushed out
  - Creates lots of apps, does not delete them. We normally make sure we're targetted at a 'pats' space and just cf delete-space the space after to get rid of everything.
- - Only supports basic operations so far (push via gcf, target + login + push via rest api)
- - GCF workloads assume single already-logged-in-and-targetted user
+ - Only supports basic operations so far (push via cf, target + login + push via rest api)
+ - cf workloads assume single already-logged-in-and-targetted user
 
 

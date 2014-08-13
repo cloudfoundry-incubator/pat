@@ -136,7 +136,7 @@ func (ctx *serverContext) handlePush(w http.ResponseWriter, r *http.Request) (in
 
 	workload := r.FormValue("workload")
 	if workload == "" {
-		workload = "gcf:push"
+		workload = "cf:push"
 	}
 
 	workloadContext := context.New()
