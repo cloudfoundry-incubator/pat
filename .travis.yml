@@ -6,8 +6,6 @@ before_install:
   - git submodule update --init --recursive
 
 install:
-  - npm install -g grunt-cli
-  - npm install
   - export PATH=$HOME/gopath/bin:$PATH
   - go get github.com/vito/gocart
 
