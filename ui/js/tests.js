@@ -55,11 +55,11 @@ describe("Workload List", function(){
   })
 
   it("returns a list of selected commands, separated by commas", function(){
-    $("#workloadItems button:contains('gcf:push')").trigger("click")
+    $("#workloadItems button:contains('cf:push')").trigger("click")
     $("#workloadItems button:contains('dummyWithErrors')").trigger("click")
-    $("#workloadItems button:contains('gcf:push')").trigger("click")
+    $("#workloadItems button:contains('cf:push')").trigger("click")
 
-    expect( workloadList.workloads() ).toBe("gcf:push,dummyWithErrors,gcf:push")    
+    expect( workloadList.workloads() ).toBe("cf:push,dummyWithErrors,cf:push")    
   })
 
   it("removes a selected command when selected command is clicked", function(){
@@ -475,7 +475,7 @@ describe("Throughput chart", function() {
   })
 
   it("should replace illegal characters with underscore in tooltip class names", function() {
-    var illegalName = "gcf:login+123";
+    var illegalName = "cf:login+123";
     var workload = [{ Commands: { illegalName: {"Count": 1, "Throughput": 0.50}}}];
 
     chart(workload);
@@ -483,7 +483,7 @@ describe("Throughput chart", function() {
 
     expect( $(node).find("g.data" + illegalName).length ).toEqual(0);
 
-    expect( $(node).find("g.data" + "gcf_login_123").length ).toEqual(1);
+    expect( $(node).find("g.data" + "cf_login_123").length ).toEqual(1);
   })
 
   it("should show the maximum command throughput in seconds in the y-axis", function() {

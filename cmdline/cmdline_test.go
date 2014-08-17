@@ -28,7 +28,7 @@ var _ = Describe("Cmdline", func() {
 			worker := benchmarker.NewLocalWorker()
 			worker.AddWorkloadStep(workloads.Step("login", nil, "description"))
 			worker.AddWorkloadStep(workloads.Step("push", nil, "description"))
-			worker.AddWorkloadStep(workloads.Step("gcf:push", nil, "description"))
+			worker.AddWorkloadStep(workloads.Step("cf:push", nil, "description"))
 			return fn(worker)
 		}
 
@@ -101,11 +101,11 @@ var _ = Describe("Cmdline", func() {
 
 		Describe("When -workload contains white spaces", func() {
 			BeforeEach(func() {
-				args = []string{"-workload", "  login ,  push , gcf:push"}
+				args = []string{"-workload", "  login ,  push , cf:push"}
 			})
 
 			It("removes white spaces in the parameter", func() {
-				Ω(lab).Should(HaveBeenRunWith("workload", "login,push,gcf:push"))
+				Ω(lab).Should(HaveBeenRunWith("workload", "login,push,cf:push"))
 			})
 		})
 	})

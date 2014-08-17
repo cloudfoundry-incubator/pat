@@ -38,7 +38,7 @@ func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.concurrencyStepTime, "concurrency:timeBetweenSteps", 60, "seconds between adding additonal workers when ramping works up")
 	config.BoolVar(&params.silent, "silent", false, "true to run the commands and print output the terminal")
 	config.StringVar(&params.output, "output", "", "if specified, writes benchmark results to a CSV file")
-	config.StringVar(&params.workload, "workload", "gcf:push", "a comma-separated list of operations a user should issue (use -list-workloads to see available workload options)")
+	config.StringVar(&params.workload, "workload", "cf:push", "a comma-separated list of operations a user should issue (use -list-workloads to see available workload options)")
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload every n seconds, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "repeat a repeating interval until n seconds, to be used with -interval")
 	config.BoolVar(&params.listWorkloads, "list-workloads", false, "Lists the available workloads")

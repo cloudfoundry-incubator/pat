@@ -143,7 +143,7 @@ var _ = Describe("Server", func() {
 		Ω(lab.config.ConcurrencyStepTime).Should(Equal(60 * time.Second))
 		Ω(lab.config.Interval).Should(Equal(0))
 		Ω(lab.config.Stop).Should(Equal(0))
-		Ω(lab.config.Workload).Should(Equal("gcf:push"))
+		Ω(lab.config.Workload).Should(Equal("cf:push"))
 	})
 
 	It("Supports an 'iterations' parameter", func() {
