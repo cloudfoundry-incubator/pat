@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/nu7hatch/gouuid"
+	"github.com/onsi/gomega/gbytes"
 	. "github.com/pivotal-cf-experimental/cf-test-helpers/cf"
 )
 
@@ -38,8 +39,7 @@ func DummyWithErrors() error {
 func Push() error {
 	guid, _ := uuid.NewV4()
 	pathToApp := path.Join("assets", "dora")
-	err := Cf("push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp).ExpectOutput("App started")
-	return err
+	return expectCfToSay("App Started", "push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp)
 }
 
 func CopyAndReplaceText(srcDir string, dstDir string, searchText string, replaceText string) error {
@@ -83,6 +83,15 @@ func GenerateAndPush() error {
 		return err
 	}
 
-	err = Cf("push", "pats-"+guid.String(), "-m", "128M", "-p", dstDir).ExpectOutput("App started")
-	return err
+	return expectCfToSay("App Started", "push", "pats-"+guid.String(), "-m", "128M", "-p", dstDir)
+}
+
+func expectCfToSay(expect string, args ...string) error {
+	success, err := gbytes.Say(expect).Match(Cf(args...))
+
+	if success {
+		return nil
+	} else {
+		return err
+	}
 }

@@ -12,7 +12,7 @@ Download PATs Binary
 ==================================
 If you just want to run PATs, you could download our PATs binary file.
 
-Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been symlinked to `cf` or renamed to `cf`.
+Note: It is important that `cf` is accessable on your `$PATH` if you intend to use any of the 'cf:' workloads (see [CF Cli](http://github.com/cloudfoundry/cli) for instructions on installing the cloudfoundry cli).
 
 Available Binary:
 - Mac OSx 64bit
@@ -50,7 +50,7 @@ application, see the instructions on "Running PAT as a Cloud Foundry App" below.
 
 5) See [CF CLI] (https://github.com/cloudfoundry/cli) for instructions on installing `cf`
 
-Note: It is important that `cf` is accessable on your `$PATH`, and that it has either been symlinked to `cf` or renamed to `cf`.
+Note: It is important that `cf` is accessable on your `$PATH` if you intend to use any of the 'cf:' workloads (see [CF Cli](http://github.com/cloudfoundry/cli) for instructions on installing the cloudfoundry cli).
 
 Running PAT
 =================================

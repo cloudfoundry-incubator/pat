@@ -1,6 +1,7 @@
 github.com/nu7hatch/gouuid origin/master
 github.com/vito/cmdtest origin/master
 github.com/pivotal-cf-experimental/cf-test-helpers/cf origin/master
+github.com/pivotal-cf-experimental/cf-test-helpers/runner origin/master
 github.com/gorilla/mux origin/master
 github.com/garyburd/redigo/redis origin/master
 github.com/cloudfoundry/gosteno origin/master

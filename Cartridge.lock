@@ -1,9 +1,10 @@
 github.com/nu7hatch/gouuid	179d4d0c4d8d407a32af483c2354df1d2c91e6c3
-github.com/vito/cmdtest	7949d8f2b06890d93ca31d3056de240b9d7c3bd5
-github.com/pivotal-cf-experimental/cf-test-helpers/cf	0e1d12aa96a27ce7c275335df9fe3fc0c8bac982
+github.com/vito/cmdtest	6d025fad5c9c2d65a0e827f4d636747226222eec
+github.com/pivotal-cf-experimental/cf-test-helpers/cf	f71489ff97085ccf3a106ff6e27638a34204d5ed
+github.com/pivotal-cf-experimental/cf-test-helpers/runner	f71489ff97085ccf3a106ff6e27638a34204d5ed
 github.com/gorilla/mux	9ede152210fa25c1377d33e867cb828c19316445
 github.com/garyburd/redigo/redis	ed54f4ed86a815cf09870e4bd1a10a2ee39a4308
 github.com/cloudfoundry/gosteno	5eb8c6e554f0dfc39d6468813b8ac19ec28fe74f
-github.com/onsi/ginkgo	b7291895c890c7f560d82751954c5a7501c57a7f
-github.com/onsi/gomega	f89bbd91594bca784410ec5cfd44101023317933
+github.com/onsi/ginkgo	32204a3eab0576cbea19f5ff8b27d3a928647ea6
+github.com/onsi/gomega	a78ae492d53aad5a7a232d0d0462c14c400e3ee7
 launchpad.net/goyaml	51
