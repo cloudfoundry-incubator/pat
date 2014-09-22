@@ -36,7 +36,7 @@ func InitCommandLineFlags(config config.Config) {
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
 	config.StringVar(&params.concurrency, "concurrency", "1", "number of workers to execute the workload in parallel, can be static or ramping up, i.e. 1..3")
 	config.IntVar(&params.concurrencyStepTime, "concurrency:timeBetweenSteps", 60, "seconds between adding additonal workers when ramping works up")
-	config.BoolVar(&params.silent, "silent", false, "true to run the commands and print output the terminal")
+	config.BoolVar(&params.silent, "silent", false, "true to run silently and exit without interaction when finished")
 	config.StringVar(&params.output, "output", "", "if specified, writes benchmark results to a CSV file")
 	config.StringVar(&params.workload, "workload", "cf:push", "a comma-separated list of operations a user should issue (use -list-workloads to see available workload options)")
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload every n seconds, to be used with -stop")
@@ -72,12 +72,29 @@ func RunCommandLine() error {
 					})
 				}
 
+				exitBlocker := make(chan int)
+				if params.silent {
+					var tryBlock = func(s <-chan *Sample) {
+						for _ = range s {
+							exitBlocker <- 1
+						}
+						close(exitBlocker)
+					}
+					handlers = append(handlers, func(s <-chan *Sample) {
+						tryBlock(s)
+					})
+				}
+
 				lab.RunWithHandlers(
 					NewRunnableExperiment(
 						NewExperimentConfiguration(
 							params.iterations, parsedConcurrency, parsedConcurrencyStepTime, params.interval, params.stop, worker, params.workload)), handlers, workloadContext)
 
-				BlockExit()
+				if params.silent {
+					SilentExit(exitBlocker)
+				} else {
+					BlockExit()
+				}
 				return err
 			})
 		})
@@ -140,6 +157,12 @@ var BlockExit = func() {
 			return
 		}
 	}
+}
+
+var SilentExit = func(e <-chan int) {
+	for _ = range e {
+	}
+	return
 }
 
 var PrintWorkload = func(workload workloads.WorkloadStep) {
