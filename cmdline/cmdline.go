@@ -61,6 +61,9 @@ func RunCommandLine() error {
 			return store.WithStore(func(store Store) error {
 
 				parsedConcurrency, err := parseConcurrency(params.concurrency)
+				if err != nil {
+					return err
+				}
 				parsedConcurrencyStepTime := parseConcurrencyStepTime(params.concurrencyStepTime)
 
 				lab := LaboratoryFactory(store)
