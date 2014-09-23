@@ -22,7 +22,6 @@ var params = struct {
 	concurrency         string
 	concurrencyStepTime int
 	silent              bool
-	output              string
 	workload            string
 	interval            int
 	stop                int
@@ -37,7 +36,6 @@ func InitCommandLineFlags(config config.Config) {
 	config.StringVar(&params.concurrency, "concurrency", "1", "number of workers to execute the workload in parallel, can be static or ramping up, i.e. 1..3")
 	config.IntVar(&params.concurrencyStepTime, "concurrency:timeBetweenSteps", 60, "seconds between adding additonal workers when ramping works up")
 	config.BoolVar(&params.silent, "silent", false, "true to run silently and exit without interaction when finished")
-	config.StringVar(&params.output, "output", "", "if specified, writes benchmark results to a CSV file")
 	config.StringVar(&params.workload, "workload", "cf:push", "a comma-separated list of operations a user should issue (use -list-workloads to see available workload options)")
 	config.IntVar(&params.interval, "interval", 0, "repeat a workload every n seconds, to be used with -stop")
 	config.IntVar(&params.stop, "stop", 0, "repeat a repeating interval until n seconds, to be used with -interval")
