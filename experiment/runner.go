@@ -31,6 +31,7 @@ type Sample struct {
 	Commands              map[string]Command
 	Average               time.Duration
 	TotalTime             time.Duration
+	SystemTime            string
 	Total                 int64
 	TotalErrors           int
 	TotalWorkers          int
@@ -244,6 +245,6 @@ func (ex *SamplableExperiment) Sample() {
 		case _ = <-heartbeat.C:
 			//heartbeat for updating CLI Walltime every second
 		}
-		ex.samples <- &Sample{clone(commands), avg, totalTime, iterations, totalErrors, workers, lastResult, lastError, worstResult, ninetyfifthPercentile, time.Now().Sub(startTime), sampleType}
+		ex.samples <- &Sample{clone(commands), avg, totalTime, time.Now().Format(time.RFC3339Nano), iterations, totalErrors, workers, lastResult, lastError, worstResult, ninetyfifthPercentile, time.Now().Sub(startTime), sampleType}
 	}
 }

@@ -40,20 +40,20 @@ var _ = Describe("Redis Store", func() {
 
 			writer := store.Writer("experiment-1")
 			write(writer, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, "", 7, 9, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, "foo", 3, 1, 2, experiment.ResultSample},
+				&experiment.Sample{nil, 1, 2, "2009-11-10T23:00:00Z", 3, 4, 5, 6, "", 7, 9, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 9, 8, "2009-12-10T23:00:00Z", 7, 6, 5, 4, "foo", 3, 1, 2, experiment.ResultSample},
 			})
 
 			writer = store.Writer("experiment-2")
 			write(writer, []*experiment.Sample{
-				&experiment.Sample{nil, 2, 2, 3, 4, 5, 6, "", 7, 9, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 2, 2, "2010-11-10T23:00:00Z", 3, 4, 5, 6, "", 7, 9, 8, experiment.ResultSample},
 			})
 
 			writer = store.Writer("experiment-3")
 			write(writer, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 3, 3, 4, 5, 6, "", 7, 9, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 2, 3, 3, 4, 5, 6, "", 7, 9, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, "foo", 3, 1, 2, experiment.ResultSample},
+				&experiment.Sample{nil, 1, 3, "2011-11-10T23:00:00Z", 3, 4, 5, 6, "", 7, 9, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 2, 3, "2011-12-10T23:00:00Z", 3, 4, 5, 6, "", 7, 9, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 9, 8, "2012-11-10T23:00:00Z", 7, 6, 5, 4, "foo", 3, 1, 2, experiment.ResultSample},
 			})
 
 			writer = store.Writer("experiment-with-no-data")

@@ -41,8 +41,8 @@ var _ = Describe("Csv Store", func() {
 			cmd := experiment.Command{1, 0.5, 2, 3, 4, 5}
 			commands["boo"] = cmd
 			write(writer, []*experiment.Sample{
-				&experiment.Sample{commands, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
-				&experiment.Sample{commands, 9, 8, 7, 6, 5, 4, "foo", 3, 7, 2, experiment.ResultSample},
+				&experiment.Sample{commands, 1, 2, "2009-11-10T23:00:00Z", 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
+				&experiment.Sample{commands, 9, 8, "2009-12-10T23:00:00Z", 7, 6, 5, 4, "foo", 3, 7, 2, experiment.ResultSample},
 			})
 			files, err := ioutil.ReadDir(dir)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -53,9 +53,9 @@ var _ = Describe("Csv Store", func() {
 		})
 
 		It("Converts a list of experiments to a CSV", func() {
-			Ω(strings.Split(output, "\n")[0]).Should(ContainSubstring("Average,TotalTime,Total,TotalErrors"))
-			Ω(strings.Split(output, "\n")[1]).Should(ContainSubstring("1,2,3,4"))
-			Ω(strings.Split(output, "\n")[2]).Should(ContainSubstring("9,8,7,6"))
+			Ω(strings.Split(output, "\n")[0]).Should(ContainSubstring("Average,TotalTime,SystemTime,Total,TotalErrors"))
+			Ω(strings.Split(output, "\n")[1]).Should(ContainSubstring("1,2,3,2009-11-10T23:00:00Z,4"))
+			Ω(strings.Split(output, "\n")[2]).Should(ContainSubstring("9,8,7,2009-12-10T23:00:00Z,6"))
 		})
 
 		It("Includes all fields", func() {
@@ -71,21 +71,21 @@ var _ = Describe("Csv Store", func() {
 			samples, err := ex[0].GetData()
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(samples[0]).Should(Equal(&experiment.Sample{commands, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample}))
+			Ω(samples[0]).Should(Equal(&experiment.Sample{commands, 1, 2, "2009-11-10T23:00:00Z", 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample}))
 		})
 
 		It("Loads multiple CSVs from a directory, in order", func() {
 			foo := store.Writer("bar")
 			write(foo, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, "foo", 3, 7, 2, experiment.ResultSample},
+				&experiment.Sample{nil, 1, 2, "2009-11-10T23:00:00Z", 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 9, 8, "2009-12-10T23:00:00Z", 7, 6, 5, 4, "foo", 3, 7, 2, experiment.ResultSample},
 			})
 
 			bar := store.Writer("baz")
 			write(bar, []*experiment.Sample{
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 1, 2, 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
-				&experiment.Sample{nil, 9, 8, 7, 6, 5, 4, "foo", 3, 7, 2, experiment.ResultSample},
+				&experiment.Sample{nil, 1, 2, "2009-11-10T23:00:00Z", 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 1, 2, "2009-12-10T23:00:00Z", 3, 4, 5, 6, "", 7, 3, 8, experiment.ResultSample},
+				&experiment.Sample{nil, 9, 8, "2010-12-10T23:00:00Z", 7, 6, 5, 4, "foo", 3, 7, 2, experiment.ResultSample},
 			})
 
 			samples, err := store.LoadAll()
