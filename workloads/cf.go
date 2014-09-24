@@ -43,7 +43,13 @@ func DummyWithErrors() error {
 func Push(ctx context.Context) error {
 	guid, _ := uuid.NewV4()
 	pathToApp, _ := ctx.GetString("app")
-	return expectCfToSay("App Started", "push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp)
+	pathToManifest, _ := ctx.GetString("app:manifest")
+
+	if pathToManifest == "" {
+		return expectCfToSay("App started", "push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp)
+	} else {
+		return expectCfToSay("App started", "push", "pats-"+guid.String(), "-p", pathToApp, "-f", pathToManifest)
+	}
 }
 
 func CopyAndReplaceText(srcDir string, dstDir string, searchText string, replaceText string) error {
@@ -76,18 +82,26 @@ func CopyAndReplaceText(srcDir string, dstDir string, searchText string, replace
 }
 
 func GenerateAndPush(ctx context.Context) error {
+	pathToApp, _ := ctx.GetString("app")
+	pathToManifest, _ := ctx.GetString("app:manifest")
+
 	guid, _ := uuid.NewV4()
-	srcDir, _ := ctx.GetString("app")
 	rand.Seed(time.Now().UTC().UnixNano())
 	salt := strconv.FormatInt(rand.Int63(), 10)
+
 	dstDir := path.Join(os.TempDir(), salt)
 	defer os.RemoveAll(dstDir)
-	err := CopyAndReplaceText(srcDir, dstDir, "$RANDOM_TEXT", salt)
+
+	err := CopyAndReplaceText(pathToApp, dstDir, "$RANDOM_TEXT", salt)
 	if err != nil {
 		return err
 	}
 
-	return expectCfToSay("App started", "push", "pats-"+guid.String(), "-m", "128M", "-p", dstDir)
+	if pathToManifest == "" {
+		return expectCfToSay("App started", "push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp)
+	} else {
+		return expectCfToSay("App started", "push", "pats-"+guid.String(), "-p", pathToApp, "-f", pathToManifest)
+	}
 }
 
 func expectCfToSay(expect string, args ...string) error {

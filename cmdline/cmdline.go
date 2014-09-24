@@ -18,6 +18,7 @@ import (
 
 var params = struct {
 	app                 string
+	manifest            string
 	iterations          int
 	listWorkloads       bool
 	concurrency         string
@@ -34,6 +35,7 @@ var params = struct {
 
 func InitCommandLineFlags(config config.Config) {
 	config.StringVar(&params.app, "app", "assets/dora", "filepath to app, defaults to provided dora in assets")
+	config.StringVar(&params.manifest, "app:manifest", "", "filepath to cf manifest for the app")
 	config.IntVar(&params.iterations, "iterations", 1, "number of pushes to attempt")
 	config.StringVar(&params.concurrency, "concurrency", "1", "number of workers to execute the workload in parallel, can be static or ramping up, i.e. 1..3")
 	config.IntVar(&params.concurrencyStepTime, "concurrency:timeBetweenSteps", 60, "seconds between adding additonal workers when ramping works up")
@@ -55,7 +57,7 @@ func RunCommandLine() error {
 
 	workloadContext := context.New()
 	workloads.PopulateRestContext(params.restTarget, params.restUser, params.restPass, params.restSpace, workloadContext)
-	workloads.PopulateAppContext(params.app, workloadContext)
+	workloads.PopulateAppContext(params.app, params.manifest, workloadContext)
 
 	return WithConfiguredWorkerAndSlaves(func(worker benchmarker.Worker) error {
 		return validateParameters(worker, func() error {

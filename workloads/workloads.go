@@ -50,19 +50,26 @@ func (self *WorkloadList) DescribeWorkloads(to WorkloadAdder) {
 	}
 }
 
-func PopulateAppContext(appDir string, ctx context.Context) error {
-	normalizedAppDir, err := normalizeAppDir(appDir)
+func PopulateAppContext(appPath string, manifestPath string, ctx context.Context) error {
+	normalizedAppPath, err := normalizePath(appPath)
 	if err != nil {
 		return err
 	}
-	ctx.PutString("app", normalizedAppDir)
+	ctx.PutString("app", normalizedAppPath)
+
+	normalizedManifestPath, err := normalizePath(manifestPath)
+	if err != nil {
+		return err
+	}
+	ctx.PutString("app:manifest", normalizedManifestPath)
+
 	return nil
 }
 
-func normalizeAppDir(appDir string) (string, error) {
-	appPath := filepath.Clean(appDir)
-	appPath = filepath.ToSlash(appPath)
-	dirs := strings.Split(appPath, "/")
+func normalizePath(aPath string) (string, error) {
+	normalizedPath := filepath.Clean(aPath)
+	normalizedPath = filepath.ToSlash(normalizedPath)
+	dirs := strings.Split(normalizedPath, "/")
 
 	usr, err := user.Current()
 	if err != nil {
