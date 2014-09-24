@@ -1,7 +1,10 @@
 package workloads
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -12,7 +15,7 @@ import (
 	"time"
 
 	"github.com/nu7hatch/gouuid"
-	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/ginkgo"
 	. "github.com/pivotal-cf-experimental/cf-test-helpers/cf"
 )
 
@@ -39,7 +42,7 @@ func DummyWithErrors() error {
 func Push() error {
 	guid, _ := uuid.NewV4()
 	pathToApp := path.Join("assets", "dora")
-	return expectCfToSay("App Started", "push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp)
+	return expectCfToSay("App started", "push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp)
 }
 
 func CopyAndReplaceText(srcDir string, dstDir string, searchText string, replaceText string) error {
@@ -83,15 +86,20 @@ func GenerateAndPush() error {
 		return err
 	}
 
-	return expectCfToSay("App Started", "push", "pats-"+guid.String(), "-m", "128M", "-p", dstDir)
+	return expectCfToSay("App started", "push", "pats-"+guid.String(), "-m", "128M", "-p", dstDir)
 }
 
 func expectCfToSay(expect string, args ...string) error {
-	success, err := gbytes.Say(expect).Match(Cf(args...))
-
+	var outBuffer bytes.Buffer
+	oldWriter := ginkgo.GinkgoWriter
+	ginkgo.GinkgoWriter = bufio.NewWriter(&outBuffer)
+	cfOutBuffer := Cf(args...).Wait(10 * time.Minute).Out
+	cfContents := cfOutBuffer.Contents()
+	success := strings.Contains(string(cfContents), expect)
+	ginkgo.GinkgoWriter = oldWriter
 	if success {
 		return nil
 	} else {
-		return err
+		return errors.New(fmt.Sprintf("CF output did not contain `%s`", expect))
 	}
 }
