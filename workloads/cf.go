@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/nu7hatch/gouuid"
 	"github.com/onsi/ginkgo"
 	. "github.com/pivotal-cf-experimental/cf-test-helpers/cf"
@@ -39,10 +40,10 @@ func DummyWithErrors() error {
 	return nil
 }
 
-func Push() error {
+func Push(ctx context.Context) error {
 	guid, _ := uuid.NewV4()
-	pathToApp := path.Join("assets", "dora")
-	return expectCfToSay("App started", "push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp)
+	pathToApp, _ := ctx.GetString("app")
+	return expectCfToSay("App Started", "push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp)
 }
 
 func CopyAndReplaceText(srcDir string, dstDir string, searchText string, replaceText string) error {
@@ -74,9 +75,9 @@ func CopyAndReplaceText(srcDir string, dstDir string, searchText string, replace
 	})
 }
 
-func GenerateAndPush() error {
+func GenerateAndPush(ctx context.Context) error {
 	guid, _ := uuid.NewV4()
-	srcDir := path.Join("assets", "dora")
+	srcDir, _ := ctx.GetString("app")
 	rand.Seed(time.Now().UTC().UnixNano())
 	salt := strconv.FormatInt(rand.Int63(), 10)
 	dstDir := path.Join(os.TempDir(), salt)
