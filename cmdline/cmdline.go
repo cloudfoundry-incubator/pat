@@ -55,7 +55,7 @@ func InitCommandLineFlags(config config.Config) {
 func RunCommandLine() error {
 	params.workload = strings.Replace(params.workload, " ", "", -1)
 
-	workloadContext := context.New()
+	workloadContext := NewContext()
 	workloads.PopulateRestContext(params.restTarget, params.restUser, params.restPass, params.restSpace, workloadContext)
 	workloads.PopulateAppContext(params.app, params.manifest, workloadContext)
 
@@ -173,4 +173,8 @@ var SilentExit = func(e <-chan int) {
 
 var PrintWorkload = func(workload workloads.WorkloadStep) {
 	fmt.Printf("\x1b[1m%s\x1b[0m\n\t%s\n", workload.Name, workload.Description)
+}
+
+var NewContext = func() context.Context {
+	return context.New()
 }

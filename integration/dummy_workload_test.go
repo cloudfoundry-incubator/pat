@@ -21,18 +21,34 @@ var _ = Describe("Dummy Integration", func() {
 		newAppManifest string
 	)
 
+	BeforeEach(func() {
+		tmpPath, err = ioutil.TempDir("", "PAT")
+		Ω(err).ToNot(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		err := os.RemoveAll(tmpPath)
+		Ω(err).ToNot(HaveOccurred())
+	})
+
+	Context("running dummy, dummyDelete workloads with -silent", func() {
+		It("creates then deletes the dummy workload", func() {
+			csvDir := fmt.Sprintf("-csv-dir=%s", tmpPath)
+			session := RunPAT("-iterations=3", "-workload=dummy,dummyDelete", "-silent", csvDir)
+			Ω(session.Wait(20).ExitCode()).Should(Equal(0), "exit code is not 0")
+
+			fileInfos, err := ioutil.ReadDir(tmpPath)
+			Ω(err).ToNot(HaveOccurred())
+			checkForCSVFile(fileInfos)
+
+			//TODO: check that CSV file includes delete workload entries
+		})
+	})
+
 	Context("running dummy workload with -silent", func() {
 		BeforeEach(func() {
-			tmpPath, err = ioutil.TempDir("", "PAT")
-			Ω(err).ToNot(HaveOccurred())
-
 			newAppPath = filepath.Join("assets", "hello-world")
 			newAppManifest = filepath.Join("assets", "manifests", "hello-world-manifest.yml")
-		})
-
-		AfterEach(func() {
-			err := os.RemoveAll(tmpPath)
-			Ω(err).ToNot(HaveOccurred())
 		})
 
 		It("and finishes with 0 exit", func() {

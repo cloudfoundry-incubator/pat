@@ -48,6 +48,62 @@ var _ = Describe("Cmdline", func() {
 		err = RunCommandLine()
 	})
 
+	Describe("When rest parmaters are supplied", func() {
+		var (
+			ctx context.Context
+		)
+
+		BeforeEach(func() {
+			ctx = context.New()
+			args = []string{"-rest:target", "someTarget",
+				"-rest:username", "someUser",
+				"-rest:password", "hunter2",
+				"-rest:space", "theFinalFrontier",
+			}
+			NewContext = func() context.Context {
+				return ctx
+			}
+		})
+
+		It("configures the experiment with the parameter", func() {
+			target, ok := ctx.GetString("rest:target")
+			Ω(ok).To(BeTrue())
+			Ω(target).To(Equal("someTarget"))
+
+			user, ok := ctx.GetString("rest:username")
+			Ω(ok).To(BeTrue())
+			Ω(user).To(Equal("someUser"))
+
+			password, ok := ctx.GetString("rest:password")
+			Ω(ok).To(BeTrue())
+			Ω(password).To(Equal("hunter2"))
+
+			space, ok := ctx.GetString("rest:space")
+			Ω(ok).To(BeTrue())
+			Ω(space).To(Equal("theFinalFrontier"))
+		})
+	})
+
+	Describe("When -app is supplied", func() {
+		var (
+			ctx context.Context
+		)
+
+		BeforeEach(func() {
+			ctx = context.New()
+			args = []string{"-app", "foo/bar/baz"}
+			NewContext = func() context.Context {
+				return ctx
+			}
+		})
+
+		It("configures the experiment with the parameter", func() {
+			path, ok := ctx.GetString("app")
+			Ω(ok).To(BeTrue())
+			Ω(path).To(Equal("foo/bar/baz"))
+		})
+	})
+
 	Describe("When -iterations is supplied", func() {
 		BeforeEach(func() {
 			args = []string{"-iterations", "3"}

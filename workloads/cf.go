@@ -27,13 +27,29 @@ func random(min, max int) int {
 	return r
 }
 
-func Dummy() error {
+func Dummy(ctx context.Context) error {
+	guid, _ := uuid.NewV4()
+	appName := "pats-" + guid.String()
+	appNames, _ := ctx.GetString("appNames")
+
+	if appNames != "" {
+		appNames += fmt.Sprintf(",%s", appName)
+	} else {
+		appNames = appName
+	}
+	ctx.PutString("appNames", appNames)
+
 	time.Sleep(time.Duration(random(1, 5)) * time.Second)
 	return nil
 }
 
-func DummyWithErrors() error {
-	Dummy()
+func DummyDelete(ctx context.Context) error {
+	time.Sleep(time.Duration(random(1, 5)) * time.Second)
+	return nil
+}
+
+func DummyWithErrors(ctx context.Context) error {
+	Dummy(ctx)
 	if random(0, 10) > 8 {
 		return errors.New("Random (dummy) error")
 	}
@@ -44,14 +60,36 @@ func Push(ctx context.Context) error {
 	guid, _ := uuid.NewV4()
 	pathToApp, _ := ctx.GetString("app")
 	pathToManifest, _ := ctx.GetString("app:manifest")
+	appName := "pats-" + guid.String()
+	appNames, _ := ctx.GetString("appNames")
+
+	if appNames != "" {
+		appNames += fmt.Sprintf(",%s", appName)
+	} else {
+		appNames = appName
+	}
+	ctx.PutString("appNames", appNames)
 
 	if pathToManifest == "" {
-		return expectCfToSay("App started", "push", "pats-"+guid.String(), "-m", "64M", "-p", pathToApp)
+		return expectCfToSay("App started", "push", appName, "-m", "64M", "-p", pathToApp)
 	} else {
-		return expectCfToSay("App started", "push", "pats-"+guid.String(), "-p", pathToApp, "-f", pathToManifest)
+		return expectCfToSay("App started", "push", appName, "-p", pathToApp, "-f", pathToManifest)
 	}
 }
 
+func Delete(ctx context.Context) error {
+	appNames, _ := ctx.GetString("appNames")
+	if appNames == "" {
+		return errors.New("No app to delete")
+	}
+	appNamesArray := strings.Split(appNames, ",")
+	appNameToDelete := appNamesArray[len(appNamesArray)-1]
+
+	appNames = strings.Replace(appNames, ","+appNameToDelete, "", -1)
+	appNames = strings.Replace(appNames, appNameToDelete, "", -1)
+	ctx.PutString("appNames", appNames)
+	return expectCfToSay("Deleting app", "delete", appNameToDelete, "-f")
+}
 func CopyAndReplaceText(srcDir string, dstDir string, searchText string, replaceText string) error {
 	return filepath.Walk(srcDir, func(file string, info os.FileInfo, err error) error {
 		if err != nil {
