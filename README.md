@@ -137,7 +137,7 @@ The following options are available:
 - `rest:target` - sets the CF target. Mandatory to include before any other rest operations are listed.
 - `rest:login` - performs a login to the REST api. This option requires `rest:target` to be included in the list of workloads.
 - `rest:push` - pushes a simple Ruby application using the REST api. This option requires both `rest:target` and `rest:login` to be included in the list of workloads.
-- `cf:push` - pushes a simple Ruby application using the CF command-line
+- `cf:push` - pushes an application using the CF command-line, defaults to pushing [Dora]("https://github.com/cloudfoundry/cf-acceptance-tests/tree/master/assets/dora").
 - `dummy` - an empty workload that can be used when a CF environment is not available.
 - `dummyWithErrors` - an empty workload that generates errors. This can be used when a CF environment is not available.
 

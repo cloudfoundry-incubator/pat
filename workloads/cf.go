@@ -148,11 +148,10 @@ func expectCfToSay(expect string, args ...string) error {
 	ginkgo.GinkgoWriter = bufio.NewWriter(&outBuffer)
 	cfOutBuffer := Cf(args...).Wait(10 * time.Minute).Out
 	cfContents := cfOutBuffer.Contents()
-	success := strings.Contains(string(cfContents), expect)
 	ginkgo.GinkgoWriter = oldWriter
-	if success {
+	if strings.Contains(string(cfContents), expect) {
 		return nil
 	} else {
-		return errors.New(fmt.Sprintf("CF output did not contain `%s`", expect))
+		return errors.New(string(cfContents))
 	}
 }
