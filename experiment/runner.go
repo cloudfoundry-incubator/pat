@@ -134,10 +134,13 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample), workloadCtx 
 }
 
 func (ex *ExecutableExperiment) Execute(workloadCtx context.Context) {
-	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func(context.Context) {
-		ExecuteConcurrently(ex.schedule.start(), Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))), workloadCtx)
-	}, ex.quit), workloadCtx)
+	workloadFuncs := Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload)))
+	intervalFunc := func(context.Context) {
+		ExecuteConcurrently(ex.schedule.start(), workloadFuncs, workloadCtx)
+	}
+	multipleIntervalFunc := RepeatEveryUntil(ex.Interval, ex.Stop, intervalFunc, ex.quit)
 
+	Execute(multipleIntervalFunc, workloadCtx)
 	close(ex.iteration)
 }
 
