@@ -706,9 +706,9 @@ describe("Bar chart", function() {
 
   it("should draw a block for each commands", function() {
      var data = [{"Commands": {
-                  "dummy1":{ "LastTime": 3 * sec },
-                  "dummy2":{ "LastTime": 2 * sec },
-                  "dummy3":{ "LastTime": 3 * sec }}, 
+                  "dummy1":{ "TotalTime": 3 * sec },
+                  "dummy2":{ "TotalTime": 2 * sec },
+                  "dummy3":{ "TotalTime": 3 * sec }}, 
                 "LastResult" : 8 * sec }];
     chart(data);
 
@@ -719,8 +719,8 @@ describe("Bar chart", function() {
 
   it("should stack command blocks for an iterations within the same bar", function() {
      var data = [{"Commands": {
-                  "dummy1":{ "LastTime": 3 * sec },                  
-                  "dummy2":{ "LastTime": 3 * sec }}, 
+                  "dummy1":{ "TotalTime": 3 * sec },                  
+                  "dummy2":{ "TotalTime": 3 * sec }}, 
                 "LastResult" : 6 * sec }];
     chart(data);
     var x1 = $(node).find("rect.bar")[0].getAttribute("x")
@@ -735,9 +735,9 @@ describe("Bar chart", function() {
 
   it("should shows each command blocks in different colors", function() {
      var data = [{"Commands": {
-                  "dummy1":{ "LastTime": 3 * sec },                  
-                  "dummy2":{ "LastTime": 5 * sec }, 
-                  "dummy3":{ "LastTime": 3 * sec }}, 
+                  "dummy1":{ "TotalTime": 3 * sec },                  
+                  "dummy2":{ "TotalTime": 5 * sec }, 
+                  "dummy3":{ "TotalTime": 3 * sec }}, 
                 "LastResult" : 6 * sec }];
     chart(data);
     var color1 = window.getComputedStyle($(node).find("rect.bar")[0]).getPropertyValue("fill")
@@ -750,8 +750,8 @@ describe("Bar chart", function() {
 
   it("should contains attributes of a jQuery mouse hover tooltip", function() {
      var data = [{"Commands": {
-                  "dummy1":{ "LastTime": 3 * sec },                  
-                  "dummy2":{ "LastTime": 5 * sec }}, 
+                  "dummy1":{ "TotalTime": 3 * sec },                  
+                  "dummy2":{ "TotalTime": 5 * sec }}, 
                 "LastResult" : 8 * sec }];
     chart(data);
 
@@ -769,9 +769,9 @@ describe("Bar chart", function() {
 
   it("has a utility function to turn 'data' into array containing commands, start time and duration", function(){
     var data = [{"Commands": {
-                  "dummy1":{ "LastTime": 1 * sec },                  
-                  "dummy2":{ "LastTime": 3 * sec }, 
-                  "dummy3":{ "LastTime": 2 * sec }}, 
+                  "dummy1":{ "TotalTime": 1 * sec },                  
+                  "dummy2":{ "TotalTime": 3 * sec }, 
+                  "dummy3":{ "TotalTime": 2 * sec }}, 
                 "LastResult" : 6 * sec }];
     
     var cmdData = d3_workload.toBarGraph(data)
@@ -781,6 +781,19 @@ describe("Bar chart", function() {
     expect(cmdData[2]).toEqual({"label" : "dummy3", "y" : 4 * sec, "height" : 2 * sec, "iteration" : 0})
   })
 
+  it("sorts the command in alphabetical order", function(){
+    var data = [{"Commands": {
+                  "mango":{ "TotalTime": 1 * sec },                  
+                  "orange":{ "TotalTime": 3 * sec }, 
+                  "apple":{ "TotalTime": 2 * sec }}, 
+                "LastResult" : 6 * sec }];
+    
+    var cmdData = d3_workload.toBarGraph(data)
+    
+    expect(cmdData[0]).toEqual({"label" : "apple", "y" : 0, "height" : 2 * sec, "iteration" : 0})
+    expect(cmdData[1]).toEqual({"label" : "mango", "y" : 2 * sec, "height" : 1 * sec, "iteration" : 0})
+    expect(cmdData[2]).toEqual({"label" : "orange", "y" : 3 * sec, "height" : 3 * sec, "iteration" : 0})
+  })
 });
 
 describe("The experiment list", function() {
