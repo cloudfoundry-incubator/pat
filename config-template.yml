@@ -1,9 +1,28 @@
-# cli_commands are used to specify what the cli commands should be.
-server: false            # true/false should we be running in server mode?
-iterations: 5            # The number of times we wish to itterate over the workload
-concurrency: 1           # The nuber of users we want to simulate running the iterations
-silent: false            # true/false do we want to output command line information
-output: "csv.test"       # name of the .csv file we should be writting too
-interval: 0              # how long we should wait before each workload is ran
-stop: 0                  # the total time we want to be runnins workload intervalse
-workload: "cf:push"   # A single iteration workload that will be executed in the order commands are provided
+# This file has all the command line parameters you can provide (listed alphabetical order) and their default values.
+# You could modify the values here conveniently and run the command as follows:
+# pat -config=config-template.yml
+#
+app: "assets/dora"                      # filepath to app, defaults to provided dora in assets
+app:manifest: ""                        # filepath to cf manifest for the app
+concurrency: 1                          # number of workers to execute the workload in parallel, can be static or ramping up, i.e. 1..3
+concurrency:timeBetweenSteps: 60        # seconds between adding additonal workers when ramping works up
+csv-dir: "output/csvs"                  # Directory to Store CSVs
+interval: 0                             # repeat a workload every n seconds, to be used with -stop
+iterations: 1                           # number of pushes to attempt
+list-workloads: "false"                 # Lists the available workloads
+logging:file: ""                        # A file to log to, or empty to log to STDOUT. By default it creates a file with name GUID in csv-dir folder.
+logging:level: "INFO"                   # The level to log at, one of all, debug2, debug1, debug, info, warn, error, fatal, off
+redis-host: "localhost"                 # Redis hostname
+redis-password: ""                      # Redis password
+redis-port: 6379                        # Redis port
+rest:space: ""                          # space to target for REST api
+rest:target: ""                         # the target for the REST api
+rest:username: ""                       # username for REST api
+server: false                           # true to run the HTTP server interface
+silent: false                           # true to run silently and exit without interaction when finished
+stop: 0                                 # repeat a repeating interval until n seconds, to be used with -interval
+use-redis-store: false                  # True if redis should be used (requires the -redis-host, -redis-port and -redis-password arguments)
+use-redis-worker: false                 # Runs in master mode, sending work to perform to a redis queue
+workload: "cf:push"                     # a comma-separated list of operations a user should issue. use 'pat -list-workloads' to see available workload options.
+#
+
