@@ -40,6 +40,11 @@ func (store *CsvStore) load(filename string, guid string) (experiment.Experiment
 
 func (store *CsvStore) newCsvFile(guid string) *csvFile {
 	file := &csvFile{path.Join(store.dir, strconv.Itoa(int(time.Now().UnixNano()))+"-"+guid+".csv"), guid, nil}
+	// if output file is passed as argument, then overwrite the default format.
+	var lfile = logs.GetPath();
+        if (lfile != "") {
+        file = &csvFile{path.Join(store.dir,lfile), "", nil }
+        }
 	store.workloadList.DescribeWorkloads(file)
 	return file
 }
