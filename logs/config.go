@@ -3,6 +3,7 @@ package logs
 import (
 	"os"
 	"strings"
+	"path/filepath"
 
 	"github.com/cloudfoundry-incubator/pat/config"
 	"github.com/cloudfoundry/gosteno"
@@ -19,6 +20,10 @@ func InitCommandLineFlags(flags config.Config) {
 }
 
 var initialized bool
+
+func GetPath() string{
+        return params.path
+}
 
 func NewLogger(name string) *gosteno.Logger {
 	if !initialized {
@@ -41,7 +46,14 @@ func initLogging() {
 
 	sinks := []gosteno.Sink{}
 	if params.path != "" {
-		sinks = append(sinks, NewFileSink(params.path))
+		ret := strings.Contains(params.path, "/")
+                if(ret) {
+                        ldir, lfile := filepath.Split(params.path)
+                        if(lfile != "") {
+				sinks = append(sinks, NewFileSink(params.path))
+                        } else {
+                        	sinks = append(sinks, NewIOSink(os.Stdout))
+                        }
 	} else {
 		sinks = append(sinks, NewIOSink(os.Stdout))
 	}
