@@ -26,15 +26,15 @@ var restContext = NewRestWorkload()
 
 func DefaultWorkloadList() *WorkloadList {
 	return &WorkloadList{[]WorkloadStep{
-		StepWithContext("rest:target", restContext.Target, "Sets the CF target"),
-		StepWithContext("rest:login", restContext.Login, "Performs a login to the REST api. This option requires rest:target to be included in the list of workloads"),
-		StepWithContext("rest:push", restContext.Push, "Pushes an application using the REST api. This option requires both rest:target and rest:login to be included in the list of workloads"),
-		StepWithContext("cf:push", Push, "Pushes an application using the CF command-line"),
-		StepWithContext("cf:delete", Delete, "Deletes the most recently pushed app."),
-		StepWithContext("cf:generateAndPush", GenerateAndPush, "Generates and pushes a unique application using the CF command-line"),
-		StepWithContext("dummy", Dummy, "An empty workload that can be used when a CF environment is not available"),
-		StepWithContext("dummyDelete", DummyDelete, "An empty workload that simulates Delete"),
-		StepWithContext("dummyWithErrors", DummyWithErrors, "An empty workload that generates errors. This can be used when a CF environment is not available"),
+		StepWithContext("rest:target", restContext.Target, "rest:target - Sets the CF target"),
+		StepWithContext("rest:login", restContext.Login, "rest:login - Performs a login to the REST api. This option requires rest:target to be included in the list of workloads"),
+		StepWithContext("rest:push", restContext.Push, "rest:push - Pushes an application using the REST api. This option requires both rest:target and rest:login to be included in the list of workloads"),
+		StepWithContext("cf:push", Push, "cf:push - Pushes an application using the CF command-line"),
+		StepWithContext("cf:delete", Delete, "cf:delete - Deletes the most recently pushed app."),
+		StepWithContext("cf:generateAndPush", GenerateAndPush, "cf:generateAndPush - Generates and pushes a unique application using the CF command-line"),
+		StepWithContext("dummy", Dummy, "dummy - An empty workload that can be used when a CF environment is not available"),
+		StepWithContext("dummyDelete", DummyDelete, "dummyDelete - An empty workload that simulates Delete"),
+		StepWithContext("dummyWithErrors", DummyWithErrors, "dummyWithErrors - An empty workload that generates errors. This can be used when a CF environment is not available"),
 	}}
 }
 
