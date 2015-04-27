@@ -189,13 +189,17 @@ func (store *CsvStore) LoadAll() (samples []experiment.Experiment, err error) {
 	samples = make([]experiment.Experiment, 0)
 	for _, f := range files {
 		base := strings.Split(f.Name(), ".")[0]
-		name := strings.SplitN(base, "-", 2)[1]
-		if len(name) > 0 {
-			loaded, err := store.load(f.Name(), name)
-			if err == nil {
-				samples = append(samples, loaded)
+		// In the output dir if a file/directory does not have a '-' (was part of standard output file), then it ignores it. 
+		ret := strings.Contains(base, "-")
+		 if(ret) {
+			name := strings.SplitN(base, "-", 2)[1]
+			if len(name) > 0 {
+				loaded, err := store.load(f.Name(), name)
+				if err == nil {
+					samples = append(samples, loaded)
+				}
 			}
-		}
+		}	
 	}
 
 	return
