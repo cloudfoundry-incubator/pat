@@ -98,6 +98,13 @@ var _ = Describe("Csv Store", func() {
 			Ω(data(samples[2].GetData())).Should(HaveLen(3))
 		})
 
+ 		It("Check CSVs files ", func() {
+                        os.Create(dir+"/wrong-file-format")
+                        _ , err := store.LoadAll()
+                        Ω(err).Should(HaveOccurred())
+                        Ω(err.Error()).To(Equal("these files are ignored ,wrong-file-format"))
+		})
+
 		PIt("Throws exception if header is not in correct order", func() {
 		})
 
