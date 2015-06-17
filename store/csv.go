@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"fmt"
 
 	"github.com/cloudfoundry-incubator/pat/experiment"
 	"github.com/cloudfoundry-incubator/pat/logs"
@@ -185,19 +186,36 @@ func (store *CsvStore) LoadAll() (samples []experiment.Experiment, err error) {
 	if err != nil {
 		return nil, err
 	}
+	
+	var err_string string
 
 	samples = make([]experiment.Experiment, 0)
 	for _, f := range files {
-		base := strings.Split(f.Name(), ".")[0]
-		name := strings.SplitN(base, "-", 2)[1]
-		if len(name) > 0 {
-			loaded, err := store.load(f.Name(), name)
-			if err == nil {
-				samples = append(samples, loaded)
-			}
-		}
-	}
+         	Iscsvfile := strings.Contains(f.Name(), ".csv")
+                if (Iscsvfile) {
+                        base := strings.Split(f.Name(), ".")[0]
+                        Isdash := strings.Contains(base, "-")
+                	var name string = ""
+                        if (Isdash) {
+                                name = strings.SplitN(base, "-", 2)[1]
+                                }
+                        if len(name) <= 0 {
+                                name = base
+                        }
+                        loaded, err := store.load(f.Name(), name)
+                        if err == nil {
+                                samples = append(samples, loaded)
+                        }
+                } else {
+                        err_string = err_string + "," + f.Name()
 
+                }
+
+        }
+        if len(err_string) > 0 {
+                return samples, fmt.Errorf("these files are ignored %s", err_string)
+        }
+	
 	return
 }
 
