@@ -247,5 +247,25 @@ var _ = Describe("ConfigAndFlags", func() {
 			Ω(err.Error()).Should(ContainSubstring("YAML error"))
 			os.RemoveAll(tempfile)
 		})
-	})
+
+		It("Returns an error when passed a wrong parameter ", func() {
+			tempfile := filepath.Join(os.TempDir(), "test.yml")
+			configFile, err := os.Create(tempfile)
+			if err != nil {
+				Ω(err).ShouldNot(HaveOccurred())
+			}
+
+			configFile.WriteString("WrongStringPassed: 1\n")
+			configFile.Sync()
+			configFile.Close()
+			flags = []string{"-config", tempfile}
+
+			err = config.Parse(flags)
+                        Ω(err).Should(HaveOccurred())
+                        Ω(err.Error()).To(Equal("invalid strings passed ,WrongStringPassed"))
+	 		os.RemoveAll(tempfile)
 })
+	
+		})
+	})
+

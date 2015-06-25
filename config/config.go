@@ -4,7 +4,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
-
+	"fmt"
 	"launchpad.net/goyaml"
 )
 
@@ -68,15 +68,15 @@ func (f *f) allowDoubleSetting(target interface{}, name string, fn func()) {
 
 func (f *f) Parse(args []string) error {
 	config := f.flagSet.String("config", "", "YML file containing configuration parameters")
-
 	if err := f.ParseEnv(); err != nil {
 		return err
 	}
 
 	f.flagSet.Parse(args)
+
 	if len(*config) > 0 {
 		if err := f.ParseConfig(*config); err != nil {
-			return err
+	return err
 		}
 	}
 
@@ -102,6 +102,7 @@ func (f *f) ParseConfig(path string) error {
 	}
 
 	yml := make(map[string]string)
+
 	err = goyaml.Unmarshal(file, &yml)
 	if err != nil {
 		return err
@@ -109,12 +110,26 @@ func (f *f) ParseConfig(path string) error {
 
 	f.flagSet.Visit(func(flag *flag.Flag) {
 		delete(yml, flag.Name)
+
 	})
+
+
+  	var invalid_string string
 
 	for k, v := range yml {
 		flag := f.flagSet.Lookup(k)
+
+	// if wrong parameters are passed, do not crash, exit with message. 
+	if flag != nil { 
 		flag.Value.Set(v)
-	}
+		} else { 
+                invalid_string = invalid_string + "," + k
+               }
+		}
+
+        if len(invalid_string) > 0 {
+                return fmt.Errorf("invalid strings passed %s", invalid_string)
+        }
 
 	return nil
 }
