@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"launchpad.net/goyaml"
+	goyaml "github.com/go-yaml/yaml"
 )
 
 type Config interface {
