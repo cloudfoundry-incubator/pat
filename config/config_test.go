@@ -244,7 +244,7 @@ var _ = Describe("ConfigAndFlags", func() {
 			flags = []string{"-config", tempfile}
 
 			err = config.Parse(flags)
-			Ω(err.Error()).Should(ContainSubstring("YAML error"))
+			Ω(err.Error()).Should(ContainSubstring("yaml: line"))
 			os.RemoveAll(tempfile)
 		})
 	})
