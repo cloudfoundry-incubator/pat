@@ -7,4 +7,4 @@ github.com/garyburd/redigo/redis	ed54f4ed86a815cf09870e4bd1a10a2ee39a4308
 github.com/cloudfoundry/gosteno	5eb8c6e554f0dfc39d6468813b8ac19ec28fe74f
 github.com/onsi/ginkgo	32204a3eab0576cbea19f5ff8b27d3a928647ea6
 github.com/onsi/gomega	a78ae492d53aad5a7a232d0d0462c14c400e3ee7
-launchpad.net/goyaml	51
+github.com/go-yaml/yaml	53feefa2559fb8dfa8d81baad31be332c97d6c77
