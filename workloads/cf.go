@@ -17,6 +17,7 @@ import (
 	"github.com/cloudfoundry-incubator/pat/context"
 	"github.com/nu7hatch/gouuid"
 	"github.com/onsi/ginkgo"
+	"github.com/onsi/gomega"
 	. "github.com/pivotal-cf-experimental/cf-test-helpers/cf"
 )
 
@@ -144,6 +145,7 @@ func GenerateAndPush(ctx context.Context) error {
 
 func expectCfToSay(expect string, args ...string) error {
 	var outBuffer bytes.Buffer
+	gomega.RegisterFailHandler(ginkgo.Fail)
 	oldWriter := ginkgo.GinkgoWriter
 	ginkgo.GinkgoWriter = bufio.NewWriter(&outBuffer)
 	cfOutBuffer := Cf(args...).Wait(10 * time.Minute).Out
